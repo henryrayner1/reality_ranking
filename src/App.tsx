@@ -7,7 +7,6 @@ import Layout from "./components/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import { checkUserLoggedIn, getShows, getWeeks } from "./utils/util";
 import { setUser } from "./redux/slices/userSlice";
-import RankingComponent from "./components/RankingComponent/RankingComponent";
 import { fetchAllShows } from "./redux/thunks/showsThunks";
 import { useAppDispatch } from "./redux/hooks";
 import Navbar from "./components/Navbar";

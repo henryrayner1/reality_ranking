@@ -2,7 +2,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { upsertShows } from "../redux/slices/showsSlice";
 import { upsertSeasons } from "../redux/slices/seasonsSlice";
 import { upsertWeeks } from "../redux/slices/weeksSlice";
-import type { Contestant, Elimination, EliminationEntry, Season, Show, Week } from "./Constants";
+import type { Contestant, Elimination, EliminationEntry, Ranking, Season, Show, Week } from "./Constants";
 
 export const getUserId = async (email: string) => {
   const userRes = await fetch(`/api/users/lookup?email=${email}`);
@@ -242,6 +242,36 @@ export const getEliminationOrder = (eliminations: Elimination[], weekNumber: num
   }
   return eliminatedContestants;
 }
+
+export interface RankingColumnEntry {
+  contestantId: string;
+  eliminated: boolean;
+}
+
+// Builds one ordered column of a past-rankings table for a single week's ranking:
+// non-eliminated contestants first (by submitted position), then eliminated
+// contestants appended in elimination order. Row index == rank position.
+export const buildPastRankingColumn = (
+  ranking: Ranking,
+  weekNumber: number,
+  eliminations: Elimination[],
+  contestants: Contestant[]
+): RankingColumnEntry[] => {
+  const eliminationOrderIds = getEliminationOrder(eliminations, weekNumber).reverse();
+  const elimNames = eliminationOrderIds.map((id) => {
+    const contestant = contestants.find((c) => c.id === id);
+    return contestant ? contestant.name : "";
+  });
+
+  const active = [...ranking.entries]
+    .sort((a, b) => a.position - b.position)
+    .filter((entry) => !elimNames.includes(entry.contestant_id))
+    .map((entry) => ({ contestantId: entry.contestant_id, eliminated: false }));
+
+  const eliminated = elimNames.map((name) => ({ contestantId: name, eliminated: true }));
+
+  return [...active, ...eliminated];
+};
 
 export const addShow = async (show: Partial<Show>) => {
   const response = await fetch('/api/shows/add', {

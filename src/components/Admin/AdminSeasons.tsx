@@ -7,11 +7,12 @@ import ShowSelect from "../ShowSelect/ShowSelect";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
 import { deleteSeasonAndCleanup } from "../../redux/thunks/showsThunks";
 import { upsertSeason } from "../../redux/slices/seasonsSlice";
+import { selectCurrShow } from "../../redux/selectors";
 
 const AdminSeasons = () => {
 
   const dispatch = useAppDispatch();
-  const currShow = useAppSelector(state => state.shows.currShow ?? state.shows.entities[state.shows.ids[0]]); 
+  const currShow = useAppSelector(selectCurrShow);
 
   const qc = useQueryClient()
   const [form, setForm] = useState<Partial<Season>>({})

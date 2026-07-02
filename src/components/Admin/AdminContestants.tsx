@@ -12,16 +12,25 @@ import * as AdminUI from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import AvatarEditor from "react-avatar-editor";
 import { useAppSelector } from "../../redux/hooks";
+import { selectCurrShow } from "../../redux/selectors";
 
 const AdminContestants = () => {
   const qc = useQueryClient();
   const [contestant, setContestant] = useState<Partial<Contestant>>({});
-  const [photoLabel, setPhotoLabel] = useState("Click to upload headshot");
-  const currShow = useAppSelector(state => state.shows?.currShow);
+  const [photoLabel, setPhotoLabel] = useState("Click, drag & drop, or paste to upload headshot");
+  const currShow = useAppSelector(selectCurrShow);
   const [currSeason, setCurrSeason] = useState<Season>();
   const [image, setImage] = useState<File | null>(null);
   const [scale, setScale] = useState(1.2);
+  const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFile = (f: File | null | undefined) => {
+    if (f && f.type.startsWith("image/")) {
+      setImage(f);
+    }
+  };
 
 
   const { data: seasons = [] } = useQuery({
@@ -39,7 +48,7 @@ const AdminContestants = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["contestants"] });
       setContestant({});
-      setPhotoLabel("Click to upload headshot");
+      setPhotoLabel("Click, drag & drop, or paste to upload headshot");
     },
   });
   const remove = useMutation({
@@ -121,14 +130,41 @@ const AdminContestants = () => {
               />
             </AdminUI.FormGroup>
             <AdminUI.FormGroup label="Photo">
-              <label
+              <div
+                tabIndex={0}
+                role="button"
+                aria-label="Upload headshot: click to browse, drag and drop, or paste an image"
+                onClick={() => {
+                  if (image == null) fileInputRef.current?.click();
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (!isDragging) setIsDragging(true);
+                }}
+                onDragLeave={(e) => {
+                  if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setIsDragging(false);
+                  }
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setIsDragging(false);
+                  handleFile(e.dataTransfer.files?.[0]);
+                }}
+                onPaste={(e) => {
+                  const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
+                    i.type.startsWith("image/")
+                  );
+                  handleFile(item?.getAsFile());
+                }}
                 style={{
-                  border: "1.5px dashed var(--color-border-secondary,#ccc)",
+                  border: `1.5px dashed ${isDragging ? "#4f8cff" : "var(--color-border-secondary,#ccc)"}`,
                   borderRadius: 8,
                   padding: "1.25rem",
                   textAlign: "center",
                   cursor: "pointer",
                   display: "block",
+                  backgroundColor: isDragging ? "rgba(79,140,255,0.08)" : undefined,
                 }}
               >
                 {(image == null) ? <><div style={{ fontSize: 20, marginBottom: 6 }}>↑</div>
@@ -141,14 +177,12 @@ const AdminContestants = () => {
                   {photoLabel}
                 </p>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   style={{ display: "none" }}
                   onChange={async (e) => {
-                    const f = e.target.files?.[0];
-                    if (f) {
-                      setImage(f);
-                    }
+                    handleFile(e.target.files?.[0]);
                   }}
                 /></> : <div>
                     <AvatarEditor
@@ -158,10 +192,10 @@ const AdminContestants = () => {
                         border={50} borderRadius={125} // Circular mask
                         scale={scale}
                       />
-                      <input type="range" min="1" max="3" step="0.01" 
+                      <input type="range" min="1" max="3" step="0.01"
         value={scale} onChange={(e) => setScale(parseFloat(e.target.value))} className="w-100"/>
                   </div>}
-              </label>
+              </div>
             </AdminUI.FormGroup>
             <AdminUI.PrimaryButton
               onClick={() =>

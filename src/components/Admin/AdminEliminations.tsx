@@ -5,11 +5,12 @@ import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSe
 import * as AdminUI from "../../utils/AdminComponents"
 import { useAppSelector } from "../../redux/hooks"
 import ShowSelect from "../ShowSelect/ShowSelect"
+import { selectCurrShow } from "../../redux/selectors"
 
 const AdminEliminations = () => {
     const qc = useQueryClient()
     const [elimination, setElimination] = useState<Partial<EliminationEntry>>({ eliminationType: EliminationTypes.ELIMINATED })
-    const currShow = useAppSelector(state => state.shows.currShow);
+    const currShow = useAppSelector(selectCurrShow);
     const [currSeason, setCurrSeason] = useState<Partial<Season>>({})
     const { data: weeks = [] } = useQuery({ queryKey: ['weeks', currSeason.id], queryFn: getWeeks })
     const { data: contestants = [] } = useQuery({ queryKey: ['contestants', currSeason.id], queryFn: () => getContestantsBySeason(currSeason.id) })

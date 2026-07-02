@@ -5,6 +5,11 @@ import { weeksSelectors } from './slices/weeksSlice';
 import { type RootState } from './store';
 import type { Season, Week } from '../utils/Constants';
 
+// The explicitly-selected show, falling back to the first loaded show so
+// pages default to something sensible before the user has picked one.
+export const selectCurrShow = (state: RootState) =>
+  state.shows.currShow ?? state.shows.entities[state.shows.ids[0]];
+
 // Create a single stable selector that takes showId as part of the input
 export const selectShowWithSeasonsAndWeeks = createSelector(
   [

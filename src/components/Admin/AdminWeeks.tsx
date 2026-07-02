@@ -6,9 +6,10 @@ import * as AdminUI from "../../utils/AdminComponents";
 import { Card } from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useAppSelector } from "../../redux/hooks";
+import { selectCurrShow } from "../../redux/selectors";
 
 const AdminWeeks = () => {
-    const currShow = useAppSelector(state => state.shows.currShow);
+    const currShow = useAppSelector(selectCurrShow);
     const qc = useQueryClient()
     const [week, setWeek] = useState<Partial<Week>>({})
     const [airTime, setAirTime] = useState("20:00");

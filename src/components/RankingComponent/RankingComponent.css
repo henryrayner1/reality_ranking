@@ -1,13 +1,34 @@
-.ranking-grid {
-  display: grid;
-  grid-template-rows: 1fr 1.25rem;
-  grid-auto-flow: column;
+.ranker-section {
+  display: flex;
+  flex-direction: row;
   border: 5px solid lightblue;
   border-radius: 5px;
   background-color: rgba(166, 233, 245, 0.8);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   overflow: hidden;
+}
+
+.rank-gutter {
+  display: flex;
+  flex-direction: column;
+}
+
+.weeks-to-rank {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.weeks-to-rank-body {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+}
+
+.week-column {
+  display: flex;
+  flex-direction: column;
 }
 
 .cell {
@@ -50,8 +71,8 @@
 }
 
 .week-heading {
-  max-width: 2.5rem;
-  max-height: 1.25rem;
+  width: 2.5rem;
+  height: 1.25rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,6 +84,7 @@
   display: flex;
   flex-direction: row;
   justify-content: center;
+  align-items: flex-start;
   margin-left: 1vw;
 }
 
@@ -128,6 +150,10 @@
   display: flex;
   justify-content: center;
   align-items: flex-start;
+}
+
+.rankings-main-loading {
+  align-items: center;
 }
 
 .rank-type-container {

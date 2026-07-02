@@ -1,18 +1,18 @@
 import { type Contestant, type Elimination, nameToImage, type Ranking, type RankType, type Season, type Show } from "../../utils/Constants";
 import { use, useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { useSelector } from "react-redux";
-import { getContestantEliminationStatus, getEliminationOrder, getEliminations, getRanking, getUserRankings, submitRanking, submitRankings } from "../../utils/util";
+import { getContestantEliminationStatus, getEliminations, getRanking, getUserRankings, submitRanking, submitRankings } from "../../utils/util";
 import {type WeekRef} from "../Week/Week";
 import WeekComponent from "../Week/Week";
-import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import './RankingComponent.css';
 import SubmitRankingsModal from "../modals/SubmitRankingsModal";
 import TooltipComponent from "../TooltipComponent/TooltipComponent";
 import { useAppSelector } from "../../redux/hooks";
-import { selectShowWithSeasonsAndWeeks } from "../../redux/selectors";
+import { selectCurrShow, selectShowWithSeasonsAndWeeks } from "../../redux/selectors";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useParams } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import PastRankingsTable from "./PastRankingsTable";
 
 const RankingComponent2 = () => {
   const [pastRankings, setPastRankings] = useState<Ranking[]>([]);
@@ -28,7 +28,7 @@ const RankingComponent2 = () => {
 
   const { showId } = useParams<{ showId: string }>();
 
-  const currShow = useAppSelector(state => state.shows.currShow ?? state.shows.entities[state.shows.ids[0]]); 
+  const currShow = useAppSelector(selectCurrShow);
 
   const currShowTree = useAppSelector(state => 
     selectShowWithSeasonsAndWeeks(state, currShow?.id || "")
@@ -50,6 +50,7 @@ const RankingComponent2 = () => {
   }, []);
 
   const initializePastRankings = async () => {
+    if (!currShow) return; // shows haven't loaded from Redux yet — stay in loading state
     if (currSeason?.weeks?.length > 0 && user) {
       try {
         if(!submitModalDisplayFlag) setLoadingFlag(true);
@@ -124,43 +125,6 @@ const RankingComponent2 = () => {
     return hit ?? null;
   }
 
-  const pastRankingsElements = (ranking: Ranking) => {
-    const elements = []
-    const currWeekNo = currSeason?.weeks.find(week => week.id === ranking.week_id)?.weekNumber;
-    elements.push(
-      <div className="week-heading" key={`${ranking.id}-heading`}>{currWeekNo}</div>
-    )
-
-    const eliminationOrderIds = getEliminationOrder(eliminations, currWeekNo).reverse();
-    const elimNames = eliminationOrderIds.map(id => {
-      const contestant = currSeason?.contestants.find(c => c.id === id);
-      return contestant ? contestant.name : "";
-    });
-    ranking.entries.map((entry) => {
-          const eliminated = elimNames?.includes(entry.contestant_id);
-          if (!eliminated) {
-          elements.push(
-            <div key={`${ranking.id}-${entry.contestant_id}`} className="cell">
-              <ContestantIcon name={entry.contestant_id} id={entry.contestant_id} isActive={false} isEliminated={eliminated} season={currSeason} show={currShow}/>
-            </div>
-          );}
-    })
-    elimNames?.map((dancerId) => {
-      elements.push(
-        <div key={`${ranking.id}-${dancerId}-elim`} className="cell eliminated-week">
-          <ContestantIcon name={dancerId} id={dancerId} isActive={false} isEliminated={true} season={currSeason} show={currShow}/>
-        </div>
-      );
-    });
-
-    return elements;
-  }
-
-  const style = {
-    gridColumn: "span " + currSeason?.weeks?.length,
-    justifyContent: "center",
-  };
-
   const checkSubmitDisabled = () => {
     return pastRankings?.length === currSeason?.weeks?.length || activeWeeks?.size === 0;
   }
@@ -176,41 +140,58 @@ const RankingComponent2 = () => {
     return currSeason.contestants.map(contestant => contestant.name).sort();
   }
 
+  const unrankedWeeks = currSeason?.weeks?.filter((week) => !checkPastRankings(week.id)) ?? [];
+  const rankedWeeks = currSeason?.weeks?.filter((week) => checkPastRankings(week.id)) ?? [];
+
   const rankingContainer = <div className="ranking-container">
-      <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${currSeason?.weeks?.length + 1}, 1fr)`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
-        <div className="grid-heading">Rank</div>
-        <div className="week-heading"></div>
-        {currSeason?.contestants?.map((contestant, index) => {
-          return (
-            <div key={contestant.id} className="grid-item">
-              {index + 1}
-            </div>
-          );
-        })}
-        <div className="grid-heading" style={style}>Week</div>
-          {currSeason?.weeks?.map((week, index) => {
-            const inPastRankings = checkPastRankings(week.id);
-            return !inPastRankings ? <WeekComponent id={week.id} 
-                  setActiveWeeks={setActiveWeeks} 
-                  activeWeeks={activeWeeks} 
-                  currWeek={week} 
-                  key={`week-${week.weekNumber}`} 
-                  ref={setWeekRef(week.id)} 
-                  lastOrder={getLastRankingNames(index+1)} 
-                  eliminations={eliminations}
-                  contestants={currSeason?.contestants}
-                  season={currSeason}
-                  show={currShow}/> :
-              pastRankingsElements(inPastRankings);
+      <div className="ranker-section">
+        <div className="rank-gutter">
+          <div className="grid-heading">Rank</div>
+          <div className="week-heading"></div>
+          {currSeason?.contestants?.map((contestant, index) => {
+            return (
+              <div key={contestant.id} className="grid-item">
+                {index + 1}
+              </div>
+            );
           })}
         </div>
-        <div className="active-weeks-container">
-          {[...activeWeeks].map((weekId) => <div className="remove-button px-2 text-xs" key={weekId} onClick={()=>removeActiveWeek(weekId)}>X Week {currSeason?.weeks.find(week => week.id === weekId)?.weekNumber}</div>)}
-        </div>
-        <div className={`button ${checkSubmitDisabled() ? 'inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
-          Submit Rankings
-        </div>
+        {unrankedWeeks.length > 0 && (
+          <div className="weeks-to-rank">
+            <div className="grid-heading">Week</div>
+            <div className="weeks-to-rank-body">
+              {unrankedWeeks.map((week) => (
+                <WeekComponent id={week.id}
+                      setActiveWeeks={setActiveWeeks}
+                      activeWeeks={activeWeeks}
+                      currWeek={week}
+                      key={`week-${week.weekNumber}`}
+                      ref={setWeekRef(week.id)}
+                      lastOrder={getLastRankingNames(week.weekNumber)}
+                      eliminations={eliminations}
+                      contestants={currSeason?.contestants}
+                      season={currSeason}
+                      show={currShow}/>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="active-weeks-container">
+        {[...activeWeeks].map((weekId) => <div className="remove-button px-2 text-xs" key={weekId} onClick={()=>removeActiveWeek(weekId)}>X Week {currSeason?.weeks.find(week => week.id === weekId)?.weekNumber}</div>)}
+      </div>
+      <div className={`button ${checkSubmitDisabled() ? 'inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
+        Submit Rankings
+      </div>
+      <PastRankingsTable
+        weeks={rankedWeeks}
+        rankings={pastRankingForType}
+        eliminations={eliminations}
+        season={currSeason}
+        show={currShow}
+      />
     </div>
+
   const rankTypeContainer = <div className="rank-type-container gap-2">
     <ShowSelect 
         currShow={currShow} 
@@ -230,8 +211,8 @@ const RankingComponent2 = () => {
       <h1 className="font-bold text-gray-800 page-header">Ranking Page</h1>
 
       <div className="rankings-content">
-        {!loadingFlag && <aside className="rank-type-sidebar">{rankTypeContainer}</aside>}
-        <main className="rankings-main">
+        <aside className="rank-type-sidebar">{!loadingFlag && rankTypeContainer}</aside>
+        <main className={`rankings-main${loadingFlag ? ' rankings-main-loading' : ''}`}>
           {loadingFlag ? <div className="loading-circle" /> : user && rankingContainer}
         </main>
       </div>

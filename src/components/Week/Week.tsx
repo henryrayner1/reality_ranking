@@ -94,7 +94,7 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
     return entries;
   }
 
-  return <div className="" style={{gridRow: `span ${season?.contestants?.length+1}`}}>
+  return <div className="week-column">
             {activeWeeks?.has(currWeek?.id) ? <div>
             <DndContext
               sensors={sensors}
