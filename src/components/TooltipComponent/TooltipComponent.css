@@ -1,0 +1,24 @@
+.tooltip-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.tooltip {
+  position:absolute;
+  background-color: rgb(31, 23, 62);
+  transform: translateX(25%);
+  width: max-content;
+  max-width: 10rem;
+  color: white;
+  border-radius: 5px;
+  font-size: small;
+  padding: 0.5rem;
+}
+
+@media screen and (max-width: 800px) {
+  .tooltip {
+    transform: translate(-15%,105%);
+    text-align: center;
+  }
+}

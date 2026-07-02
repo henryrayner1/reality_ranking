@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(grep -n '$transaction' -r /Users/henryrayner/Desktop/reality_ranking/backend/src)",
+      "Bash(xargs ls -la)",
+      "Bash(sort -k6,7)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git reset *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}

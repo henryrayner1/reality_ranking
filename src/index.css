@@ -1,0 +1,231 @@
+@import 'bootstrap/dist/css/bootstrap.min.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0px;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+.navigation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.dropdown-header {
+  background-color: navy;
+  color: white;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  user-select: none;
+  width: 8rem;
+  text-align: center;
+  font-weight: bold;
+}
+
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+  overflow: visible;
+  z-index: 1000;
+}
+
+.dropdown-content {
+  position: absolute;
+  background-color: #f9f9f9;
+  color: black;
+  text-align: left;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  padding: 12px 16px;
+  right: -1rem;
+  top: 2.5rem;
+}
+
+.dropdown-item:hover {
+  background-color: #f1f1f1;
+  cursor: pointer;
+}
+
+.button {
+  cursor: pointer;
+  background-color: navy;
+  border: 3px solid navy;
+  color: white;
+  border-radius: 0.9rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  max-height: 2.7rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap:nowrap;
+}
+
+.inactive {
+  background-color: rgba(0,0,128,0.2);
+  border-color: rgba(0,0,128,0.0);
+  cursor:default;
+}
+
+.submit-container {
+  z-index: 10;
+  bottom: 0;
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  width: 40rem;
+  height: 5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.submit-section {
+  position: absolute;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 500px;
+  height: 5rem;
+  background-color: white;
+  z-index: 10;
+}
+
+.page {
+  min-width: 100vw;
+  background-color: rgb(223, 221, 235);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 0;
+}
+
+.page-header {
+  background-color: rgb(202, 194, 245);
+  width: 100%;
+  z-index: 20;
+}
+
+.week {
+  grid-row: span 15;
+}
+
+.x-button {
+  cursor: pointer;
+  color: white;
+  border-radius: 1rem;
+  margin-left: 5px;
+  font-size: 0.75rem;
+  background-color: rgb(195, 78, 78);
+  max-width: 1.5rem;
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-circle {
+  height: 2rem;
+  width: 2rem;
+  border: 4px solid gray;
+  border-top: 4px solid black;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.shows-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  width: 80%;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.show-card {
+  background-color: white;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+
+  position: relative;
+}
+
+.show-image {
+  opacity: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: .5s ease;
+  backface-visibility: hidden;
+}
+
+.show-title {
+  text-align: center;
+  width: 100%;
+}
+
+.middle {
+  transition: .5s ease;
+  opacity: 0;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  -ms-transform: translate(-50%, -50%);
+  text-align: center;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  height: 100%;
+}
+
+.show-card:hover .show-image {
+  opacity: 0.3;
+}
+
+.show-card:hover .middle {
+  opacity: 1;
+  border: 2px solid darkblue;
+}
+
+.show-card .text {
+  position: relative;
+  min-width: 60%;
+  max-width: 80%;
+  font-weight: bold;
+  font-size: 1.5rem;
+  cursor: pointer;
+  background-color:darkblue;
+  color: white;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

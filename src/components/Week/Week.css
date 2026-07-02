@@ -1,0 +1,22 @@
+.cell-default {
+  max-width: 2.5rem;
+  min-width: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: rgb(190, 213, 218);
+}
+
+.cell-default:hover {
+  background-color: rgb(180, 200, 205);
+}
+
+.cell-default:hover .add-week {
+    outline: 2px solid white;
+    border-radius: 50%;
+}
+.add-week {
+    width: 1.5rem;
+    height: 1.5rem;
+}

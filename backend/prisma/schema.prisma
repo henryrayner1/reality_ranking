@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String      @id @db.VarChar(6)
+  email         String      @unique
+  password      String
+  accountType   AccountType @default(USER)
+  rankings      Ranking[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Show {
+  id          String    @id @unique @default(cuid())
+  name        String
+  seasons     Season[]
+  network     String    @default("")
+  currSeason  Int       @default(1)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Season {
+  id            String       @id @unique @db.VarChar()
+  showId        String
+  show          Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
+  seasonNumber  Int
+  isCurrent     Boolean      @default(false)
+  contestants   Contestant[]
+  weeks         Week[]  
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model Contestant {
+  id          String       @id @unique @default(cuid())
+  name        String
+  seasonId    String
+  season      Season       @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  photoUrl    String       @default(".src/assets/contestant_placeholder.png")
+  elimination Elimination?
+  rankingEntries      RankingEntry[]
+  status      ContestantStatus @default(ACTIVE)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([name, seasonId])
+}
+
+model Week {
+  id            String        @id @default(cuid())
+  weekNumber    Int           @default(autoincrement())
+  seasonId      String
+  eliminations  Elimination[]
+  rankings      Ranking[]
+  season        Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  airDate       DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Elimination {
+  id              String          @id @unique @db.VarChar(10)
+  weekId          String
+  week            Week            @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  contestantId    String          @unique
+  contestant      Contestant?     @relation(fields: [contestantId], references: [id], onDelete: Cascade)
+  eliminationType EliminationType @default(ELIMINATED)
+}
+
+model Ranking {
+  id          String    @id @unique @db.VarChar(10)
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekId      String
+  week        Week      @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  type        RankType
+  entries     RankingEntry[]
+}
+
+model RankingEntry {
+  id           String     @id @default(cuid())
+  rankingId    String
+  ranking      Ranking    @relation(fields: [rankingId], references: [id])
+  contestantId String
+  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  position     Int
+  createdAt    DateTime   @default(now())
+
+  @@unique([rankingId, position])
+  @@unique([rankingId, contestantId])
+}
+
+
+
+enum AccountType {
+  ADMIN
+  USER
+}
+
+enum ContestantStatus {
+  ACTIVE
+  ELIMINATED
+}
+
+enum EliminationType {
+  ELIMINATED
+  QUIT
+  MEDICAL
+  WINNER
+  RUNNER_UP
+}
+
+enum RankType {
+  FAVORITE
+  WINNER
+}
