@@ -208,6 +208,13 @@
   margin-top: 0;
 }
 
+.ranking-placeholder {
+  color: rgb(90, 85, 120);
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+}
+
 .ranking-grid-loading {
   display: flex;
   align-items: center;

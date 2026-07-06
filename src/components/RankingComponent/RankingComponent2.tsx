@@ -225,10 +225,19 @@ const RankingComponent2 = () => {
       })}
     </div>
 
+  const rowCount = currSeason?.contestants?.length ?? 0;
+  const weekCount = currSeason?.weeks?.length ?? 0;
+
   const rankingContainer = <div className="ranking-container">
       <div className="ranking-panel">
         {rankTypeTabs}
-        {loadingFlag ? <div className="ranking-grid-loading"><div className="loading-circle" /></div> : rankingGrid}
+        {loadingFlag
+          ? <div className="ranking-grid-loading"><div className="loading-circle" /></div>
+          : rowCount === 0
+            ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
+            : weekCount === 0
+              ? <p className="ranking-placeholder">No weeks have been added to this season yet.</p>
+              : rankingGrid}
       </div>
       {!loadingFlag && <div className="active-weeks-container">
           {[...activeWeeks].map((weekId) => <div className="remove-button px-2 text-xs" key={weekId} onClick={()=>removeActiveWeek(weekId)}>X Week {currSeason?.weeks.find(week => week.id === weekId)?.weekNumber}</div>)}

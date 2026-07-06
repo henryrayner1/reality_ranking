@@ -24,7 +24,8 @@
       "Bash(node verify_insights.mjs)",
       "Bash(curl *)",
       "Bash(node verify_empty_season.mjs)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(git commit *)"
     ]
   }
 }

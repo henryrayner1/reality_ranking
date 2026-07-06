@@ -21,6 +21,7 @@ export default function showsRouter(prisma: PrismaClient) {
 
     router.get("/", async (req, res) => {
         const shows = await prisma.show.findMany({
+            orderBy: { createdAt: 'asc' },
             include: {
                 seasons: {
                     include: {
