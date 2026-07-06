@@ -49,7 +49,15 @@ const ContestantIcon = (props:IconProps) => {
 
   return (
     <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...dragProps} className='flex flex-col relative overflow-hidden dancer-icon'>
-      <img src={getImagePath()} alt={props.name} className='mt-[-5px] mb-[5px]' style={props.isEliminated ? { filter: 'grayscale(100%)', pointerEvents: 'none' } : undefined}/>
+      <img
+        src={getImagePath()}
+        alt={props.name}
+        className='mt-[-5px] mb-[5px]'
+        style={{
+          touchAction: 'none',
+          ...(props.isEliminated ? { filter: 'grayscale(100%)', pointerEvents: 'none' } : {}),
+        }}
+      />
       <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>
     </div>
   );

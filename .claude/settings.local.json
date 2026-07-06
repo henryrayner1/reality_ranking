@@ -26,7 +26,10 @@
       "Bash(node verify_empty_season.mjs)",
       "Bash(python3 -c ' *)",
       "Bash(git commit *)",
-      "Bash(node verify_pageheader.mjs)"
+      "Bash(node verify_pageheader.mjs)",
+      "Bash(node inspect_grid.mjs)",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('columns:', d['gridTemplateColumns']\\); print\\('childCount:', d['childCount']\\)\")",
+      "Bash(node verify_overall.mjs)"
     ]
   }
 }

@@ -153,10 +153,10 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
           </Fragment>
         ))}
 
-        <div className="insights-grid-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}>Overall</div>
-        <div className="insights-week-heading"></div>
+        <div className="insights-grid-heading insights-overall-heading" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
+        <div className="insights-week-heading insights-week-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}></div>
         {overallColumn.map((contestantId, rowIndex) => (
-          <div key={`overall-cell-${rowIndex}`} className="insights-cell">
+          <div key={`overall-cell-${rowIndex}`} className="insights-cell insights-overall-cell">
             {contestantId && (
               <ContestantIcon
                 name={contestantsById[contestantId]?.name ?? ""}

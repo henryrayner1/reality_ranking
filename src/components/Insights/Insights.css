@@ -1,6 +1,9 @@
 .insights-page {
   width: 100%;
-  min-height: 100vh;
+  /* The sticky navbar sits above this container in normal flow, consuming
+     real height, so min-height:100vh here would always overflow the
+     viewport by exactly the navbar's height even with no real content. */
+  min-height: calc(100vh - var(--navbar-height, 59px));
   background-color: rgb(223, 221, 235);
   /* No overflow here (kept visible): a non-visible value on this ancestor
      would make it the scrolling container for position:sticky descendants
@@ -193,6 +196,21 @@
   align-items: center;
   justify-content: center;
   font-weight: 550;
+}
+
+/* Overall is an aggregate column, not a specific week — visually set it apart
+   from the weekly data with its own accent color (tying into the app's
+   existing purple page-header accent) and a left divider. */
+.insights-overall-heading {
+  background-color: rgb(122, 90, 180);
+  color: #ffffff;
+  font-weight: bold;
+  border-left: 3px solid rgb(223, 221, 235);
+}
+
+.insights-overall-cell {
+  background-color: rgba(202, 194, 245, 0.55);
+  border-left: 3px solid rgb(223, 221, 235);
 }
 
 .insights-grid-loading {
