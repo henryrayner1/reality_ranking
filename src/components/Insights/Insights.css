@@ -2,8 +2,9 @@
   width: 100%;
   min-height: 100vh;
   background-color: rgb(223, 221, 235);
-  overflow-y: auto;
-  overflow-x: hidden;
+  /* No overflow here (kept visible): a non-visible value on this ancestor
+     would make it the scrolling container for position:sticky descendants
+     (.page-header), breaking their stickiness relative to the real viewport. */
 }
 
 .insights-content {
@@ -303,8 +304,6 @@
 
 @media screen and (max-width: 800px) {
   .insights-page {
-    overflow-y: auto;
-    overflow-x: hidden;
     padding-bottom: 5vh;
   }
 

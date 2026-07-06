@@ -1,0 +1,11 @@
+.app-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.app-navbar .nav-link.active {
+  color: #ffffff;
+  font-weight: 700;
+  border-bottom: 3px solid rgb(67, 164, 209);
+}

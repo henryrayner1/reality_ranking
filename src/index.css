@@ -121,6 +121,8 @@ body {
 .page-header {
   background-color: rgb(202, 194, 245);
   width: 100%;
+  position: sticky;
+  top: var(--navbar-height, 59px);
   z-index: 20;
 }
 
