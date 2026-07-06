@@ -8,7 +8,11 @@ const weekSlice = createSlice({
     initialState: weeksAdapter.getInitialState(),
     reducers: {
         upsertWeek: weeksAdapter.upsertOne,
-        upsertWeeks: weeksAdapter.upsertMany,
+        // Called only from fetchAllShows with the full authoritative list from
+        // the API — setAll (not upsertMany) so weeks deleted server-side are
+        // pruned from the (redux-persist-backed) client cache instead of
+        // lingering forever.
+        upsertWeeks: weeksAdapter.setAll,
         removeWeek: weeksAdapter.removeOne,
         removeWeeks: weeksAdapter.removeMany,
     }

@@ -1,0 +1,177 @@
+import { Fragment } from "react";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
+import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../utils/Constants";
+import ContestantIcon from "../ContestantIcon/ContestantIcon";
+
+interface InsightsRankingTableProps {
+  currSeason: Season | null;
+  currShow: Show | null;
+  favoriteInsights: InsightsResponse | null;
+  winnerInsights: InsightsResponse | null;
+  eliminations: EliminationEntry[];
+  rankingType: RankType;
+  setRankingType: (type: RankType) => void;
+  loadingFlag: boolean;
+}
+
+// Sorts contestants by their averaged position (ascending — lower is better)
+// into rank-ordered rows, tie-breaking by name for a deterministic order.
+// Contestants with no data (no submissions that week / ever) sort to the
+// bottom and render as blank cells rather than being force-placed.
+const buildRankColumn = (
+  items: { contestantId: string; value: number | null }[],
+  contestantsById: Record<string, Contestant>,
+  rowCount: number
+): (string | null)[] => {
+  const withData = items
+    .filter((i) => i.value !== null)
+    .sort((a, b) => {
+      if (a.value !== b.value) return (a.value as number) - (b.value as number);
+      const nameA = contestantsById[a.contestantId]?.name ?? "";
+      const nameB = contestantsById[b.contestantId]?.name ?? "";
+      return nameA.localeCompare(nameB);
+    })
+    .map((i) => i.contestantId);
+
+  const column: (string | null)[] = [...withData];
+  while (column.length < rowCount) column.push(null);
+  return column.slice(0, rowCount);
+};
+
+const InsightsRankingTable = (props: InsightsRankingTableProps) => {
+  const { currSeason, currShow, rankingType, setRankingType, loadingFlag } = props;
+  const insights = rankingType === "FAVORITE" ? props.favoriteInsights : props.winnerInsights;
+
+  const contestantsById: Record<string, Contestant> = {};
+  (currSeason?.contestants ?? []).forEach((c) => { contestantsById[c.id] = c; });
+
+  const eliminationByContestant = new Map<string, { weekNumber: number; eliminationType: string }>();
+  props.eliminations.forEach((e: any) => {
+    eliminationByContestant.set(e.contestantId, {
+      weekNumber: e.week?.weekNumber ?? 0,
+      eliminationType: e.eliminationType,
+    });
+  });
+
+  const isEliminatedByWeek = (contestantId: string, weekNumber: number) => {
+    const elim = eliminationByContestant.get(contestantId);
+    return !!elim && weekNumber > elim.weekNumber;
+  };
+
+  const rankTypeTabs = (
+    <div className="insights-tabs">
+      <div
+        className={`insights-tab${rankingType === "FAVORITE" ? " insights-tab-active" : ""}`}
+        onClick={() => setRankingType("FAVORITE")}
+        data-tooltip-id="insights-rank-type-tooltip"
+        data-tooltip-content="Average of everyone's favorite-to-least-favorite rankings"
+      >Favorite</div>
+      <div
+        className={`insights-tab${rankingType === "WINNER" ? " insights-tab-active" : ""}`}
+        onClick={() => setRankingType("WINNER")}
+        data-tooltip-id="insights-rank-type-tooltip"
+        data-tooltip-content="Average of everyone's predicted-winner rankings"
+      >Winner</div>
+      <Tooltip id="insights-rank-type-tooltip" positionStrategy="fixed" style={{ maxWidth: "14rem" }} />
+    </div>
+  );
+
+  if (loadingFlag || !currSeason || !insights) {
+    return (
+      <div className="insights-panel">
+        {rankTypeTabs}
+        <div className="insights-grid-loading"><div className="loading-circle" /></div>
+      </div>
+    );
+  }
+
+  const rowCount = currSeason.contestants.length;
+
+  if (rowCount === 0) {
+    return (
+      <div className="insights-panel">
+        {rankTypeTabs}
+        <p className="insights-placeholder">No contestants have been added to this season yet.</p>
+      </div>
+    );
+  }
+
+  const sortedWeeks = [...insights.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+
+  const weekColumns = sortedWeeks.map((week) => ({
+    weekNumber: week.weekNumber,
+    contestantIds: buildRankColumn(
+      week.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
+      contestantsById,
+      rowCount
+    ),
+  }));
+
+  const overallColumn = buildRankColumn(
+    insights.overall.map((o) => ({ contestantId: o.contestantId, value: o.overallAveragePosition })),
+    contestantsById,
+    rowCount
+  );
+
+  return (
+    <div className="insights-panel">
+      {rankTypeTabs}
+      <div
+        className="insights-grid"
+        style={{
+          gridTemplateColumns: `repeat(${sortedWeeks.length + 2}, 2.5rem) 1fr`,
+          gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
+        }}
+      >
+        <div className="insights-grid-heading">Rank</div>
+        <div className="insights-week-heading"></div>
+        {Array.from({ length: rowCount }, (_, index) => (
+          <div key={`rank-${index}`} className="insights-grid-item">{index + 1}</div>
+        ))}
+
+        {sortedWeeks.length > 0 && (
+          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedWeeks.length}`, justifyContent: "center" }}>Week</div>
+        )}
+        {weekColumns.map((week) => (
+          <Fragment key={`week-${week.weekNumber}`}>
+            <div className="insights-week-heading">{week.weekNumber}</div>
+            {week.contestantIds.map((contestantId, rowIndex) => (
+              <div key={`week-${week.weekNumber}-cell-${rowIndex}`} className="insights-cell">
+                {contestantId && (
+                  <ContestantIcon
+                    name={contestantsById[contestantId]?.name ?? ""}
+                    id={contestantId}
+                    isActive={false}
+                    isEliminated={isEliminatedByWeek(contestantId, week.weekNumber)}
+                    season={currSeason}
+                    show={currShow}
+                  />
+                )}
+              </div>
+            ))}
+          </Fragment>
+        ))}
+
+        <div className="insights-grid-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}>Overall</div>
+        <div className="insights-week-heading"></div>
+        {overallColumn.map((contestantId, rowIndex) => (
+          <div key={`overall-cell-${rowIndex}`} className="insights-cell">
+            {contestantId && (
+              <ContestantIcon
+                name={contestantsById[contestantId]?.name ?? ""}
+                id={contestantId}
+                isActive={false}
+                isEliminated={eliminationByContestant.has(contestantId)}
+                season={currSeason}
+                show={currShow}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default InsightsRankingTable;

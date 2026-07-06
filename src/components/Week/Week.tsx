@@ -22,7 +22,7 @@ interface WeekComponentProps {
 }
 
 export type WeekRef = {
-  createEntries: () => { contestant_id: string; position: number }[];
+  createEntries: () => { contestantId: string; position: number }[];
 }
 
 const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activeWeeks, setActiveWeeks, lastOrder, eliminations, contestants, season, show }: WeekComponentProps, ref) => {
@@ -39,22 +39,26 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
     })
   );
 
-  const [items, setItems] = useState(lastOrder ?? []);
   const [eliminatedContestants, setEliminatedContestants] = useState<string[]>([]);
   const [activeContestants, setActiveContestants] = useState<string[]>(lastOrder ?? []);
 
+  const getContestantName = (contestantId: string) =>
+    contestants.find(c => c.id === contestantId)?.name ?? "";
 
+  const isActive = activeWeeks?.has(currWeek?.id);
+
+  // Re-seed from the latest saved order whenever this week is opened for
+  // ranking, rather than only once on mount — every unranked week mounts
+  // together up front, before earlier weeks necessarily have a saved
+  // ranking yet, so lastOrder can be stale by the time the user gets here.
   useEffect(() => {
+    if (!isActive) return;
     const elimIds = getEliminationOrder(eliminations, currWeek.weekNumber-1).reverse();
-    const elimNames = elimIds.map(id => {
-      const contestant = contestants.find(c => c.id === id);
-      return contestant ? contestant.name : "";
-    });
 
     console.log("Eliminated Contestants for week ", currWeek.weekNumber, ": ", elimIds);
-    setEliminatedContestants(elimNames);
-    setActiveContestants(items.filter(dancer => !elimNames.includes(dancer)));
-  }, []);
+    setEliminatedContestants(elimIds);
+    setActiveContestants((lastOrder ?? []).filter(dancerId => !elimIds.includes(dancerId)));
+  }, [isActive]);
 
   const toggleWeek = (weekId: string) => {
     setActiveWeeks((prev) => {
@@ -88,14 +92,14 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
 
   const createEntries = () => {
     const entries = activeContestants.map((dancerId, index) => ({
-      contestant_id: dancerId,
+      contestantId: dancerId,
       position: index + 1,
     }));
     return entries;
   }
 
-  return <div className="week-column">
-            {activeWeeks?.has(currWeek?.id) ? <div>
+  return <div className="" style={{gridRow: `span ${season?.contestants?.length+1}`}}>
+            {isActive ? <div>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -103,16 +107,16 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
             >
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
                 <div className="week-heading">{currWeek?.weekNumber}</div>
-                {activeContestants.map((dancer, idx) => {
-                    return <div key={dancer} className="cell active-week">
-                    <ContestantIcon name={dancer} id={dancer} isActive={true} isEliminated={false} season={season} show={show}/>
+                {activeContestants.map((dancerId) => {
+                    return <div key={dancerId} className="cell active-week">
+                    <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
             </DndContext>
-            {eliminatedContestants.map((dancer) => (
-                <div key={`${dancer}-elim`} className="cell eliminated-week">
-                  <ContestantIcon name={dancer} id={dancer} isActive={false} isEliminated={true} season={season} show={show}/>
+            {eliminatedContestants.map((dancerId) => (
+                <div key={`${dancerId}-elim`} className="cell eliminated-week">
+                  <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
             </div> : <>

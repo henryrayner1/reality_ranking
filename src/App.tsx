@@ -12,6 +12,7 @@ import { useAppDispatch } from "./redux/hooks";
 import Navbar from "./components/Navbar";
 import LoginModal from "./components/modals/LoginModal";
 import RankingComponent2 from "./components/RankingComponent/RankingComponent2";
+import Insights from "./components/Insights/Insights";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -50,6 +51,7 @@ function App() {
         <Route path="/" element={<Homepage {...HomepageProps} />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/ranking" element={<RankingComponent2 />} />
+        <Route path="/insights" element={<Insights />} />
     </Routes>
     {loginDisplayFlag && <LoginModal displayFlag={loginDisplayFlag} setDisplayFlag={setLoginDisplayFlag} initialIsLogin={initialIsLogin} />}
   </>);

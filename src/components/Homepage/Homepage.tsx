@@ -3,48 +3,105 @@ import bigBrotherLogo from "../../assets/logos/bigBrotherLogo.jpg";
 import dwtsLogo from "../../assets/logos/dwtsLogo.jpg";
 import dragRaceLogo from "../../assets/logos/dragRaceLogo.jpg";
 import { useNavigate } from "react-router-dom";
-import { useAppSelector } from "../../redux/hooks";
-import { showsSelectors } from "../../redux/slices/showsSlice";
 import { useSelector } from "react-redux";
-import UploadImage from "../UploadImage";
+import { useAppDispatch, useAppSelector } from "../../redux/hooks";
+import { showsSelectors, setCurrShow } from "../../redux/slices/showsSlice";
+import type { Show } from "../../utils/Constants";
+import './Homepage.css';
 
+// Keyed by lowercased show name so lookups aren't broken by casing
+// differences between this list and however the name was typed in Admin.
+const SHOW_LOGOS: Record<string, string> = {
+  "survivor": survivorLogo,
+  "big brother": bigBrotherLogo,
+  "dancing with the stars": dwtsLogo,
+  "rupaul's drag race": dragRaceLogo,
+};
+
+const FALLBACK_GRADIENTS = [
+  "linear-gradient(135deg, #7F77DD, #4f8cff)",
+  "linear-gradient(135deg, #43A4D1, #2c6fa8)",
+  "linear-gradient(135deg, #b06ab3, #4568dc)",
+  "linear-gradient(135deg, #ff8a5c, #ff6a88)",
+];
+
+const fallbackGradientFor = (name: string) => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return FALLBACK_GRADIENTS[hash % FALLBACK_GRADIENTS.length];
+};
 
 const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const shows = useAppSelector(showsSelectors.selectAll);
   const user = useSelector((state: any) => state.user.value);
 
+  const goToShow = (show: Show) => {
+    dispatch(setCurrShow(show));
+    navigate("/ranking");
+  };
+
   return (
-    <div className="page">
-  
-        <h1 className="text-4xl font-bold mb-6 text-gray-800">
-          Welcome to Reality Ranking!
-        </h1>
-        <p className="text-lg text-gray-600 mb-8">
-          Discover rankings, track eliminations, and engage with your favorite reality shows.
+    <div className="homepage">
+      <section className="homepage-hero">
+        <h1 className="homepage-hero-title">Reality Ranking</h1>
+        <p className="homepage-hero-subtitle">
+          Rank your favorites, track eliminations, and see how your predictions stack up
+          week to week across your favorite reality shows.
         </p>
-      {!user && <div className="w-1/5 flex flex-col justify-between mx-auto gap-2">
-        <button className="btn btn-primary" onClick={() => props.openAuthModal(true)}>Login</button>
-        <button className="btn btn-secondary" onClick={() => props.openAuthModal(false)}>Create Account</button>
-      </div>}
-        <div className="shows-grid">
-           <div className="show-card">
-             <img src={survivorLogo} alt="Show 1" className="show-image" />
-             <div className="middle"><h2 className="show-title text" onClick={()=>navigate("/ranking")}>Survivor</h2></div>
-           </div>
-            <div className="show-card">
-              <img src={dwtsLogo} alt="Show 3" className="show-image" />
-              <div className="middle"><h2 className="show-title text" onClick={()=>navigate("/ranking", {state: {show: shows.find((show) => show.name === "Dancing with the Stars")}})}>Dancing with the Stars</h2></div>
-            </div>
-            <div className="show-card">
-              <img src={bigBrotherLogo} alt="Show 2" className="show-image" />
-              <div className="middle"><h2 className="show-title text" onClick={()=>navigate("/ranking", {state: {show: shows.find((show) => show.name === "Big Brother")}})}>Big Brother</h2></div>
-            </div>
-            <div className="show-card">
-              <img src={dragRaceLogo} alt="Show 2" className="show-image" />
-              <div className="middle"><h2 className="show-title text" onClick={()=>navigate("/ranking", {state: {show: shows.find((show) => show.name === "RuPaul's Drag Race")}})}>RuPaul's Drag Race</h2></div>
-            </div>
-        </div>
+        {!user && (
+          <div className="homepage-hero-actions">
+            <button className="homepage-btn homepage-btn-primary" onClick={() => props.openAuthModal(true)}>
+              Log in
+            </button>
+            <button className="homepage-btn homepage-btn-secondary" onClick={() => props.openAuthModal(false)}>
+              Create account
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="homepage-shows-section">
+        {shows.length === 0 ? (
+          <p className="homepage-empty-state">No shows have been added yet.</p>
+        ) : (
+          <div className="shows-grid">
+            {shows.map((show) => {
+              const logo = SHOW_LOGOS[show.name.toLowerCase()];
+              return (
+                <div
+                  key={show.id}
+                  className="show-card"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => goToShow(show)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") goToShow(show);
+                  }}
+                >
+                  <div className="show-card-media">
+                    {logo ? (
+                      <img src={logo} alt={show.name} className="show-image" />
+                    ) : (
+                      <div
+                        className="show-image-fallback"
+                        style={{ background: fallbackGradientFor(show.name) }}
+                      >
+                        {show.name.charAt(0)}
+                      </div>
+                    )}
+                  </div>
+                  <div className="show-card-overlay">
+                    <h3 className="show-card-title">{show.name}</h3>
+                    {show.network && <p className="show-card-meta">{show.network}</p>}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
     </div>
   );
 };

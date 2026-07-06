@@ -29,6 +29,7 @@
     "react-redux": "^9.2.0",
     "react-router-dom": "^7.9.4",
     "react-tooltip": "^5.30.0",
+    "recharts": "^3.9.2",
     "redux-persist": "^6.0.0"
   },
   "devDependencies": {

@@ -47,7 +47,7 @@ const AdminContestants = () => {
     mutationFn: addContestant,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["contestants"] });
-      setContestant({});
+      setContestant((c) => ({ seasonId: c.seasonId }));
       setPhotoLabel("Click, drag & drop, or paste to upload headshot");
     },
   });

@@ -1,0 +1,344 @@
+.insights-page {
+  width: 100%;
+  min-height: 100vh;
+  background-color: rgb(223, 221, 235);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.insights-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  min-height: calc(100vh - 5rem);
+  padding: 0 1rem;
+}
+
+.insights-main {
+  min-width: 0;
+  width: 100%;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.insights-top-bar {
+  width: 100%;
+  max-width: 60rem;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 0.75rem 1.5rem;
+  margin: 1rem 0 0.5rem;
+  background: rgba(67, 164, 209, 0.14);
+  border-radius: 0.75rem;
+}
+
+.insights-top-bar-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.insights-top-bar-left .w-full {
+  width: auto;
+}
+
+/* Page-mode switch: "Rankings Table" vs "By Contestant". A plain pill-style
+   tab row (no attach-to-grid trick) since different content follows
+   depending on mode. */
+.insights-mode-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.insights-mode-tab {
+  cursor: pointer;
+  background-color: rgba(166, 233, 245, 0.35);
+  color: navy;
+  font-weight: bold;
+  border: 3px solid lightblue;
+  border-radius: 0.75rem;
+  padding: 0.5rem 1.5rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.insights-mode-tab:hover {
+  background-color: lightblue;
+}
+
+.insights-mode-tab-active {
+  cursor: default;
+  background-color: navy;
+  color: white;
+  border-color: navy;
+}
+
+/* Rank/type toggle (Favorite/Winner) directly above the grid — same
+   "attached tabs" visual trick as RankingComponent.css's .rank-tabs. */
+.insights-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: fit-content;
+}
+
+.insights-tabs {
+  display: flex;
+  flex-direction: row;
+  gap: 0.25rem;
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  margin: 1.5rem 0 -5px 0;
+}
+
+.insights-tab {
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  background-color: rgba(166, 233, 245, 0.35);
+  color: navy;
+  font-weight: bold;
+  border: 3px solid lightblue;
+  border-bottom: none;
+  border-radius: 0.5rem 0.5rem 0 0;
+  padding: 0.5rem 1.25rem;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.insights-tab:hover {
+  background-color: lightblue;
+}
+
+.insights-tab-active {
+  cursor: default;
+  background-color: rgba(166, 233, 245, 0.8);
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-rows: 1fr 1.25rem;
+  grid-auto-flow: column;
+  border: 5px solid lightblue;
+  border-radius: 5px;
+  background-color: rgba(166, 233, 245, 0.8);
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  overflow: hidden;
+}
+
+.insights-panel .insights-grid {
+  margin-top: 0;
+}
+
+.insights-cell {
+  max-width: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.insights-grid-heading {
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(67, 164, 209);
+  color: white;
+  font-weight: bold;
+  font-size: .875rem;
+}
+
+.insights-grid-item {
+  max-width: 2.5rem;
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 550;
+}
+
+.insights-grid-item:nth-child(odd) {
+  background-color: rgb(135, 202, 233);
+}
+
+.insights-grid-item:nth-child(even) {
+  background-color: rgb(166, 233, 245);
+}
+
+.insights-week-heading {
+  width: 2.5rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 550;
+}
+
+.insights-grid-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20rem;
+  min-height: 20rem;
+  border: 5px solid lightblue;
+  border-radius: 5px;
+  background-color: rgba(166, 233, 245, 0.8);
+}
+
+.insights-placeholder {
+  color: rgb(90, 85, 120);
+  font-style: italic;
+  padding: 2rem;
+  text-align: center;
+}
+
+/* "By Contestant" mode: contestant list (left) + detail panel (right) */
+.insights-two-pane {
+  width: 100%;
+  max-width: 60rem;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.contestant-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 14rem;
+  max-height: 32rem;
+  overflow-y: auto;
+  background: rgba(67, 164, 209, 0.14);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+}
+
+.contestant-list-item {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.contestant-list-item .insights-contestant-thumb {
+  width: 2.25rem;
+  min-width: 2.25rem;
+}
+
+.contestant-list-item:hover {
+  background-color: rgba(166, 233, 245, 0.5);
+}
+
+.contestant-list-item-active {
+  background-color: rgb(67, 164, 209);
+  color: white;
+  font-weight: bold;
+}
+
+.contestant-detail-panel {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: rgba(166, 233, 245, 0.35);
+  border: 3px solid lightblue;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+}
+
+.contestant-detail-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.contestant-detail-photo {
+  width: 8rem;
+  min-width: 8rem;
+}
+
+.contestant-detail-name {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: navy;
+}
+
+.elimination-badge {
+  display: inline-block;
+  margin-top: 0.5rem;
+  background-color: rgb(255, 209, 209);
+  color: rgb(61, 0, 0);
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+@media screen and (max-width: 800px) {
+  .insights-page {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-bottom: 5vh;
+  }
+
+  .insights-content {
+    gap: 0.5rem;
+    min-height: auto;
+    padding: 0.5rem;
+  }
+
+  .insights-top-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.75rem 1rem;
+  }
+
+  .insights-two-pane {
+    flex-direction: column;
+  }
+
+  .contestant-list {
+    max-height: 16rem;
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 400px) {
+  .insights-tabs {
+    width: 100%;
+    justify-content: center;
+    margin-left: 0;
+  }
+
+  .contestant-detail-header {
+    flex-direction: column;
+    text-align: center;
+  }
+}

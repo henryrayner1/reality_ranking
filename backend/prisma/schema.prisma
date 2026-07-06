@@ -87,7 +87,7 @@ model Ranking {
 model RankingEntry {
   id           String     @id @default(cuid())
   rankingId    String
-  ranking      Ranking    @relation(fields: [rankingId], references: [id])
+  ranking      Ranking    @relation(fields: [rankingId], references: [id], onDelete: Cascade)
   contestantId String
   contestant   Contestant @relation(fields: [contestantId], references: [id])
   position     Int

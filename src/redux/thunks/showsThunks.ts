@@ -19,6 +19,7 @@ export const fetchAllShows = createAsyncThunk(
         id: show.id,
         name: show.name,
         currSeason: show.currSeason,
+        network: show.network,
       });
       show.seasons?.forEach((season: any) => {
         flatSeasons.push({

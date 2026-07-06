@@ -8,7 +8,10 @@ const seasonsSlice = createSlice({
     initialState: seasonsAdapter.getInitialState(),
     reducers: {
         upsertSeason: seasonsAdapter.upsertOne,
-        upsertSeasons: seasonsAdapter.upsertMany,
+        // Called only from fetchAllShows with the full authoritative list —
+        // setAll so seasons removed server-side get pruned from the client
+        // cache rather than persisting as ghosts (see weeksSlice.upsertWeeks).
+        upsertSeasons: seasonsAdapter.setAll,
         removeSeason: seasonsAdapter.removeOne,
         removeSeasons: seasonsAdapter.removeMany,
 

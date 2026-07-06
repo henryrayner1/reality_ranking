@@ -206,6 +206,13 @@ export const getEliminationsBySeason = async (seasonId: string) => {
   return elimData;
 };
 
+export const getRankingsInsights = async (seasonId: string, type: string) => {
+  const insightsRes = await fetch(`/api/rankings/insights/${seasonId}?type=${type}`);
+  if (!insightsRes.ok) throw new Error('Failed to fetch rankings insights');
+  const insightsData = await insightsRes.json();
+  return insightsData;
+};
+
 export const addManyEliminations = async (eliminationsList: { weekId: string; contestantIds: string[] }[]) => {
   const elimRes = await fetch('/api/eliminations/addMany', {
     method: 'POST',
@@ -251,24 +258,24 @@ export interface RankingColumnEntry {
 // Builds one ordered column of a past-rankings table for a single week's ranking:
 // non-eliminated contestants first (by submitted position), then eliminated
 // contestants appended in elimination order. Row index == rank position.
+// All contestant references (ranking entries and elimination ids) are real
+// Contestant.id values; resolve to a display name at render time.
 export const buildPastRankingColumn = (
   ranking: Ranking,
   weekNumber: number,
-  eliminations: Elimination[],
-  contestants: Contestant[]
+  eliminations: Elimination[]
 ): RankingColumnEntry[] => {
-  const eliminationOrderIds = getEliminationOrder(eliminations, weekNumber).reverse();
-  const elimNames = eliminationOrderIds.map((id) => {
-    const contestant = contestants.find((c) => c.id === id);
-    return contestant ? contestant.name : "";
-  });
+  // A contestant eliminated during week N is still active for week N's own
+  // ranking — they only show as eliminated starting week N+1 — matching
+  // Week.tsx's WeekComponent, which uses the same weekNumber - 1 offset.
+  const eliminatedIds = getEliminationOrder(eliminations, weekNumber - 1).reverse();
 
   const active = [...ranking.entries]
     .sort((a, b) => a.position - b.position)
-    .filter((entry) => !elimNames.includes(entry.contestant_id))
-    .map((entry) => ({ contestantId: entry.contestant_id, eliminated: false }));
+    .filter((entry) => !eliminatedIds.includes(entry.contestantId))
+    .map((entry) => ({ contestantId: entry.contestantId, eliminated: false }));
 
-  const eliminated = elimNames.map((name) => ({ contestantId: name, eliminated: true }));
+  const eliminated = eliminatedIds.map((id) => ({ contestantId: id, eliminated: true }));
 
   return [...active, ...eliminated];
 };

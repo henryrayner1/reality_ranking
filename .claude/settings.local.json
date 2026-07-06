@@ -12,7 +12,19 @@
       "Bash(git commit -m ' *)",
       "Skill(run)",
       "Bash(docker --version)",
-      "Bash(docker compose *)"
+      "Bash(docker compose *)",
+      "Bash(curl -s \"http://localhost:4000/api/rankings/insights/4nybtnyprp?type=FAVORITE\")",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" \"http://localhost:4000/api/rankings/insights/4nybtnyprp?type=BOGUS\")",
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); print\\('overall entries:', len\\(d['overall']\\)\\); print\\(d['overall'][:3]\\)\")",
+      "Bash(npm info *)",
+      "Bash(npm install *)",
+      "Bash(curl -s http://localhost:5173/ -o /dev/null -w \"vite root: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:5173/src/components/Insights/Insights.tsx\")",
+      "Bash(cp /Users/henryrayner/.claude/jobs/85b9e401/tmp/verify_insights.mjs /private/tmp/claude-501/-Users-henryrayner-Desktop-reality-ranking/0376176c-6d58-40c5-a7e2-686c0678b23e/scratchpad/verify_insights.mjs)",
+      "Bash(node verify_insights.mjs)",
+      "Bash(curl *)",
+      "Bash(node verify_empty_season.mjs)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

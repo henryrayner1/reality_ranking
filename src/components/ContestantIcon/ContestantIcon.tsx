@@ -32,7 +32,7 @@ const ContestantIcon = (props:IconProps) => {
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "");
     const seasonNumber = `season_${props.season.seasonNumber}`;
-    const contestantName = `${props.name?.replace(/\s+/g, '_').toLowerCase()}.png`;
+    const contestantName = `${props.name?.replace(/\s+/g, '_').replace(/['']/g, '').toLowerCase()}.png`;
 
     return `${prefix}${showFolder}/${seasonNumber}/contestants/${contestantName}`;
   }
@@ -44,10 +44,12 @@ const ContestantIcon = (props:IconProps) => {
   };
   
   const uppercaseName = props.name.toUpperCase().split(' ')[0];
-  
+
+  const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
+
   return (
-    <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...attributes} {...listeners} className='flex flex-col relative overflow-hidden dancer-icon'>
-      <img src={getImagePath()} alt={props.name} className='mt-[-5px] mb-[5px]' style={props.isEliminated ? { filter: 'grayscale(100%)' } : undefined}/>
+    <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...dragProps} className='flex flex-col relative overflow-hidden dancer-icon'>
+      <img src={getImagePath()} alt={props.name} className='mt-[-5px] mb-[5px]' style={props.isEliminated ? { filter: 'grayscale(100%)', pointerEvents: 'none' } : undefined}/>
       <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>
     </div>
   );

@@ -16,7 +16,10 @@ const showsSlice = createSlice({
   initialState,
   reducers: {
     upsertShow: showsAdapter.upsertOne,
-    upsertShows: showsAdapter.upsertMany,
+    // Called only from fetchAllShows with the full authoritative list —
+    // setAll so shows removed server-side get pruned from the client cache
+    // rather than persisting as ghosts (see weeksSlice.upsertWeeks).
+    upsertShows: showsAdapter.setAll,
     removeShow: showsAdapter.removeOne,
     setCurrShow: (state, action: PayloadAction<Show | null>) => {
       state.currShow = action.payload;

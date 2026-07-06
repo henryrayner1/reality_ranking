@@ -21,14 +21,17 @@ const Navbar = (props) => {
                 </button>
 
                 <div className="collapse navbar-collapse" id="mainNavbar">
-                    {props.loggedIn && <ul className="navbar-nav me-auto mb-2 mb-md-0">
-                        <li className="nav-item">
+                    <ul className="navbar-nav me-auto mb-2 mb-md-0">
+                        {props.loggedIn && <li className="nav-item">
                             <a className="nav-link" href="/admin">Admin</a>
-                        </li>
-                        <li className="nav-item">
+                        </li>}
+                        {props.loggedIn && <li className="nav-item">
                             <a className="nav-link" href="/ranking">My Rankings</a>
+                        </li>}
+                        <li className="nav-item">
+                            <a className="nav-link" href="/insights">Insights</a>
                         </li>
-                    </ul>}
+                    </ul>
                     <ul className="navbar-nav ms-auto mb-2 mb-md-0">
                         <li className="nav-item">
                             {props.loggedIn ? <a className="nav-link" href="#">Logout</a> : <a className="nav-link" href="#">Login</a>}

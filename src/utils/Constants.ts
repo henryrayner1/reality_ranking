@@ -4,12 +4,12 @@ export interface ModalProps {
   initialIsLogin?: boolean;
 }
 
-export interface Ranking { 
+export interface Ranking {
   id: string;
-  user_id: string; 
-  week_id: string; 
-  type: string; 
-  entries: { contestant_id: string; position: number }[]; 
+  userId: string;
+  weekId: string;
+  type: string;
+  entries: { contestantId: string; position: number }[];
   week?: Week;
 }
 
@@ -130,4 +130,23 @@ export interface EliminationEntry {
   weekId: string;
   contestantId: string;
   eliminationType: EliminationType;
+}
+
+// Shape returned by GET /api/rankings/insights/:seasonId
+export interface InsightsWeek {
+  weekId: string;
+  weekNumber: number;
+  contestantAverages: { contestantId: string; averagePosition: number }[];
+}
+
+export interface InsightsOverall {
+  contestantId: string;
+  overallAveragePosition: number | null;
+}
+
+export interface InsightsResponse {
+  seasonId: string;
+  type: RankType;
+  weeks: InsightsWeek[];
+  overall: InsightsOverall[];
 }
