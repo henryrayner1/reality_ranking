@@ -68,6 +68,7 @@ function App() {
         <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
         <Route path="/ranking" element={<RankingComponent2 />} />
         <Route path="/insights" element={<Insights />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     {loginDisplayFlag && <LoginModal displayFlag={loginDisplayFlag} setDisplayFlag={setLoginDisplayFlag} initialIsLogin={initialIsLogin} />}
     {logoutConfirmDisplayFlag && (
