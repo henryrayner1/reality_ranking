@@ -14,10 +14,19 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+html {
+  /* Matches the lavender background every page sets on its own container
+     (.homepage/.insights-page/.rankings-page). Without this, mobile
+     overscroll bounce (or any gap from dynamic viewport-height quirks)
+     reveals the browser's default white behind the content instead. */
+  background-color: rgb(223, 221, 235);
+}
+
 body {
   margin: 0px;
   min-width: 320px;
   min-height: 100vh;
+  background-color: rgb(223, 221, 235);
 }
 
 .navigation {
