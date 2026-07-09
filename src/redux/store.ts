@@ -28,7 +28,15 @@ const rootReducer = {
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['user', 'episodes']
+  // 'user' is deliberately NOT persisted here — it's already restored
+  // synchronously from its own localStorage key at store-creation time
+  // (see userSlice's initialState), which is authoritative. Also
+  // persisting it here via redux-persist's own (asynchronous) rehydration
+  // created two competing copies of the same state that could go stale
+  // relative to each other, e.g. a fresh login could get silently
+  // clobbered back to a previous (or logged-out) session once
+  // redux-persist's rehydration resolved a moment later.
+  whitelist: ['episodes']
 };
 
 const persistedReducer = persistReducer(persistConfig, combineReducers(rootReducer));
