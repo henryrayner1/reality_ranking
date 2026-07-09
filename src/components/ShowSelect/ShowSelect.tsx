@@ -40,8 +40,8 @@ const ShowSelect = (props:ShowSelectProps) => {
 
     return (
         <div className="w-full">
-            <div className="w-1/3 flex mx-auto my-3 align-items-center justify-center">
-                <h1 className="font-bold text-gray-800 pr-2">Current Show:</h1>
+            <div className="flex my-3 items-center justify-center">
+                <h1 className="font-bold text-gray-800 pr-2 whitespace-nowrap">Current Show:</h1>
                 <Dropdown>
                 <Dropdown.Toggle variant="" id="dropdown-basic" className="custom-button min-w-[10vw] min-h-[2.5rem]">{currShow?.name || "Select a Show"}</Dropdown.Toggle>
                 <Dropdown.Menu className="">
