@@ -42,7 +42,7 @@ const Navbar = (props) => {
 
                 <div className="collapse navbar-collapse" id="mainNavbar">
                     <ul className="navbar-nav me-auto mb-2 mb-md-0">
-                        {props.loggedIn && <li className="nav-item">
+                        {props.isAdmin && <li className="nav-item">
                             <NavLink className="nav-link" to="/admin">Admin</NavLink>
                         </li>}
                         {props.loggedIn && <li className="nav-item">

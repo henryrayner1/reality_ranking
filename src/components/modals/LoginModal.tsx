@@ -28,7 +28,7 @@ const LoginModal = (props: ModalProps) => {
       const loginRes = await userLogin(email, password);
       if (loginRes) {
         props.setDisplayFlag(false);
-        dispatch(setUser({id: loginRes.id, email: loginRes.email, isAdmin: loginRes.isAdmin}));
+        dispatch(setUser({id: loginRes.id, email: loginRes.email, accountType: loginRes.accountType}));
       }
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Login failed');
@@ -41,7 +41,7 @@ const LoginModal = (props: ModalProps) => {
       const createRes = await createUser(email, password);
       if (createRes) {
         props.setDisplayFlag(false);
-        dispatch(setUser({id: createRes.id, email: createRes.email, isAdmin: createRes.isAdmin}));
+        dispatch(setUser({id: createRes.id, email: createRes.email, accountType: createRes.accountType}));
       }
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Account creation failed');

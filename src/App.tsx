@@ -1,11 +1,12 @@
 import { StrictMode, useEffect, useState } from "react";
 import "./App.css";
 import Homepage from "./components/Homepage/Homepage";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Admin from "./components/Admin/Admin";
 import Layout from "./components/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import { checkUserLoggedIn, getShows, getEpisodes } from "./utils/util";
+import { AccountTypes } from "./utils/Constants";
 import { setUser } from "./redux/slices/userSlice";
 import { fetchAllShows } from "./redux/thunks/showsThunks";
 import { useAppDispatch } from "./redux/hooks";
@@ -25,7 +26,7 @@ function App() {
     if (checkUserLoggedIn() && !user) {
       const loggedInUser = checkUserLoggedIn();
       if (loggedInUser) {
-        dispatch(setUser({ id: loggedInUser.id, email: loggedInUser.email, isAdmin: loggedInUser.isAdmin }) );
+        dispatch(setUser({ id: loggedInUser.id, email: loggedInUser.email, accountType: loggedInUser.accountType }) );
       }
     }
 
@@ -45,11 +46,13 @@ function App() {
     openAuthModal,
   };
 
+  const isAdmin = user?.accountType === AccountTypes.ADMIN;
+
   return (<>
-    <Navbar loggedIn={!!user} />
+    <Navbar loggedIn={!!user} isAdmin={isAdmin} />
     <Routes>
         <Route path="/" element={<Homepage {...HomepageProps} />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
         <Route path="/ranking" element={<RankingComponent2 />} />
         <Route path="/insights" element={<Insights />} />
     </Routes>

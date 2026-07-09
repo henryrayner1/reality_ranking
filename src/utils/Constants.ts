@@ -29,6 +29,13 @@ export const RankTypes = {
 
 export type RankType = keyof typeof RankTypes;
 
+export const AccountTypes = {
+  ADMIN: "ADMIN",
+  USER: "USER"
+} as const;
+
+export type AccountType = typeof AccountTypes[keyof typeof AccountTypes];
+
 export const dwts_nameToImage: Record<number, Record<string,string>> = {
   34:  {
     "Jen": "./src/assets/DWTS/season_34/jen.jpg",

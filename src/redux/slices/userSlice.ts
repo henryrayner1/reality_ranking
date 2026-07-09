@@ -1,9 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
+import type { AccountType } from "../../utils/Constants";
 
 interface User {
   id: string;
   email: string;
-  isAdmin: boolean;
+  accountType: AccountType;
 }
 
 const initialState = {
