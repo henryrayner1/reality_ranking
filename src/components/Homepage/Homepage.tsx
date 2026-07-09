@@ -39,7 +39,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
 
   const goToShow = (show: Show) => {
     dispatch(setCurrShow(show));
-    navigate("/ranking");
+    navigate("/insights");
   };
 
   return (
