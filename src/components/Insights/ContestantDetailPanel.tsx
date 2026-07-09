@@ -76,7 +76,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
                 <div className="contestant-detail-name">{selected.name}</div>
                 {selectedEliminationInfo && (
                   <div className="elimination-badge">
-                    Eliminated Episode {selectedEliminationInfo.episodeNumber} ({selectedEliminationInfo.eliminationType})
+                    Eliminated Episode {selectedEliminationInfo.episodeNumber}
                   </div>
                 )}
               </div>
