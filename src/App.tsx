@@ -5,7 +5,7 @@ import { Routes, Route } from "react-router-dom";
 import Admin from "./components/Admin/Admin";
 import Layout from "./components/Layout";
 import { useDispatch, useSelector } from "react-redux";
-import { checkUserLoggedIn, getShows, getWeeks } from "./utils/util";
+import { checkUserLoggedIn, getShows, getEpisodes } from "./utils/util";
 import { setUser } from "./redux/slices/userSlice";
 import { fetchAllShows } from "./redux/thunks/showsThunks";
 import { useAppDispatch } from "./redux/hooks";

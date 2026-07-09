@@ -20,10 +20,10 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
     return <div className="insights-grid-loading"><div className="loading-circle" /></div>;
   }
 
-  const eliminationByContestant = new Map<string, { weekNumber: number; eliminationType: string }>();
+  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();
   props.eliminations.forEach((e: any) => {
     eliminationByContestant.set(e.contestantId, {
-      weekNumber: e.week?.weekNumber ?? 0,
+      episodeNumber: e.episode?.episodeNumber ?? 0,
       eliminationType: e.eliminationType,
     });
   });
@@ -76,7 +76,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
                 <div className="contestant-detail-name">{selected.name}</div>
                 {selectedEliminationInfo && (
                   <div className="elimination-badge">
-                    Eliminated Week {selectedEliminationInfo.weekNumber} ({selectedEliminationInfo.eliminationType})
+                    Eliminated Episode {selectedEliminationInfo.episodeNumber} ({selectedEliminationInfo.eliminationType})
                   </div>
                 )}
               </div>

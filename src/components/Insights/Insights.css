@@ -189,7 +189,7 @@
   background-color: rgb(166, 233, 245);
 }
 
-.insights-week-heading {
+.insights-episode-heading {
   width: 2.5rem;
   height: 1.25rem;
   display: flex;
@@ -198,8 +198,8 @@
   font-weight: 550;
 }
 
-/* Overall is an aggregate column, not a specific week — visually set it apart
-   from the weekly data with its own accent color (tying into the app's
+/* Overall is an aggregate column, not a specific episode — visually set it apart
+   from the per-episode data with its own accent color (tying into the app's
    existing purple page-header accent) and a left divider. */
 .insights-overall-heading {
   background-color: rgb(122, 90, 180);

@@ -48,7 +48,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
         <h1 className="homepage-hero-title">Reality Ranking</h1>
         <p className="homepage-hero-subtitle">
           Rank your favorites, track eliminations, and see how your predictions stack up
-          week to week across your favorite reality shows.
+          episode to episode across your favorite reality shows.
         </p>
         {!user && (
           <div className="homepage-hero-actions">

@@ -4,7 +4,7 @@ import { Dropdown } from 'react-bootstrap';
 import { useAppDispatch, useAppSelector } from '../../redux/hooks';
 import { setCurrShow, showsSelectors } from '../../redux/slices/showsSlice';
 import AddShowModal from '../modals/AddShowModal';
-import { selectShowWithSeasonsAndWeeks } from '../../redux/selectors';
+import { selectShowWithSeasonsAndEpisodes } from '../../redux/selectors';
 import { addSeason, changeCurrentSeason } from '../../utils/util';
 import { upsertSeason } from '../../redux/slices/seasonsSlice';
 
@@ -27,7 +27,7 @@ const ShowSelect = (props:ShowSelectProps) => {
     const [addShowModalFlag, setAddShowModalFlag] = useState(false);
 
     const currShowTree = useAppSelector(state => 
-    selectShowWithSeasonsAndWeeks(state, currShow?.id || "")
+    selectShowWithSeasonsAndEpisodes(state, currShow?.id || "")
     );
 
     const dispatch = useAppDispatch();

@@ -5,7 +5,7 @@ import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg"; 
 import usersRouter from "./routes/users.js";
 import rankingsRouter from "./routes/rankings.js";
-import weeksRouter from "./routes/weeks.js";
+import episodesRouter from "./routes/episodes.js";
 import eliminationsRouter from "./routes/eliminations.js";
 import contestantsRouter from "./routes/contestant.js";
 import showsRouter from "./routes/show.js";
@@ -25,7 +25,7 @@ app.use('/uploads', express.static('../uploads'));
 
 app.use("/api/users", usersRouter(db));
 app.use("/api/rankings", rankingsRouter(db));
-app.use("/api/weeks", weeksRouter(db));
+app.use("/api/episodes", episodesRouter(db));
 app.use("/api/eliminations", eliminationsRouter(db));
 app.use("/api/contestants", contestantsRouter(db));
 app.use("/api/shows", showsRouter(db));

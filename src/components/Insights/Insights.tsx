@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { type InsightsResponse, type RankType } from "../../utils/Constants";
 import { getEliminationsBySeason, getRankingsInsights } from "../../utils/util";
 import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow, selectShowWithSeasonsAndWeeks } from "../../redux/selectors";
+import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/selectors";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import SeasonSelect from "./SeasonSelect";
 import InsightsRankingTable from "./InsightsRankingTable";
@@ -23,7 +23,7 @@ const Insights = () => {
 
   const currShow = useAppSelector(selectCurrShow);
   const currShowTree = useAppSelector((state) =>
-    selectShowWithSeasonsAndWeeks(state, currShow?.id || "")
+    selectShowWithSeasonsAndEpisodes(state, currShow?.id || "")
   );
 
   const seasons = currShowTree?.seasons ?? [];

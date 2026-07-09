@@ -3,17 +3,17 @@ import { useState } from "react";
 import AdminShows from "./AdminShows";
 import AdminSeasons from "./AdminSeasons";
 import AdminContestants from "./AdminContestants";
-import AdminWeeks from "./AdminWeeks";
+import AdminEpisodes from "./AdminEpisodes";
 import AdminEliminations from "./AdminEliminations";
 
 const Admin = () => {
-  type Section = 'shows' | 'seasons' | 'contestants' | 'weeks' | 'eliminations';
+  type Section = 'shows' | 'seasons' | 'contestants' | 'episodes' | 'eliminations';
 
   const NAV: { id: Section; label: string }[] = [
     { id: 'shows', label: 'Shows' },
     { id: 'seasons', label: 'Seasons' },
     { id: 'contestants', label: 'Contestants' },
-    { id: 'weeks', label: 'Weeks' },
+    { id: 'episodes', label: 'Episodes' },
     { id: 'eliminations', label: 'Eliminations' },
   ];
 
@@ -21,7 +21,7 @@ const Admin = () => {
     shows: <AdminShows />,
     seasons: <AdminSeasons />,
     contestants: <AdminContestants />,
-    weeks: <AdminWeeks />,
+    episodes: <AdminEpisodes />,
     eliminations: <AdminEliminations />,
   };
 

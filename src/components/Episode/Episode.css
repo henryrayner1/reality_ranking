@@ -12,11 +12,11 @@
   background-color: rgb(180, 200, 205);
 }
 
-.cell-default:hover .add-week {
+.cell-default:hover .add-episode {
     outline: 2px solid white;
     border-radius: 50%;
 }
-.add-week {
+.add-episode {
     width: 1.5rem;
     height: 1.5rem;
 }

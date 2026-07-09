@@ -26,7 +26,7 @@ export default function showsRouter(prisma: PrismaClient) {
                 seasons: {
                     include: {
                         contestants: true,
-                        weeks: {
+                        episodes: {
                             include: {
                                 eliminations: {
                                     include: {
@@ -64,7 +64,7 @@ export default function showsRouter(prisma: PrismaClient) {
             },
             include: {
                 contestants: true,
-                weeks: true,
+                episodes: true,
             }
         });
         res.json(currentSeason);

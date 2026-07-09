@@ -33,7 +33,7 @@ model Season {
   seasonNumber  Int
   isCurrent     Boolean      @default(false)
   contestants   Contestant[]
-  weeks         Week[]  
+  episodes      Episode[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -53,22 +53,22 @@ model Contestant {
   @@unique([name, seasonId])
 }
 
-model Week {
-  id            String        @id @default(cuid())
-  weekNumber    Int           @default(autoincrement())
-  seasonId      String
-  eliminations  Elimination[]
-  rankings      Ranking[]
-  season        Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  airDate       DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+model Episode {
+  id              String        @id @default(cuid())
+  episodeNumber   Int           @default(autoincrement())
+  seasonId        String
+  eliminations    Elimination[]
+  rankings        Ranking[]
+  season          Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  airDate         DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model Elimination {
   id              String          @id @unique @db.VarChar(10)
-  weekId          String
-  week            Week            @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  episodeId       String
+  episode         Episode         @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   contestantId    String          @unique
   contestant      Contestant?     @relation(fields: [contestantId], references: [id], onDelete: Cascade)
   eliminationType EliminationType @default(ELIMINATED)
@@ -78,8 +78,8 @@ model Ranking {
   id          String    @id @unique @db.VarChar(10)
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weekId      String
-  week        Week      @relation(fields: [weekId], references: [id], onDelete: Cascade)
+  episodeId   String
+  episode     Episode   @relation(fields: [episodeId], references: [id], onDelete: Cascade)
   type        RankType
   entries     RankingEntry[]
 }
@@ -89,7 +89,7 @@ model RankingEntry {
   rankingId    String
   ranking      Ranking    @relation(fields: [rankingId], references: [id], onDelete: Cascade)
   contestantId String
-  contestant   Contestant @relation(fields: [contestantId], references: [id])
+  contestant   Contestant @relation(fields: [contestantId], references: [id], onDelete: Cascade)
   position     Int
   createdAt    DateTime   @default(now())
 

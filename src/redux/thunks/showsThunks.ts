@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { removeShow, setCurrShow, upsertShow, upsertShows } from "../slices/showsSlice";
 import { removeSeason, removeSeasons, upsertSeasons } from "../slices/seasonsSlice";
-import { removeWeeks, upsertWeeks } from "../slices/weeksSlice";
+import { removeEpisodes, upsertEpisodes } from "../slices/episodesSlice";
 import type { RootState } from "../store";
 
 export const fetchAllShows = createAsyncThunk(
@@ -12,7 +12,7 @@ export const fetchAllShows = createAsyncThunk(
 
     const flatShows = [];
     const flatSeasons = [];
-    const flatWeeks = [];
+    const flatEpisodes = [];
 
     shows.forEach((show: any) => {
       flatShows.push({
@@ -29,12 +29,13 @@ export const fetchAllShows = createAsyncThunk(
           isCurrent: season.isCurrent,
           contestants: season.contestants
         });
-        season.weeks?.forEach((week: any) => {
-          flatWeeks.push({
-            id: week.id,
-            weekNumber: week.weekNumber,
+        season.episodes?.forEach((episode: any) => {
+          flatEpisodes.push({
+            id: episode.id,
+            episodeNumber: episode.episodeNumber,
             seasonId: season.id,
-            eliminations: week.eliminations
+            airDate: episode.airDate,
+            eliminations: episode.eliminations
           });
         });
       });
@@ -42,8 +43,8 @@ export const fetchAllShows = createAsyncThunk(
 
     dispatch(upsertShows(flatShows));
     dispatch(upsertSeasons(flatSeasons));
-    dispatch(upsertWeeks(flatWeeks));
-    
+    dispatch(upsertEpisodes(flatEpisodes));
+
     return flatShows;
   }
 );
@@ -53,20 +54,20 @@ export const deleteShowAndCleanup = createAsyncThunk(
   async (showId: string, { dispatch, getState }) => {
     const state = getState() as RootState;
     const allSeasons = Object.values(state.seasons.entities);
-    const allWeeks = Object.values(state.weeks.entities);
+    const allEpisodes = Object.values(state.episodes.entities);
     const seasonIdsToRemove = allSeasons
       .filter((season) => season?.showId === showId)
       .map((season) => season!.id);
-    const weekIdsToRemove = allWeeks
-      .filter((week) => week && seasonIdsToRemove.includes(week.seasonId))
-      .map((week) => week!.id);
+    const episodeIdsToRemove = allEpisodes
+      .filter((episode) => episode && seasonIdsToRemove.includes(episode.seasonId))
+      .map((episode) => episode!.id);
 
     dispatch(removeShow(showId));
     if (seasonIdsToRemove.length > 0) {
       dispatch(removeSeasons(seasonIdsToRemove));
     }
-    if (weekIdsToRemove.length > 0) {
-      dispatch(removeWeeks(weekIdsToRemove));
+    if (episodeIdsToRemove.length > 0) {
+      dispatch(removeEpisodes(episodeIdsToRemove));
     }
 
     if (state.shows.currShow?.id === showId) {
@@ -86,11 +87,11 @@ export const deleteSeasonAndCleanup = createAsyncThunk(
     dispatch(removeSeason(seasonId));
 
     const stateAfterDelete = getState() as RootState;
-    const weekIdsToRemove = Object.values(stateAfterDelete.weeks.entities)
-      .filter((week) => week?.seasonId === seasonId)
-      .map((week) => week!.id);
-    if (weekIdsToRemove.length > 0) {
-      dispatch(removeWeeks(weekIdsToRemove));
+    const episodeIdsToRemove = Object.values(stateAfterDelete.episodes.entities)
+      .filter((episode) => episode?.seasonId === seasonId)
+      .map((episode) => episode!.id);
+    if (episodeIdsToRemove.length > 0) {
+      dispatch(removeEpisodes(episodeIdsToRemove));
     }
 
     if (seasonToRemove) {

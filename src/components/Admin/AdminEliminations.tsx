@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { EliminationTypes, type EliminationEntry, type EliminationType, type Season } from "../../utils/Constants"
-import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSeason, getEliminationsBySeason, getWeeks } from "../../utils/util"
+import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSeason, getEliminationsBySeason, getEpisodes } from "../../utils/util"
 import * as AdminUI from "../../utils/AdminComponents"
 import { useAppSelector } from "../../redux/hooks"
 import ShowSelect from "../ShowSelect/ShowSelect"
@@ -12,7 +12,7 @@ const AdminEliminations = () => {
     const [elimination, setElimination] = useState<Partial<EliminationEntry>>({ eliminationType: EliminationTypes.ELIMINATED })
     const currShow = useAppSelector(selectCurrShow);
     const [currSeason, setCurrSeason] = useState<Partial<Season>>({})
-    const { data: weeks = [] } = useQuery({ queryKey: ['weeks', currSeason.id], queryFn: getWeeks })
+    const { data: episodes = [] } = useQuery({ queryKey: ['episodes', currSeason.id], queryFn: getEpisodes })
     const { data: contestants = [] } = useQuery({ queryKey: ['contestants', currSeason.id], queryFn: () => getContestantsBySeason(currSeason.id) })
     const { data: eliminations = [], isLoading } = useQuery({ queryKey: ['eliminations', currSeason.id], queryFn: () => getEliminationsBySeason(currSeason.id) })
     const create = useMutation({ mutationFn: () => addElimination(elimination), onSuccess: () => { qc.invalidateQueries({ queryKey: ['eliminations', currSeason.id] }); qc.invalidateQueries({ queryKey: ['contestants', currSeason.id] }); setElimination({ eliminationType: EliminationTypes.ELIMINATED }) } })
@@ -38,7 +38,7 @@ const AdminEliminations = () => {
     return (
         <div>
         <AdminUI.PageHeader title="Eliminations" subtitle="Record which contestants were eliminated each episode" />
-        <ShowSelect 
+        <ShowSelect
             currShow={currShow}
             currSeason={currShow?.currSeason}
         />
@@ -46,9 +46,9 @@ const AdminEliminations = () => {
             <AdminUI.Card title="Log elimination">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <AdminUI.FormGroup label="Episode">
-                <AdminUI.Select value={elimination.weekId || ''} onChange={e => setElimination(f => ({ ...f, weekId: e.target.value }))}>
+                <AdminUI.Select value={elimination.episodeId || ''} onChange={e => setElimination(f => ({ ...f, episodeId: e.target.value }))}>
                     <option value="">Select an episode...</option>
-                    {weeks.map(week => <option key={week.id} value={week.id}>Week {week.weekNumber}</option>)}
+                    {episodes.map(episode => <option key={episode.id} value={episode.id}>Episode {episode.episodeNumber}</option>)}
                 </AdminUI.Select>
                 </AdminUI.FormGroup>
                 <AdminUI.FormGroup label="Contestant eliminated">
@@ -62,7 +62,7 @@ const AdminEliminations = () => {
                     {Object.entries(ELIM_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </AdminUI.Select>
                 </AdminUI.FormGroup>
-                <AdminUI.PrimaryButton onClick={() => elimination.weekId && elimination.contestantId && create.mutate()} disabled={create.isPending}>{create.isPending ? 'Logging...' : 'Log elimination'}</AdminUI.PrimaryButton>
+                <AdminUI.PrimaryButton onClick={() => elimination.episodeId && elimination.contestantId && create.mutate()} disabled={create.isPending}>{create.isPending ? 'Logging...' : 'Log elimination'}</AdminUI.PrimaryButton>
                 {create.isError && <AdminUI.ErrorMsg />}
             </div>
             </AdminUI.Card>
@@ -71,11 +71,11 @@ const AdminEliminations = () => {
             {!isLoading && eliminations.length === 0 && <AdminUI.EmptyState message="No eliminations logged yet." />}
             {eliminations.map(elim => {
                     const contestant = contestants.find(c => c.id === elim.contestantId)
-                    const week = weeks.find(e => e.id === elim.weekId)
-                    console.log(contestant, week)
+                    const episode = episodes.find(e => e.id === elim.episodeId)
+                    console.log(contestant, episode)
                     return (
                     <div key={contestant?.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.6rem 0', borderBottom: '0.5px solid var(--color-border-tertiary,#e5e5e5)' }}>
-                        <span style={{ fontSize: 12, color: 'var(--color-text-secondary,#888)', minWidth: 40 }}>E{week?.weekNumber || '?'}</span>
+                        <span style={{ fontSize: 12, color: 'var(--color-text-secondary,#888)', minWidth: 40 }}>E{episode?.episodeNumber || '?'}</span>
                         <AdminUI.Avatar name={contestant?.name || '?'} size={28} />
                         <span style={{ fontSize: 14, flex: 1 }}>{contestant?.name || 'Unknown'}</span>
                         <AdminUI.Badge label={ELIM_LABELS[elim.eliminationType]} variant={ELIM_VARIANTS[elim.eliminationType]} />

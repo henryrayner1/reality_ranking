@@ -2,7 +2,7 @@ import { CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContai
 import { type InsightsResponse } from "../../utils/Constants";
 
 interface ChartPoint {
-  weekNumber: number;
+  episodeNumber: number;
   favoriteAvg: number | null;
   winnerAvg: number | null;
 }
@@ -12,7 +12,7 @@ interface ContestantTrendChartProps {
   favoriteInsights: InsightsResponse;
   winnerInsights: InsightsResponse;
   contestantCount: number;
-  eliminationInfo?: { weekNumber: number; eliminationType: string } | null;
+  eliminationInfo?: { episodeNumber: number; eliminationType: string } | null;
 }
 
 const buildChartData = (
@@ -20,18 +20,18 @@ const buildChartData = (
   favoriteInsights: InsightsResponse,
   winnerInsights: InsightsResponse
 ): ChartPoint[] => {
-  const weekNumbers = [...new Set([
-    ...favoriteInsights.weeks.map((w) => w.weekNumber),
-    ...winnerInsights.weeks.map((w) => w.weekNumber),
+  const episodeNumbers = [...new Set([
+    ...favoriteInsights.episodes.map((w) => w.episodeNumber),
+    ...winnerInsights.episodes.map((w) => w.episodeNumber),
   ])].sort((a, b) => a - b);
 
-  return weekNumbers.map((weekNumber) => {
-    const favWeek = favoriteInsights.weeks.find((w) => w.weekNumber === weekNumber);
-    const winWeek = winnerInsights.weeks.find((w) => w.weekNumber === weekNumber);
-    const favEntry = favWeek?.contestantAverages.find((c) => c.contestantId === contestantId);
-    const winEntry = winWeek?.contestantAverages.find((c) => c.contestantId === contestantId);
+  return episodeNumbers.map((episodeNumber) => {
+    const favEpisode = favoriteInsights.episodes.find((w) => w.episodeNumber === episodeNumber);
+    const winEpisode = winnerInsights.episodes.find((w) => w.episodeNumber === episodeNumber);
+    const favEntry = favEpisode?.contestantAverages.find((c) => c.contestantId === contestantId);
+    const winEntry = winEpisode?.contestantAverages.find((c) => c.contestantId === contestantId);
     return {
-      weekNumber,
+      episodeNumber,
       favoriteAvg: favEntry?.averagePosition ?? null,
       winnerAvg: winEntry?.averagePosition ?? null,
     };
@@ -49,7 +49,7 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
     <ResponsiveContainer width="100%" height={300}>
       <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="weekNumber" label={{ value: "Week", position: "insideBottom", offset: -5 }} />
+        <XAxis dataKey="episodeNumber" label={{ value: "Episode", position: "insideBottom", offset: -5 }} />
         {/* Lower position = better rank, so the axis is reversed to put rank 1 at the top. */}
         <YAxis
           reversed
@@ -59,14 +59,14 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
         />
         <Tooltip
           formatter={(value: number, name: string) => [value != null ? value.toFixed(2) : "—", name]}
-          labelFormatter={(week) => `Week ${week}`}
+          labelFormatter={(episode) => `Episode ${episode}`}
         />
         <Legend />
         <Line type="monotone" dataKey="favoriteAvg" name="Favorite" stroke="#e0489f" connectNulls dot />
         <Line type="monotone" dataKey="winnerAvg" name="Winner" stroke="#2b7fb8" connectNulls dot />
         {props.eliminationInfo && (
           <ReferenceLine
-            x={props.eliminationInfo.weekNumber}
+            x={props.eliminationInfo.episodeNumber}
             stroke="red"
             strokeDasharray="4 4"
             label={{ value: `Eliminated (${props.eliminationInfo.eliminationType})`, position: "top", fill: "red", fontSize: 11 }}

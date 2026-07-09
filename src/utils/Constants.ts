@@ -7,16 +7,16 @@ export interface ModalProps {
 export interface Ranking {
   id: string;
   userId: string;
-  weekId: string;
+  episodeId: string;
   type: string;
   entries: { contestantId: string; position: number }[];
-  week?: Week;
+  episode?: Episode;
 }
 
-export interface Week { 
-  id: string; 
-  weekNumber: number; 
-  seasonId: string; 
+export interface Episode {
+  id: string;
+  episodeNumber: number;
+  seasonId: string;
   season?: Season;
   airDate?: string;
   eliminations?: Elimination[];
@@ -95,7 +95,7 @@ export interface Season {
   isCurrent: boolean;
   contestants: Contestant[];
   seasonNumber: number;
-  weeks?: Week[];
+  episodes?: Episode[];
 }
 
 export interface Contestant {
@@ -116,10 +116,10 @@ export const EliminationTypes = {
 
 export type EliminationType = typeof EliminationTypes[keyof typeof EliminationTypes];
 
-// Weekly-grouped shape returned by GET /api/eliminations/
+// Episode-grouped shape returned by GET /api/eliminations/
 export interface Elimination {
-  weekId: string;
-  weekNumber: number;
+  episodeId: string;
+  episodeNumber: number;
   contestantIds: string[];
   eliminationType: string;
 }
@@ -127,15 +127,15 @@ export interface Elimination {
 // Single elimination record, e.g. from GET /api/eliminations/bySeason/:seasonId
 export interface EliminationEntry {
   id: string;
-  weekId: string;
+  episodeId: string;
   contestantId: string;
   eliminationType: EliminationType;
 }
 
 // Shape returned by GET /api/rankings/insights/:seasonId
-export interface InsightsWeek {
-  weekId: string;
-  weekNumber: number;
+export interface InsightsEpisode {
+  episodeId: string;
+  episodeNumber: number;
   contestantAverages: { contestantId: string; averagePosition: number }[];
 }
 
@@ -147,6 +147,6 @@ export interface InsightsOverall {
 export interface InsightsResponse {
   seasonId: string;
   type: RankType;
-  weeks: InsightsWeek[];
+  episodes: InsightsEpisode[];
   overall: InsightsOverall[];
 }

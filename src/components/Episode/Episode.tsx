@@ -2,18 +2,18 @@ import { act, forwardRef, useEffect, useImperativeHandle, useRef, useState } fro
 import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
-import './Week.css';
+import './Episode.css';
 import { nameToImage, type Contestant, type Elimination, type Season, type Show } from "../../utils/Constants";
-import { getContestantEliminationStatus, getEliminationOrder, getEliminations, getWeeks } from "../../utils/util";
+import { getContestantEliminationStatus, getEliminationOrder, getEliminations, getEpisodes } from "../../utils/util";
 import { useSelector } from "react-redux";
 import plusIcon from "../../assets/plus.png";
 import { propTypes } from "react-bootstrap/esm/Image";
 
-interface WeekComponentProps {
+interface EpisodeComponentProps {
   id?: string;
-  currWeek: { id: string; weekNumber: number };
-  activeWeeks: Set<string>;
-  setActiveWeeks: (value: Set<string> | ((prevState: Set<string>) => Set<string>)) => void;
+  currEpisode: { id: string; episodeNumber: number };
+  activeEpisodes: Set<string>;
+  setActiveEpisodes: (value: Set<string> | ((prevState: Set<string>) => Set<string>)) => void;
   lastOrder: string[];
   eliminations: Elimination[];
   contestants: Contestant[];
@@ -21,17 +21,17 @@ interface WeekComponentProps {
   show?: Show;
 }
 
-export type WeekRef = {
+export type EpisodeRef = {
   createEntries: () => { contestantId: string; position: number }[];
 }
 
-const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activeWeeks, setActiveWeeks, lastOrder, eliminations, contestants, season, show }: WeekComponentProps, ref) => {
+const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEpisode, activeEpisodes, setActiveEpisodes, lastOrder, eliminations, contestants, season, show }: EpisodeComponentProps, ref) => {
 
   useImperativeHandle(ref, () => ({
     createEntries: () => createEntries()
   }));
-  
-  
+
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -45,28 +45,28 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
   const getContestantName = (contestantId: string) =>
     contestants.find(c => c.id === contestantId)?.name ?? "";
 
-  const isActive = activeWeeks?.has(currWeek?.id);
+  const isActive = activeEpisodes?.has(currEpisode?.id);
 
-  // Re-seed from the latest saved order whenever this week is opened for
-  // ranking, rather than only once on mount — every unranked week mounts
-  // together up front, before earlier weeks necessarily have a saved
+  // Re-seed from the latest saved order whenever this episode is opened for
+  // ranking, rather than only once on mount — every unranked episode mounts
+  // together up front, before earlier episodes necessarily have a saved
   // ranking yet, so lastOrder can be stale by the time the user gets here.
   useEffect(() => {
     if (!isActive) return;
-    const elimIds = getEliminationOrder(eliminations, currWeek.weekNumber-1).reverse();
+    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber-1).reverse();
 
-    console.log("Eliminated Contestants for week ", currWeek.weekNumber, ": ", elimIds);
+    console.log("Eliminated Contestants for episode ", currEpisode.episodeNumber, ": ", elimIds);
     setEliminatedContestants(elimIds);
     setActiveContestants((lastOrder ?? []).filter(dancerId => !elimIds.includes(dancerId)));
   }, [isActive]);
 
-  const toggleWeek = (weekId: string) => {
-    setActiveWeeks((prev) => {
+  const toggleEpisode = (episodeId: string) => {
+    setActiveEpisodes((prev) => {
       const newSet = new Set(prev);
-      if (newSet.has(weekId)) {
-        newSet.delete(weekId);
+      if (newSet.has(episodeId)) {
+        newSet.delete(episodeId);
       } else {
-        newSet.add(weekId);
+        newSet.add(episodeId);
       }
       return newSet;
     });
@@ -106,25 +106,25 @@ const WeekComponent = forwardRef<WeekRef, WeekComponentProps>(({ currWeek, activ
               onDragEnd={(event) => handleDragEnd(event)}
             >
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
-                <div className="week-heading">{currWeek?.weekNumber}</div>
+                <div className="episode-heading">{currEpisode?.episodeNumber}</div>
                 {activeContestants.map((dancerId) => {
-                    return <div key={dancerId} className="cell active-week">
+                    return <div key={dancerId} className="cell active-episode">
                     <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
             </DndContext>
             {eliminatedContestants.map((dancerId) => (
-                <div key={`${dancerId}-elim`} className="cell eliminated-week">
+                <div key={`${dancerId}-elim`} className="cell eliminated-episode">
                   <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
             </div> : <>
-                <div className="week-heading">{currWeek?.weekNumber}</div>
-                <div key={`${currWeek?.id}-empty`} className="cell-default" style={{minHeight: `${season?.contestants?.length * 2.5}rem`}} onClick={() => toggleWeek(currWeek.id)}>
-                  <img src={plusIcon} alt="Activate Week" className="add-week"/>
+                <div className="episode-heading">{currEpisode?.episodeNumber}</div>
+                <div key={`${currEpisode?.id}-empty`} className="cell-default" style={{minHeight: `${season?.contestants?.length * 2.5}rem`}} onClick={() => toggleEpisode(currEpisode.id)}>
+                  <img src={plusIcon} alt="Activate Episode" className="add-episode"/>
                 </div>
                 </>}
   </div>
 });
-export default WeekComponent;
+export default EpisodeComponent;

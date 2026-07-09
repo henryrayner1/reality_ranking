@@ -6,52 +6,52 @@ export default function eliminationsRouter(prisma: PrismaClient) {
 
     router.get("/", async (req, res) => {
         const eliminations = await prisma.elimination.findMany({
-            include: {week: true,
-                contestant: true 
+            include: {episode: true,
+                contestant: true
             },
             orderBy: {
-                week: {
-                    weekNumber: 'asc'
+                episode: {
+                    episodeNumber: 'asc'
                 }
             }
         })
 
-        // Group eliminations by weekId
-        const weeklyEliminationsMap = eliminations.reduce((acc, elim) => {
-            if (!acc[elim.weekId]) {
-                acc[elim.weekId] = {
-                    weekId: elim.weekId,
-                    weekNumber: elim.week.weekNumber,
+        // Group eliminations by episodeId
+        const episodeEliminationsMap = eliminations.reduce((acc, elim) => {
+            if (!acc[elim.episodeId]) {
+                acc[elim.episodeId] = {
+                    episodeId: elim.episodeId,
+                    episodeNumber: elim.episode.episodeNumber,
                     contestantIds: []
                 };
             }
-            if (elim.contestantId && !acc[elim.weekId].contestantIds.includes(elim.contestantId)) {
-                acc[elim.weekId].contestantIds.push(elim.contestantId);
+            if (elim.contestantId && !acc[elim.episodeId].contestantIds.includes(elim.contestantId)) {
+                acc[elim.episodeId].contestantIds.push(elim.contestantId);
             }
             return acc;
-        }, {} as { [key: string]: { weekId: string, weekNumber: number, contestantIds: string[] } });
-        
-        // Convert to array and sort by weekNumber to guarantee order
-        const weeklyEliminations = Object.values(weeklyEliminationsMap).sort((a, b) => a.weekNumber - b.weekNumber);
-        
-        res.json(weeklyEliminations);
+        }, {} as { [key: string]: { episodeId: string, episodeNumber: number, contestantIds: string[] } });
+
+        // Convert to array and sort by episodeNumber to guarantee order
+        const episodeEliminations = Object.values(episodeEliminationsMap).sort((a, b) => a.episodeNumber - b.episodeNumber);
+
+        res.json(episodeEliminations);
     });
 
     router.get("/bySeason/:seasonId", async (req, res) => {
         const { seasonId } = req.params;
         const eliminations = await prisma.elimination.findMany({
             where: {
-                week: {
+                episode: {
                     seasonId: seasonId
                 }
             },
             include: {
-                week: true,
+                episode: true,
                 contestant: true
             },
             orderBy: {
-                week: {
-                    weekNumber: 'asc'
+                episode: {
+                    episodeNumber: 'asc'
                 }
             }
         });
@@ -60,20 +60,20 @@ export default function eliminationsRouter(prisma: PrismaClient) {
 
     router.post("/add", async (req, res) => {
         const randomId = Math.random().toString(36).slice(2, 12).toLowerCase();
-        const { weekId, contestantId, eliminationType } = req.body;
-        if (!weekId || !contestantId) {
-            return res.status(400).json({ error: "weekId and contestantId are required" });
+        const { episodeId, contestantId, eliminationType } = req.body;
+        if (!episodeId || !contestantId) {
+            return res.status(400).json({ error: "episodeId and contestantId are required" });
         }
         const newElimination = await prisma.$transaction(async (tx) => {
             const elimination = await tx.elimination.create({
                 data: {
                     id: randomId,
-                    weekId: weekId,
+                    episodeId: episodeId,
                     contestantId: contestantId,
                     ...(eliminationType ? { eliminationType } : {})
                 },
                 include: {
-                    week: true,
+                    episode: true,
                     contestant: true
                 }
             });
@@ -85,7 +85,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         });
         res.json({
             ...newElimination,
-            weekNumber: newElimination.week.weekNumber
+            episodeNumber: newElimination.episode.episodeNumber
         });
     });
 
@@ -112,23 +112,23 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         }
 
         const newElimination = await prisma.elimination.createMany({
-            data: eliminationsList.map((elim: { weekId: string; contestantId: string; seasonId: string }) => ({
+            data: eliminationsList.map((elim: { episodeId: string; contestantId: string; seasonId: string }) => ({
                 id: Math.random().toString(36).slice(2, 12).toLowerCase(),
-                weekId: elim.weekId,
+                episodeId: elim.episodeId,
                 contestantId: elim.contestantId,
                 seasonId: elim.seasonId
             }))
         });
 
-        // Fetch the created eliminations with week information
+        // Fetch the created eliminations with episode information
         const createdEliminations = await prisma.elimination.findMany({
             where: {
-                weekId: { in: eliminationsList.map((elim: { weekId: string }) => elim.weekId) }
+                episodeId: { in: eliminationsList.map((elim: { episodeId: string }) => elim.episodeId) }
             },
-            include: { week: true },
+            include: { episode: true },
             orderBy: {
-                week: {
-                    weekNumber: 'asc'
+                episode: {
+                    episodeNumber: 'asc'
                 }
             }
         });
@@ -137,25 +137,25 @@ export default function eliminationsRouter(prisma: PrismaClient) {
             count: newElimination.count,
             eliminations: createdEliminations.map(elim => ({
                 ...elim,
-                weekNumber: elim.week.weekNumber
+                episodeNumber: elim.episode.episodeNumber
             }))
         });
     });
 
-    router.get(("/getWeek"), async (req, res) => {
-        const { weekId } = req.query;
-        if (!weekId || typeof weekId !== "string") {
-            return res.status(400).json({ error: "weekId is required" });
+    router.get(("/getEpisode"), async (req, res) => {
+        const { episodeId } = req.query;
+        if (!episodeId || typeof episodeId !== "string") {
+            return res.status(400).json({ error: "episodeId is required" });
         }
         const eliminations = await prisma.elimination.findMany({
-            where: { weekId },
-            include: { week: true }
+            where: { episodeId },
+            include: { episode: true }
         });
-        const weekEliminations = {
-            weekNumber: eliminations.length > 0 ? eliminations[0].week.weekNumber : null,
+        const episodeEliminations = {
+            episodeNumber: eliminations.length > 0 ? eliminations[0].episode.episodeNumber : null,
             contestantIds: eliminations.map(e => e.contestantId)
         };
-        res.json(weekEliminations);
+        res.json(episodeEliminations);
     });
 
     router.delete("/deleteMany", async (req, res) => {

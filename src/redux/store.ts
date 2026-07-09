@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit';
 import userReducer from './slices/userSlice';
-import weeksReducer from './slices/weeksSlice';
+import episodesReducer from './slices/episodesSlice';
 import storage from 'redux-persist/lib/storage'
 import persistReducer from 'redux-persist/es/persistReducer';
 import persistStore from 'redux-persist/lib/persistStore';
@@ -19,7 +19,7 @@ import {
 
 const rootReducer = {
   user: userReducer,
-  weeks: weeksReducer,
+  episodes: episodesReducer,
   activeRankings: rankingsReducer,
   shows: showReducer,
   seasons: seasonsReducer
@@ -28,7 +28,7 @@ const rootReducer = {
 const persistConfig = {
   key: 'root',
   storage,
-  whitelist: ['user', 'weeks']
+  whitelist: ['user', 'episodes']
 };
 
 const persistedReducer = persistReducer(persistConfig, combineReducers(rootReducer));

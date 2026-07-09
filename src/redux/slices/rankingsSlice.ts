@@ -6,7 +6,7 @@ interface Rankings {
 }
 
 const initialState = {
-    value: null as { [weekId: string]: Rankings[] } | null,
+    value: null as { [episodeId: string]: Rankings[] } | null,
 }
 
 const rankingsSlice = createSlice({

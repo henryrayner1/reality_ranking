@@ -17,7 +17,7 @@ interface InsightsRankingTableProps {
 
 // Sorts contestants by their averaged position (ascending — lower is better)
 // into rank-ordered rows, tie-breaking by name for a deterministic order.
-// Contestants with no data (no submissions that week / ever) sort to the
+// Contestants with no data (no submissions that episode / ever) sort to the
 // bottom and render as blank cells rather than being force-placed.
 const buildRankColumn = (
   items: { contestantId: string; value: number | null }[],
@@ -46,17 +46,17 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   const contestantsById: Record<string, Contestant> = {};
   (currSeason?.contestants ?? []).forEach((c) => { contestantsById[c.id] = c; });
 
-  const eliminationByContestant = new Map<string, { weekNumber: number; eliminationType: string }>();
+  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();
   props.eliminations.forEach((e: any) => {
     eliminationByContestant.set(e.contestantId, {
-      weekNumber: e.week?.weekNumber ?? 0,
+      episodeNumber: e.episode?.episodeNumber ?? 0,
       eliminationType: e.eliminationType,
     });
   });
 
-  const isEliminatedByWeek = (contestantId: string, weekNumber: number) => {
+  const isEliminatedByEpisode = (contestantId: string, episodeNumber: number) => {
     const elim = eliminationByContestant.get(contestantId);
-    return !!elim && weekNumber > elim.weekNumber;
+    return !!elim && episodeNumber > elim.episodeNumber;
   };
 
   const rankTypeTabs = (
@@ -97,12 +97,12 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
     );
   }
 
-  const sortedWeeks = [...insights.weeks].sort((a, b) => a.weekNumber - b.weekNumber);
+  const sortedEpisodes = [...insights.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
 
-  const weekColumns = sortedWeeks.map((week) => ({
-    weekNumber: week.weekNumber,
+  const episodeColumns = sortedEpisodes.map((episode) => ({
+    episodeNumber: episode.episodeNumber,
     contestantIds: buildRankColumn(
-      week.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
+      episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
       contestantsById,
       rowCount
     ),
@@ -120,30 +120,30 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
       <div
         className="insights-grid"
         style={{
-          gridTemplateColumns: `repeat(${sortedWeeks.length + 2}, 2.5rem) 1fr`,
+          gridTemplateColumns: `repeat(${sortedEpisodes.length + 2}, 2.5rem) 1fr`,
           gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
         }}
       >
         <div className="insights-grid-heading">Rank</div>
-        <div className="insights-week-heading"></div>
+        <div className="insights-episode-heading"></div>
         {Array.from({ length: rowCount }, (_, index) => (
           <div key={`rank-${index}`} className="insights-grid-item">{index + 1}</div>
         ))}
 
-        {sortedWeeks.length > 0 && (
-          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedWeeks.length}`, justifyContent: "center" }}>Week</div>
+        {sortedEpisodes.length > 0 && (
+          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length}`, justifyContent: "center" }}>Episode</div>
         )}
-        {weekColumns.map((week) => (
-          <Fragment key={`week-${week.weekNumber}`}>
-            <div className="insights-week-heading">{week.weekNumber}</div>
-            {week.contestantIds.map((contestantId, rowIndex) => (
-              <div key={`week-${week.weekNumber}-cell-${rowIndex}`} className="insights-cell">
+        {episodeColumns.map((episode) => (
+          <Fragment key={`episode-${episode.episodeNumber}`}>
+            <div className="insights-episode-heading">{episode.episodeNumber}</div>
+            {episode.contestantIds.map((contestantId, rowIndex) => (
+              <div key={`episode-${episode.episodeNumber}-cell-${rowIndex}`} className="insights-cell">
                 {contestantId && (
                   <ContestantIcon
                     name={contestantsById[contestantId]?.name ?? ""}
                     id={contestantId}
                     isActive={false}
-                    isEliminated={isEliminatedByWeek(contestantId, week.weekNumber)}
+                    isEliminated={isEliminatedByEpisode(contestantId, episode.episodeNumber)}
                     season={currSeason}
                     show={currShow}
                   />
@@ -154,7 +154,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
         ))}
 
         <div className="insights-grid-heading insights-overall-heading" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
-        <div className="insights-week-heading insights-week-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}></div>
+        <div className="insights-episode-heading insights-episode-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}></div>
         {overallColumn.map((contestantId, rowIndex) => (
           <div key={`overall-cell-${rowIndex}`} className="insights-cell insights-overall-cell">
             {contestantId && (

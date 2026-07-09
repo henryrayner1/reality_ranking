@@ -1,8 +1,8 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { upsertShows } from "../redux/slices/showsSlice";
 import { upsertSeasons } from "../redux/slices/seasonsSlice";
-import { upsertWeeks } from "../redux/slices/weeksSlice";
-import type { Contestant, Elimination, EliminationEntry, Ranking, Season, Show, Week } from "./Constants";
+import { upsertEpisodes } from "../redux/slices/episodesSlice";
+import type { Contestant, Elimination, EliminationEntry, Episode, Ranking, Season, Show } from "./Constants";
 
 export const getUserId = async (email: string) => {
   const userRes = await fetch(`/api/users/lookup?email=${email}`);
@@ -65,43 +65,43 @@ export const checkUserLoggedIn = () => {
   return null;
 };
 
-export const getWeeks = async () => {
-  const weeksRes = await fetch('/api/weeks/');
-  if (!weeksRes.ok) throw new Error('Failed to fetch weeks');
-  const weeksData = await weeksRes.json();
-  weeksData.sort((a: any, b: any) => a.weekNumber - b.weekNumber);
-  return weeksData;
+export const getEpisodes = async () => {
+  const episodesRes = await fetch('/api/episodes/');
+  if (!episodesRes.ok) throw new Error('Failed to fetch episodes');
+  const episodesData = await episodesRes.json();
+  episodesData.sort((a: any, b: any) => a.episodeNumber - b.episodeNumber);
+  return episodesData;
 };
 
-export const getWeeksByShow = async (showId: string) => {
-  const weeksRes = await fetch(`/api/weeks/byShow/${showId}`);
-  if (!weeksRes.ok) throw new Error('Failed to fetch weeks');
-  const weeksData = await weeksRes.json();
-  return weeksData;
+export const getEpisodesByShow = async (showId: string) => {
+  const episodesRes = await fetch(`/api/episodes/byShow/${showId}`);
+  if (!episodesRes.ok) throw new Error('Failed to fetch episodes');
+  const episodesData = await episodesRes.json();
+  return episodesData;
 };
 
-export const addWeek = async ( week: Partial<Week>) => {
-  const createRes = await fetch('/api/weeks/create', {
+export const addEpisode = async ( episode: Partial<Episode>) => {
+  const createRes = await fetch('/api/episodes/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ seasonId: week.seasonId, airDate: week.airDate }),
+    body: JSON.stringify({ seasonId: episode.seasonId, airDate: episode.airDate }),
   });
   if (!createRes.ok) {
-    const msg = await createRes.text().catch(() => 'Failed to create week');
+    const msg = await createRes.text().catch(() => 'Failed to create episode');
     throw new Error(msg);
   }
   const createData = await createRes.json();
   return createData;
 }
 
-export const deleteWeek = async (weekId: string) => {
-  const deleteRes = await fetch(`/api/weeks/delete/${weekId}`, {
+export const deleteEpisode = async (episodeId: string) => {
+  const deleteRes = await fetch(`/api/episodes/delete/${episodeId}`, {
     method: 'DELETE',
   });
   if (!deleteRes.ok) {
-    const msg = await deleteRes.text().catch(() => 'Failed to delete week');
+    const msg = await deleteRes.text().catch(() => 'Failed to delete episode');
     throw new Error(msg);
   }
   const deleteData = await deleteRes.json();
@@ -115,13 +115,13 @@ export const getUserRankings = async (userId: string) => {
   return rankingsData;
 };
 
-export const submitRanking = async (userId: string, weekId: string, rankings: string[], type: string) => {
+export const submitRanking = async (userId: string, episodeId: string, rankings: string[], type: string) => {
   const submitRes = await fetch('/api/rankings/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ userId, weekId, rankings, type }),
+    body: JSON.stringify({ userId, episodeId, rankings, type }),
   });
   if (!submitRes.ok) {
     const msg = await submitRes.text().catch(() => 'Failed to submit rankings');
@@ -131,7 +131,7 @@ export const submitRanking = async (userId: string, weekId: string, rankings: st
   return submitData;
 };
 
-export const submitRankings = async (rankingsList: { userId: string; weekId: string; rankings: {}; type: string }[]) => {
+export const submitRankings = async (rankingsList: { userId: string; episodeId: string; rankings: {}; type: string }[]) => {
   
   const submitRes = await fetch('/api/rankings/createMany', {
     method: 'POST',
@@ -170,7 +170,7 @@ export const addElimination = async (elimination: Partial<EliminationEntry>) => 
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ weekId: elimination.weekId, contestantId: elimination.contestantId, eliminationType: elimination.eliminationType }),
+    body: JSON.stringify({ episodeId: elimination.episodeId, contestantId: elimination.contestantId, eliminationType: elimination.eliminationType }),
   });
   if (!elimRes.ok) {
     const msg = await elimRes.text().catch(() => 'Failed to add elimination');
@@ -213,7 +213,7 @@ export const getRankingsInsights = async (seasonId: string, type: string) => {
   return insightsData;
 };
 
-export const addManyEliminations = async (eliminationsList: { weekId: string; contestantIds: string[] }[]) => {
+export const addManyEliminations = async (eliminationsList: { episodeId: string; contestantIds: string[] }[]) => {
   const elimRes = await fetch('/api/eliminations/addMany', {
     method: 'POST',
     headers: {
@@ -229,22 +229,22 @@ export const addManyEliminations = async (eliminationsList: { weekId: string; co
   return elimData;
 };
 
-export const getContestantEliminationStatus = (eliminations: any, contestantId: string, weekNumber: number) => {
-  for (const weekId in eliminations) {
-    const weekData = eliminations[weekId];
-    if (weekData.weekNumber <= weekNumber && weekData.contestant_ids.includes(contestantId)) {
+export const getContestantEliminationStatus = (eliminations: any, contestantId: string, episodeNumber: number) => {
+  for (const episodeId in eliminations) {
+    const episodeData = eliminations[episodeId];
+    if (episodeData.episodeNumber <= episodeNumber && episodeData.contestant_ids.includes(contestantId)) {
       return true;
     }
   }
   return false;
 };
 
-export const getEliminationOrder = (eliminations: Elimination[], weekNumber: number) => {
+export const getEliminationOrder = (eliminations: Elimination[], episodeNumber: number) => {
   const eliminatedContestants: string[] = [];
-  console.log(weekNumber, eliminations);
-  for (const weekData of eliminations) {
-    if (weekData.weekNumber <= weekNumber) {
-      eliminatedContestants.push(...weekData.contestantIds);
+  console.log(episodeNumber, eliminations);
+  for (const episodeData of eliminations) {
+    if (episodeData.episodeNumber <= episodeNumber) {
+      eliminatedContestants.push(...episodeData.contestantIds);
     }
   }
   return eliminatedContestants;
@@ -255,20 +255,20 @@ export interface RankingColumnEntry {
   eliminated: boolean;
 }
 
-// Builds one ordered column of a past-rankings table for a single week's ranking:
+// Builds one ordered column of a past-rankings table for a single episode's ranking:
 // non-eliminated contestants first (by submitted position), then eliminated
 // contestants appended in elimination order. Row index == rank position.
 // All contestant references (ranking entries and elimination ids) are real
 // Contestant.id values; resolve to a display name at render time.
 export const buildPastRankingColumn = (
   ranking: Ranking,
-  weekNumber: number,
+  episodeNumber: number,
   eliminations: Elimination[]
 ): RankingColumnEntry[] => {
-  // A contestant eliminated during week N is still active for week N's own
-  // ranking — they only show as eliminated starting week N+1 — matching
-  // Week.tsx's WeekComponent, which uses the same weekNumber - 1 offset.
-  const eliminatedIds = getEliminationOrder(eliminations, weekNumber - 1).reverse();
+  // A contestant eliminated during episode N is still active for episode N's own
+  // ranking — they only show as eliminated starting episode N+1 — matching
+  // Episode.tsx's EpisodeComponent, which uses the same episodeNumber - 1 offset.
+  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber - 1).reverse();
 
   const active = [...ranking.entries]
     .sort((a, b) => a.position - b.position)
@@ -416,6 +416,22 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
   }
   const contestantData = await contestantRes.json();
   return contestantData;
+};
+
+export const updateContestantPhoto = async (contestantId: string, photoUrl: string) => {
+  const updateRes = await fetch(`/api/contestants/${contestantId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ photoUrl }),
+  });
+  if (!updateRes.ok) {
+    const msg = await updateRes.text().catch(() => 'Failed to update contestant photo');
+    throw new Error(msg);
+  }
+  const updateData = await updateRes.json();
+  return updateData;
 };
 
 export const deleteContestant = async (contestantId: string) => {
