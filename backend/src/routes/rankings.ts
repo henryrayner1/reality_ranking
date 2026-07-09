@@ -1,5 +1,6 @@
 import { PrismaClient, type RankType } from "@prisma/client";
 import { Router } from "express";
+import { isEpisodeRankable } from "../utils/episodeRankability.js";
 
 export default function rankingsRouter(prisma: PrismaClient) {
   const router = Router();
@@ -10,14 +11,14 @@ export default function rankingsRouter(prisma: PrismaClient) {
     res.json(rankings);
   });
 
-  // Aggregate insights: average rank position per contestant per week (and
+  // Aggregate insights: average rank position per contestant per episode (and
   // overall), computed across every user's submissions for a season+type.
   //
-  // NOTE: Ranking has no @@unique([userId, weekId, type]) constraint, so
+  // NOTE: Ranking has no @@unique([userId, episodeId, type]) constraint, so
   // nothing in the DB stops a user from submitting more than once for the
-  // same week+type. This query does not dedupe by user — it averages every
+  // same episode+type. This query does not dedupe by user — it averages every
   // matching RankingEntry regardless of how many Rankings a user has for a
-  // given week+type. The app's own UI (checkPastRankings in
+  // given episode+type. The app's own UI (checkPastRankings in
   // RankingComponent2.tsx) already prevents this in the normal flow, so a
   // duplicate would only occur via an out-of-band write; not worth a
   // migration for this feature.
@@ -32,13 +33,13 @@ export default function rankingsRouter(prisma: PrismaClient) {
       where: {
         ranking: {
           type: type as RankType,
-          week: { seasonId },
+          episode: { seasonId },
         },
       },
       select: {
         position: true,
         contestantId: true,
-        ranking: { select: { weekId: true, week: { select: { weekNumber: true } } } },
+        ranking: { select: { episodeId: true, episode: { select: { episodeNumber: true } } } },
       },
     });
 
@@ -47,47 +48,47 @@ export default function rankingsRouter(prisma: PrismaClient) {
       select: { id: true },
     });
 
-    const weekBuckets = new Map<
+    const episodeBuckets = new Map<
       string,
-      { weekNumber: number; sums: Map<string, number>; counts: Map<string, number> }
+      { episodeNumber: number; sums: Map<string, number>; counts: Map<string, number> }
     >();
 
     for (const e of entries) {
-      const weekId = e.ranking.weekId;
-      const weekNumber = e.ranking.week.weekNumber;
-      if (!weekBuckets.has(weekId)) {
-        weekBuckets.set(weekId, { weekNumber, sums: new Map(), counts: new Map() });
+      const episodeId = e.ranking.episodeId;
+      const episodeNumber = e.ranking.episode.episodeNumber;
+      if (!episodeBuckets.has(episodeId)) {
+        episodeBuckets.set(episodeId, { episodeNumber, sums: new Map(), counts: new Map() });
       }
-      const bucket = weekBuckets.get(weekId)!;
+      const bucket = episodeBuckets.get(episodeId)!;
       bucket.sums.set(e.contestantId, (bucket.sums.get(e.contestantId) ?? 0) + e.position);
       bucket.counts.set(e.contestantId, (bucket.counts.get(e.contestantId) ?? 0) + 1);
     }
 
-    const weeks = [...weekBuckets.entries()]
-      .sort((a, b) => a[1].weekNumber - b[1].weekNumber)
-      .map(([weekId, bucket]) => ({
-        weekId,
-        weekNumber: bucket.weekNumber,
+    const episodes = [...episodeBuckets.entries()]
+      .sort((a, b) => a[1].episodeNumber - b[1].episodeNumber)
+      .map(([episodeId, bucket]) => ({
+        episodeId,
+        episodeNumber: bucket.episodeNumber,
         contestantAverages: [...bucket.sums.entries()].map(([contestantId, sum]) => ({
           contestantId,
           averagePosition: sum / bucket.counts.get(contestantId)!,
         })),
       }));
 
-    // Overall = mean of each contestant's per-week averages (mean-of-means),
-    // so every week counts equally regardless of how many users submitted.
-    const perContestantWeekAverages = new Map<string, number[]>();
-    for (const week of weeks) {
-      for (const ca of week.contestantAverages) {
-        if (!perContestantWeekAverages.has(ca.contestantId)) {
-          perContestantWeekAverages.set(ca.contestantId, []);
+    // Overall = mean of each contestant's per-episode averages (mean-of-means),
+    // so every episode counts equally regardless of how many users submitted.
+    const perContestantEpisodeAverages = new Map<string, number[]>();
+    for (const episode of episodes) {
+      for (const ca of episode.contestantAverages) {
+        if (!perContestantEpisodeAverages.has(ca.contestantId)) {
+          perContestantEpisodeAverages.set(ca.contestantId, []);
         }
-        perContestantWeekAverages.get(ca.contestantId)!.push(ca.averagePosition);
+        perContestantEpisodeAverages.get(ca.contestantId)!.push(ca.averagePosition);
       }
     }
 
     const overall = contestants.map((c) => {
-      const vals = perContestantWeekAverages.get(c.id);
+      const vals = perContestantEpisodeAverages.get(c.id);
       return {
         contestantId: c.id,
         overallAveragePosition:
@@ -95,7 +96,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
       };
     });
 
-    res.json({ seasonId, type, weeks, overall });
+    res.json({ seasonId, type, episodes, overall });
   });
 
   router.get("/userRankings", async (req, res) => {
@@ -105,10 +106,10 @@ export default function rankingsRouter(prisma: PrismaClient) {
     }
     const rankings = await prisma.ranking.findMany({
       where: { userId: userId },
-      include: {week: true, entries: true},
+      include: {episode: true, entries: true},
       orderBy: {
-          week: {
-              weekNumber: 'asc'
+          episode: {
+              episodeNumber: 'asc'
           }
       }
     });
@@ -123,10 +124,10 @@ export default function rankingsRouter(prisma: PrismaClient) {
         .status(400)
         .json({ error: "userId is required and must be a string" });
     }
-    if (!body.weekId || typeof body.weekId !== "string") {
+    if (!body.episodeId || typeof body.episodeId !== "string") {
       return res
         .status(400)
-        .json({ error: "weekId is required and must be a string" });
+        .json({ error: "episodeId is required and must be a string" });
     }
     if (
       !body.rankings ||
@@ -138,12 +139,23 @@ export default function rankingsRouter(prisma: PrismaClient) {
         .json({ error: "rankings is required and must be a non-empty array" });
     }
 
+    const episode = await prisma.episode.findUnique({
+      where: { id: body.episodeId },
+      select: { airDate: true },
+    });
+    if (!episode) {
+      return res.status(404).json({ error: "Episode not found" });
+    }
+    if (!isEpisodeRankable(episode.airDate)) {
+      return res.status(403).json({ error: "Ranking is not yet open for this episode" });
+    }
+
     try {
       const ranking = await prisma.ranking.create({
         data: {
           id: randomId,
           userId: body.userId,
-          weekId: body.weekId,
+          episodeId: body.episodeId,
           type: body.type,
           entries: {
             create: body.rankings.map((entry: any) => ({
@@ -172,27 +184,27 @@ export default function rankingsRouter(prisma: PrismaClient) {
       });
     }
 
-    let rankingRows: { id: string; userId: string; weekId: string; type: RankType }[];
+    let rankingRows: { id: string; userId: string; episodeId: string; type: RankType }[];
     let entryRows: { rankingId: string; contestantId: string; position: number }[];
     try {
       rankingRows = body.rankingsList.map((ranking: any) => {
         if (
           !ranking.userId ||
           typeof ranking.userId !== "string" ||
-          !ranking.weekId ||
-          typeof ranking.weekId !== "string" ||
+          !ranking.episodeId ||
+          typeof ranking.episodeId !== "string" ||
           !ranking.rankings ||
           !Array.isArray(ranking.rankings) ||
           ranking.rankings.length === 0
         ) {
           throw new Error(
-            "Each ranking must have userId (string), weekId (string), and rankings (non-empty array)"
+            "Each ranking must have userId (string), episodeId (string), and rankings (non-empty array)"
           );
         }
         return {
           id: Math.random().toString(36).slice(2, 8).toLowerCase(),
           userId: ranking.userId,
-          weekId: ranking.weekId,
+          episodeId: ranking.episodeId,
           type: ranking.type as RankType,
         };
       });
@@ -206,6 +218,20 @@ export default function rankingsRouter(prisma: PrismaClient) {
       );
     } catch (error) {
       return res.status(400).json({ error: (error as Error).message });
+    }
+
+    const episodeIds = [...new Set(rankingRows.map((r) => r.episodeId))];
+    const episodes = await prisma.episode.findMany({
+      where: { id: { in: episodeIds } },
+      select: { id: true, airDate: true },
+    });
+    const episodeById = new Map(episodes.map((e) => [e.id, e]));
+    const notRankable = rankingRows.some((r) => {
+      const episode = episodeById.get(r.episodeId);
+      return !episode || !isEpisodeRankable(episode.airDate);
+    });
+    if (notRankable) {
+      return res.status(403).json({ error: "One or more episodes are not yet open for ranking" });
     }
 
     try {

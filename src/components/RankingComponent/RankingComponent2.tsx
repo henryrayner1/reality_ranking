@@ -2,23 +2,25 @@ import { type Contestant, type Elimination, nameToImage, type Ranking, type Rank
 import { use, useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { useSelector } from "react-redux";
 import { buildPastRankingColumn, getContestantEliminationStatus, getEliminations, getRanking, getUserRankings, submitRanking, submitRankings } from "../../utils/util";
-import {type WeekRef} from "../Week/Week";
-import WeekComponent from "../Week/Week";
+import {type EpisodeRef} from "../Episode/Episode";
+import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import './RankingComponent.css';
 import SubmitRankingsModal from "../modals/SubmitRankingsModal";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow, selectShowWithSeasonsAndWeeks } from "../../redux/selectors";
+import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/selectors";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useParams } from "react-router-dom";
 import { useLocation } from "react-router-dom";
+import { isEpisodeRankableNow } from "../../utils/episodeRankability";
+import RankingCountdown from "../RankingCountdown/RankingCountdown";
 
 const RankingComponent2 = () => {
   const [allUserRankings, setAllUserRankings] = useState<Ranking[] | null>(null);
   const [pastRankings, setPastRankings] = useState<Ranking[]>([]);
-  const [activeWeeks, setActiveWeeks] = useState<Set<string>>(new Set<string>());
+  const [activeEpisodes, setActiveEpisodes] = useState<Set<string>>(new Set<string>());
   const [loadingFlag, setLoadingFlag] = useState(true);
   const [submitModalDisplayFlag, setSubmitModalDisplayFlag] = useState(false);
   const [rankingType, setRankingType] = useState<RankType>("FAVORITE");
@@ -39,11 +41,18 @@ const RankingComponent2 = () => {
 
   const currShow = useAppSelector(selectCurrShow);
 
-  const currShowTree = useAppSelector(state => 
-    selectShowWithSeasonsAndWeeks(state, currShow?.id || "")
+  const currShowTree = useAppSelector(state =>
+    selectShowWithSeasonsAndEpisodes(state, currShow?.id || "")
   );
 
   const currSeason = currShowTree?.seasons?.find(s => s.seasonNumber === currShow?.currSeason) ?? null;
+
+  // Only episodes whose airDate + assumed runtime has already passed are
+  // rankable. Sorted explicitly since the API doesn't guarantee episode
+  // order, so grid columns always render left-to-right in air order.
+  const rankableEpisodes = [...(currSeason?.episodes ?? [])]
+    .filter((episode) => isEpisodeRankableNow(episode))
+    .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
   useEffect(() => {
     if (currShow) {
@@ -54,8 +63,8 @@ const RankingComponent2 = () => {
   const user = useSelector((state: any) => state.user.value);
   let refs = useRef({});
 
-  const setWeekRef = useCallback((weekId: string) => (inst: WeekRef | null) => {
-    refs.current[weekId] = inst;
+  const setEpisodeRef = useCallback((episodeId: string) => (inst: EpisodeRef | null) => {
+    refs.current[episodeId] = inst;
   }, []);
 
   const refreshUserRankings = async (userId: string) => {
@@ -75,7 +84,7 @@ const RankingComponent2 = () => {
     const loadIfNeeded = async () => {
       if (!currShow) return; // shows haven't loaded from Redux yet — stay in loading state
       if (!user) { setLoadingFlag(false); return; }
-      if (!(currSeason?.weeks?.length > 0)) { setLoadingFlag(false); return; }
+      if (!(currSeason?.episodes?.length > 0)) { setLoadingFlag(false); return; }
 
       const needsRankings = rankingsLoadedForUserRef.current !== user.id;
       const needsEliminations = !eliminationsLoadedRef.current;
@@ -98,7 +107,7 @@ const RankingComponent2 = () => {
 
   useEffect(() => {
     if (!allUserRankings || !currSeason?.id) { setPastRankings([]); return; }
-    setPastRankings(allUserRankings.filter((r: Ranking) => r.week?.seasonId === currSeason.id));
+    setPastRankings(allUserRankings.filter((r: Ranking) => r.episode?.seasonId === currSeason.id));
   }, [allUserRankings, currSeason?.id]);
 
   useEffect(() => {
@@ -111,7 +120,7 @@ const RankingComponent2 = () => {
 
   useEffect(() => {
     setPastRankingForType(rankingType === "FAVORITE" ? favoriteRankings : winnerRankings);
-    setActiveWeeks(new Set<string>());
+    setActiveEpisodes(new Set<string>());
   }, [rankingType]);
 
   useEffect(() => {
@@ -128,53 +137,59 @@ const RankingComponent2 = () => {
     }
   },[favoriteRankings, winnerRankings]);
 
-  const removeActiveWeek = (weekId: string) => {
-    const newSet = new Set(activeWeeks);
-    newSet.delete(weekId);
-    setActiveWeeks(newSet);
+  const removeActiveEpisode = (episodeId: string) => {
+    const newSet = new Set(activeEpisodes);
+    newSet.delete(episodeId);
+    setActiveEpisodes(newSet);
   };
 
   const handleSubmit = async () => {
-    const activeWeeksArr = Array.from(activeWeeks);
-    const rankingsList = await Promise.all(activeWeeksArr.map(week => ({ userId: user.id, weekId: week, rankings: refs.current[week]?.createEntries?.(), type: rankingType})));
+    const activeEpisodesArr = Array.from(activeEpisodes);
+    const rankingsList = await Promise.all(activeEpisodesArr.map(episode => ({ userId: user.id, episodeId: episode, rankings: refs.current[episode]?.createEntries?.(), type: rankingType})));
     await submitRankings(rankingsList);
-    setActiveWeeks(new Set<string>());
-    // Awaited so the submitted weeks have already moved into pastRankingForType
+    setActiveEpisodes(new Set<string>());
+    // Awaited so the submitted episodes have already moved into pastRankingForType
     // (no longer draggable) by the time the modal reports success.
     await refreshUserRankings(user.id);
   };
 
-  const checkPastRankings = (weekId) => {
-    const hit = pastRankingForType.find((r) => r.weekId === weekId);
+  const checkPastRankings = (episodeId) => {
+    const hit = pastRankingForType.find((r) => r.episodeId === episodeId);
     return hit ?? null;
   }
 
   const checkSubmitDisabled = () => {
-    return pastRankingForType?.length === currSeason?.weeks?.length || activeWeeks?.size === 0;
+    return pastRankingForType?.length === rankableEpisodes.length || activeEpisodes?.size === 0;
   }
 
-  const getLastRankingNames = (weekId: number) => {
-    const pastFavRankings = favoriteRankings.filter((ranking) => ranking.week?.weekNumber < weekId);
-    const pastWinnerRankings = winnerRankings.filter((ranking) => ranking.week?.weekNumber < weekId);
+  const getLastRankingNames = (episodeId: number) => {
+    const pastFavRankings = favoriteRankings.filter((ranking) => ranking.episode?.episodeNumber < episodeId);
+    const pastWinnerRankings = winnerRankings.filter((ranking) => ranking.episode?.episodeNumber < episodeId);
     const lastRanking = rankingType=="FAVORITE" ? pastFavRankings[pastFavRankings.length-1] : pastWinnerRankings[pastWinnerRankings.length-1];
-    if (lastRanking) {
-      const sortedEntries = lastRanking.entries.sort((a, b) => a.position - b.position);
-      return sortedEntries.map(entry => entry.contestantId);
-    }
-    return [...(currSeason?.contestants ?? [])]
+    const currentContestantIds = [...(currSeason?.contestants ?? [])]
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(contestant => contestant.id);
+    if (lastRanking) {
+      const sortedEntries = lastRanking.entries.sort((a, b) => a.position - b.position);
+      const orderedIds = sortedEntries.map(entry => entry.contestantId);
+      // Contestants added to the season after this ranking was submitted
+      // won't be in orderedIds — append them so they're still rankable
+      // instead of silently disappearing from every future episode.
+      const newContestantIds = currentContestantIds.filter(id => !orderedIds.includes(id));
+      return [...orderedIds, ...newContestantIds];
+    }
+    return currentContestantIds;
   }
 
   const getContestantName = (contestantId: string) =>
     currSeason?.contestants?.find((c) => c.id === contestantId)?.name ?? "";
 
-  const pastRankingsElements = (ranking: Ranking, weekNumber: number) => {
-    const columnEntries = buildPastRankingColumn(ranking, weekNumber, eliminations);
+  const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
+    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations);
     return [
-      <div className="week-heading" key={`${ranking.id}-heading`}>{weekNumber}</div>,
+      <div className="episode-heading" key={`${ranking.id}-heading`}>{episodeNumber}</div>,
       ...columnEntries.map((entry) => (
-        <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-week' : ''}`}>
+        <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
           <ContestantIcon name={getContestantName(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
         </div>
       )),
@@ -197,9 +212,9 @@ const RankingComponent2 = () => {
     <Tooltip id="rank-type-tooltip" positionStrategy="fixed" style={{ maxWidth: "14rem" }} />
   </div>
 
-  const rankingGrid = <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${currSeason?.weeks?.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
+  const rankingGrid = <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
     <div className="grid-heading">Rank</div>
-    <div className="week-heading"></div>
+    <div className="episode-heading"></div>
     {currSeason?.contestants?.map((contestant, index) => {
       return (
         <div key={contestant.id} className="grid-item">
@@ -207,26 +222,26 @@ const RankingComponent2 = () => {
         </div>
       );
     })}
-    <div className="grid-heading" style={{ gridColumn: `span ${currSeason?.weeks?.length + 1}`, justifyContent: "center" }}>Week</div>
-      {currSeason?.weeks?.map((week) => {
-        const inPastRankings = checkPastRankings(week.id);
-        return !inPastRankings ? <WeekComponent id={week.id}
-              setActiveWeeks={setActiveWeeks}
-              activeWeeks={activeWeeks}
-              currWeek={week}
-              key={`week-${week.weekNumber}`}
-              ref={setWeekRef(week.id)}
-              lastOrder={getLastRankingNames(week.weekNumber)}
+    <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}`, justifyContent: "center" }}>Episode</div>
+      {rankableEpisodes.map((episode) => {
+        const inPastRankings = checkPastRankings(episode.id);
+        return !inPastRankings ? <EpisodeComponent id={episode.id}
+              setActiveEpisodes={setActiveEpisodes}
+              activeEpisodes={activeEpisodes}
+              currEpisode={episode}
+              key={`episode-${episode.episodeNumber}`}
+              ref={setEpisodeRef(episode.id)}
+              lastOrder={getLastRankingNames(episode.episodeNumber)}
               eliminations={eliminations}
               contestants={currSeason?.contestants}
               season={currSeason}
               show={currShow}/> :
-          pastRankingsElements(inPastRankings, week.weekNumber);
+          pastRankingsElements(inPastRankings, episode.episodeNumber);
       })}
     </div>
 
   const rowCount = currSeason?.contestants?.length ?? 0;
-  const weekCount = currSeason?.weeks?.length ?? 0;
+  const episodeCount = rankableEpisodes.length;
 
   const rankingContainer = <div className="ranking-container">
       <div className="ranking-panel">
@@ -235,12 +250,12 @@ const RankingComponent2 = () => {
           ? <div className="ranking-grid-loading"><div className="loading-circle" /></div>
           : rowCount === 0
             ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
-            : weekCount === 0
-              ? <p className="ranking-placeholder">No weeks have been added to this season yet.</p>
+            : episodeCount === 0
+              ? <p className="ranking-placeholder">No episodes have been added to this season yet.</p>
               : rankingGrid}
       </div>
-      {!loadingFlag && <div className="active-weeks-container">
-          {[...activeWeeks].map((weekId) => <div className="remove-button px-2 text-xs" key={weekId} onClick={()=>removeActiveWeek(weekId)}>X Week {currSeason?.weeks.find(week => week.id === weekId)?.weekNumber}</div>)}
+      {!loadingFlag && <div className="active-episodes-container">
+          {[...activeEpisodes].map((episodeId) => <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X Episode {rankableEpisodes.find(episode => episode.id === episodeId)?.episodeNumber}</div>)}
         </div>}
       </div>
 
@@ -263,6 +278,9 @@ const RankingComponent2 = () => {
 
       <div className="rankings-content">
         {topBar}
+        {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
+            it needs to see not-yet-rankable episodes to find "next up". */}
+        <RankingCountdown episodes={currSeason?.episodes ?? []} />
         <main className="rankings-main">
           {user && rankingContainer}
         </main>
