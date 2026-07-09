@@ -1,3 +1,76 @@
+.admin-layout {
+    display: flex;
+    height: 100vh;
+}
+
+.admin-sidebar {
+    width: 220px;
+    min-width: 220px;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0;
+}
+
+.admin-sidebar-label {
+    font-size: 13px;
+    font-weight: 500;
+    padding: 0 1.25rem 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.admin-nav-button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0.6rem 1.25rem;
+    font-size: 14px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    border: none;
+    white-space: nowrap;
+}
+
+.admin-content {
+    flex: 1;
+    min-width: 0;
+    overflow-y: auto;
+    padding: 2rem;
+}
+
+@media screen and (max-width: 700px) {
+    .admin-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .admin-sidebar {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0.75rem 0.5rem;
+        gap: 0.25rem;
+    }
+
+    .admin-sidebar-label {
+        display: none;
+    }
+
+    .admin-nav-button {
+        width: auto;
+        padding: 0.5rem 0.9rem;
+        border-radius: 0.4rem;
+    }
+
+    .admin-content {
+        padding: 1rem;
+    }
+}
+
 .custom-button {
     background-color: rgb(255, 255, 255);
     color: rgb(33, 36, 39);

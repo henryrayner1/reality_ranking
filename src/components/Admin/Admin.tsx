@@ -27,35 +27,26 @@ const Admin = () => {
 
   const [active, setActive] = useState<Section>('shows');
 
-  return(<div style={{ display: 'flex', height: '100vh', background: 'var(--color-background-tertiary,#f5f5f3)' }}>
-      <div style={{ width: 220, minWidth: 220, background: 'var(--color-background-primary,#fff)', borderRight: '0.5px solid var(--color-border-tertiary,#e5e5e5)', display: 'flex', flexDirection: 'column', padding: '1.5rem 0' }}>
-        <div style={{ fontSize: 13, fontWeight: 500, color: 'var(--color-text-secondary,#888)', padding: '0 1.25rem 1rem', letterSpacing: '0.06em', textTransform: 'uppercase' }}>Admin</div>
+  return(<div className="admin-layout" style={{ background: 'var(--color-background-tertiary,#f5f5f3)' }}>
+      <div className="admin-sidebar" style={{ background: 'var(--color-background-primary,#fff)', borderRight: '0.5px solid var(--color-border-tertiary,#e5e5e5)' }}>
+        <div className="admin-sidebar-label" style={{ color: 'var(--color-text-secondary,#888)' }}>Admin</div>
         {NAV.map(item => (
           <button
             key={item.id}
             onClick={() => setActive(item.id)}
+            className="admin-nav-button"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              padding: '0.6rem 1.25rem',
-              fontSize: 14,
-              cursor: 'pointer',
               color: active === item.id ? 'var(--color-text-primary,#111)' : 'var(--color-text-secondary,#888)',
               borderLeft: `2px solid ${active === item.id ? '#7F77DD' : 'transparent'}`,
               background: active === item.id ? 'var(--color-background-secondary,#f5f5f3)' : 'transparent',
               fontWeight: active === item.id ? 500 : 400,
-              width: '100%',
-              textAlign: 'left',
-              fontFamily: 'inherit',
-              border: 'none',
             }}
           >
             {item.label}
           </button>
         ))}
       </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
+      <div className="admin-content">
         {PAGES[active]}
       </div>
     </div>);
