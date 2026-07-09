@@ -9,6 +9,7 @@ import {
   getSeasons,
   updateContestantPhoto,
 } from "../../utils/util";
+import { backendUrl } from "../../utils/apiBase";
 import * as AdminUI from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import AvatarEditor from "react-avatar-editor";
@@ -102,7 +103,7 @@ const AdminContestants = () => {
     fd.append("category", "contestants");
     fd.append("image", image);
 
-    const res = await fetch("/api/images/upload", { method: "POST", body: fd });
+    const res = await fetch(backendUrl("/api/images/upload"), { method: "POST", body: fd });
     if (!res.ok) {
       throw new Error("Failed to upload image");
     }

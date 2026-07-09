@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { backendUrl } from '../utils/apiBase';
 
 const ImageForm = ({handleNewImage}) => {
 
@@ -11,7 +12,7 @@ const ImageForm = ({handleNewImage}) => {
         };
 
         try {
-            const res = await fetch('/api/images/upload', config);
+            const res = await fetch(backendUrl('/api/images/upload'), config);
             const data = await res.json();
             console.log(data);
         } catch (error) {

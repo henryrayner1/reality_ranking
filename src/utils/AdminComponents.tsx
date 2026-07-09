@@ -1,3 +1,5 @@
+import { backendUrl } from "./apiBase";
+
 export const PageHeader = ({ title, subtitle }: { title: string; subtitle: string }) => {
     return (
         <div className="mb-6">
@@ -120,7 +122,7 @@ export const Avatar = ({ name, photoUrl, rounded = false, size = 36 }: { name: s
 
     return (
         <div className={`${sizeClass} ${rounded ? 'rounded-lg' : 'rounded-full'} ${bg} ${text} flex flex-shrink-0 items-center justify-center overflow-hidden font-medium`}>
-        {photoUrl ? <img src={photoUrl} alt={name} className="h-full w-full object-cover" /> : initials}
+        {photoUrl ? <img src={backendUrl(photoUrl)} alt={name} className="h-full w-full object-cover" /> : initials}
         </div>
     )
 }

@@ -3,11 +3,12 @@ import { removeShow, setCurrShow, upsertShow, upsertShows } from "../slices/show
 import { removeSeason, removeSeasons, upsertSeasons } from "../slices/seasonsSlice";
 import { removeEpisodes, upsertEpisodes } from "../slices/episodesSlice";
 import type { RootState } from "../store";
+import { backendUrl } from "../../utils/apiBase";
 
 export const fetchAllShows = createAsyncThunk(
   'shows/fetchAll',
   async (_, {dispatch}) => {
-    const response = await fetch('/api/shows/');
+    const response = await fetch(backendUrl('/api/shows/'));
     const shows = await response.json();
 
     const flatShows = [];

@@ -3,9 +3,12 @@ import { upsertShows } from "../redux/slices/showsSlice";
 import { upsertSeasons } from "../redux/slices/seasonsSlice";
 import { upsertEpisodes } from "../redux/slices/episodesSlice";
 import type { Contestant, Elimination, EliminationEntry, Episode, Ranking, Season, Show } from "./Constants";
+import { backendUrl } from "./apiBase";
+
+const apiFetch = (path: string, init?: RequestInit) => fetch(backendUrl(path), init);
 
 export const getUserId = async (email: string) => {
-  const userRes = await fetch(`/api/users/lookup?email=${email}`);
+  const userRes = await apiFetch(`/api/users/lookup?email=${email}`);
   if (!userRes.ok) throw new Error('Failed to fetch userId');
   const userData = await userRes.json();
   const userId = userData.id;
@@ -13,7 +16,7 @@ export const getUserId = async (email: string) => {
 };
 
 export const userLogin = async (email: string, password: string) => {
-  const loginRes = await fetch('/api/users/login', {
+  const loginRes = await apiFetch('/api/users/login', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -37,7 +40,7 @@ export const userLogout = () => {
 };
 
 export const createUser = async (email: string, password: string) => {
-  const createRes = await fetch('/api/users/create', {
+  const createRes = await apiFetch('/api/users/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -66,7 +69,7 @@ export const checkUserLoggedIn = () => {
 };
 
 export const getEpisodes = async () => {
-  const episodesRes = await fetch('/api/episodes/');
+  const episodesRes = await apiFetch('/api/episodes/');
   if (!episodesRes.ok) throw new Error('Failed to fetch episodes');
   const episodesData = await episodesRes.json();
   episodesData.sort((a: any, b: any) => a.episodeNumber - b.episodeNumber);
@@ -74,14 +77,14 @@ export const getEpisodes = async () => {
 };
 
 export const getEpisodesByShow = async (showId: string) => {
-  const episodesRes = await fetch(`/api/episodes/byShow/${showId}`);
+  const episodesRes = await apiFetch(`/api/episodes/byShow/${showId}`);
   if (!episodesRes.ok) throw new Error('Failed to fetch episodes');
   const episodesData = await episodesRes.json();
   return episodesData;
 };
 
 export const addEpisode = async ( episode: Partial<Episode>) => {
-  const createRes = await fetch('/api/episodes/create', {
+  const createRes = await apiFetch('/api/episodes/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -97,7 +100,7 @@ export const addEpisode = async ( episode: Partial<Episode>) => {
 }
 
 export const deleteEpisode = async (episodeId: string) => {
-  const deleteRes = await fetch(`/api/episodes/delete/${episodeId}`, {
+  const deleteRes = await apiFetch(`/api/episodes/delete/${episodeId}`, {
     method: 'DELETE',
   });
   if (!deleteRes.ok) {
@@ -109,14 +112,14 @@ export const deleteEpisode = async (episodeId: string) => {
 };
 
 export const getUserRankings = async (userId: string) => {
-  const rankingsRes = await fetch(`/api/rankings/userRankings?userId=${userId}`);
+  const rankingsRes = await apiFetch(`/api/rankings/userRankings?userId=${userId}`);
   if (!rankingsRes.ok) throw new Error('Failed to fetch user rankings');
   const rankingsData = await rankingsRes.json();
   return rankingsData;
 };
 
 export const submitRanking = async (userId: string, episodeId: string, rankings: string[], type: string) => {
-  const submitRes = await fetch('/api/rankings/create', {
+  const submitRes = await apiFetch('/api/rankings/create', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -133,7 +136,7 @@ export const submitRanking = async (userId: string, episodeId: string, rankings:
 
 export const submitRankings = async (rankingsList: { userId: string; episodeId: string; rankings: {}; type: string }[]) => {
   
-  const submitRes = await fetch('/api/rankings/createMany', {
+  const submitRes = await apiFetch('/api/rankings/createMany', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -149,7 +152,7 @@ export const submitRankings = async (rankingsList: { userId: string; episodeId: 
 };
 
 export const getRanking = async (rankingId: string) => {
-  const rankingRes = await fetch('/api/rankings/fetchRanking', {
+  const rankingRes = await apiFetch('/api/rankings/fetchRanking', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -165,7 +168,7 @@ export const getRanking = async (rankingId: string) => {
 }
 
 export const addElimination = async (elimination: Partial<EliminationEntry>) => {
-  const elimRes = await fetch('/api/eliminations/add', {
+  const elimRes = await apiFetch('/api/eliminations/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -181,7 +184,7 @@ export const addElimination = async (elimination: Partial<EliminationEntry>) => 
 };
 
 export const deleteElimination = async (eliminationId: string) => {
-  const deleteRes = await fetch(`/api/eliminations/delete/${eliminationId}`, {
+  const deleteRes = await apiFetch(`/api/eliminations/delete/${eliminationId}`, {
     method: 'DELETE',
   });
   if (!deleteRes.ok) {
@@ -193,28 +196,28 @@ export const deleteElimination = async (eliminationId: string) => {
 };
 
 export const getEliminations = async () => {
-  const elimRes = await fetch('/api/eliminations/');
+  const elimRes = await apiFetch('/api/eliminations/');
   if (!elimRes.ok) throw new Error('Failed to fetch eliminations');
   const elimData = await elimRes.json();
   return elimData;
 };
 
 export const getEliminationsBySeason = async (seasonId: string) => {
-  const elimRes = await fetch(`/api/eliminations/bySeason/${seasonId}`);
+  const elimRes = await apiFetch(`/api/eliminations/bySeason/${seasonId}`);
   if (!elimRes.ok) throw new Error('Failed to fetch eliminations');
   const elimData = await elimRes.json();
   return elimData;
 };
 
 export const getRankingsInsights = async (seasonId: string, type: string) => {
-  const insightsRes = await fetch(`/api/rankings/insights/${seasonId}?type=${type}`);
+  const insightsRes = await apiFetch(`/api/rankings/insights/${seasonId}?type=${type}`);
   if (!insightsRes.ok) throw new Error('Failed to fetch rankings insights');
   const insightsData = await insightsRes.json();
   return insightsData;
 };
 
 export const addManyEliminations = async (eliminationsList: { episodeId: string; contestantIds: string[] }[]) => {
-  const elimRes = await fetch('/api/eliminations/addMany', {
+  const elimRes = await apiFetch('/api/eliminations/addMany', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -281,7 +284,7 @@ export const buildPastRankingColumn = (
 };
 
 export const addShow = async (show: Partial<Show>) => {
-  const response = await fetch('/api/shows/add', {
+  const response = await apiFetch('/api/shows/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -304,7 +307,7 @@ export const addShow = async (show: Partial<Show>) => {
 }
 
 export const deleteShow = async (showId: string) => {
-  const response = await fetch(`/api/shows/delete/${showId}`, {
+  const response = await apiFetch(`/api/shows/delete/${showId}`, {
     method: 'DELETE',
   });
   
@@ -317,7 +320,7 @@ export const deleteShow = async (showId: string) => {
 };
 
 export const addSeason = async (season: Partial<Season>) => {
-  const seasonRes = await fetch('/api/shows/addSeason', {
+  const seasonRes = await apiFetch('/api/shows/addSeason', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -333,7 +336,7 @@ export const addSeason = async (season: Partial<Season>) => {
 };
 
 export const deleteSeason = async (seasonId: string) => {
-  const deleteRes = await fetch(`/api/shows/deleteSeason/${seasonId}`, {
+  const deleteRes = await apiFetch(`/api/shows/deleteSeason/${seasonId}`, {
     method: 'DELETE',
   });
   if (!deleteRes.ok) {
@@ -345,49 +348,49 @@ export const deleteSeason = async (seasonId: string) => {
 };
 
 export const getShows = async () => {
-  const showsRes = await fetch('/api/shows/');
+  const showsRes = await apiFetch('/api/shows/');
   if (!showsRes.ok) throw new Error('Failed to fetch shows');
   const showsData = await showsRes.json();
   return showsData;
 };
 
 export const getShow = async (showId: string) => {
-  const showRes = await fetch(`/api/shows/${showId}`);
+  const showRes = await apiFetch(`/api/shows/${showId}`);
   if (!showRes.ok) throw new Error('Failed to fetch show');
   const showData = await showRes.json();
   return showData;
 };
 
 export const getContestantsBySeason = async (seasonId: string) => {
-  const contestantsRes = await fetch(`/api/contestants/bySeason/${seasonId}`);
+  const contestantsRes = await apiFetch(`/api/contestants/bySeason/${seasonId}`);
   if (!contestantsRes.ok) throw new Error('Failed to fetch contestants');
   const contestantsData = await contestantsRes.json();
   return contestantsData;
 };
 
 export const getContestantsByShow = async (showId: string) => {
-  const contestantsRes = await fetch(`/api/contestants/byShow/${showId}`);
+  const contestantsRes = await apiFetch(`/api/contestants/byShow/${showId}`);
   if (!contestantsRes.ok) throw new Error('Failed to fetch contestants');
   const contestantsData = await contestantsRes.json();
   return contestantsData;
 };
 
 export const getSeasons = async (showId: string) => {
-  const seasonsRes = await fetch(`/api/shows/${showId}`);
+  const seasonsRes = await apiFetch(`/api/shows/${showId}`);
   if (!seasonsRes.ok) throw new Error('Failed to fetch seasons');
   const seasonsData = await seasonsRes.json();
   return seasonsData.seasons;
 };
 
 export const getCurrentSeason = async (showId: string) => {
-  const seasonRes = await fetch(`/api/shows/current/${showId}`);
+  const seasonRes = await apiFetch(`/api/shows/current/${showId}`);
   if (!seasonRes.ok) throw new Error('Failed to fetch current season');
   const seasonData = await seasonRes.json();
   return seasonData;
 };
 
 export const changeCurrentSeason = async (showId: string, newSeasonId: string) => {
-  const changeRes = await fetch('/api/shows/changeCurrentSeason', {
+  const changeRes = await apiFetch('/api/shows/changeCurrentSeason', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -403,7 +406,7 @@ export const changeCurrentSeason = async (showId: string, newSeasonId: string) =
 };
 
 export const addContestant = async (contestant: Partial<Contestant>) => {
-  const contestantRes = await fetch('/api/contestants/add', {
+  const contestantRes = await apiFetch('/api/contestants/add', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -419,7 +422,7 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
 };
 
 export const updateContestantPhoto = async (contestantId: string, photoUrl: string) => {
-  const updateRes = await fetch(`/api/contestants/${contestantId}`, {
+  const updateRes = await apiFetch(`/api/contestants/${contestantId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
@@ -435,7 +438,7 @@ export const updateContestantPhoto = async (contestantId: string, photoUrl: stri
 };
 
 export const deleteContestant = async (contestantId: string) => {
-  const deleteRes = await fetch(`/api/contestants/delete/${contestantId}`, {
+  const deleteRes = await apiFetch(`/api/contestants/delete/${contestantId}`, {
     method: 'DELETE',
   });
   if (!deleteRes.ok) {
@@ -447,7 +450,7 @@ export const deleteContestant = async (contestantId: string) => {
 };
 
 export const deleteManyEliminations = async (eliminations:any[]) => {
-  const deleteRes = await fetch(`/api/eliminations/deleteMany`, {
+  const deleteRes = await apiFetch(`/api/eliminations/deleteMany`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json',

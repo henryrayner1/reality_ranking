@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { backendUrl } from "../utils/apiBase";
 
 
 const ImageContainer = ({ newImage }) => {
@@ -6,7 +7,7 @@ const ImageContainer = ({ newImage }) => {
     const [fallback, setFallback] = useState('');
     const getImages = async () => {
         try {
-            const res = await fetch("/api/images/");
+            const res = await fetch(backendUrl("/api/images/"));
             const data = await res.json();
             if(!data.files) {
                 setFallback(data.msg);

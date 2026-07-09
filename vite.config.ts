@@ -2,7 +2,11 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  // GitHub Pages serves this as a project page at /reality_ranking/, so
+  // built asset URLs need that prefix. Dev server stays at root so the
+  // existing /api proxy below keeps working unchanged.
+  base: command === 'build' ? '/reality_ranking/' : '/',
   plugins: [react()],
   server: {
     watch: {
@@ -16,4 +20,4 @@ export default defineConfig({
       }
     }
   }
-})
+}))

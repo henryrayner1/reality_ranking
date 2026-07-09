@@ -2,6 +2,7 @@ import React from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { type Season, type Show } from '../../utils/Constants';
+import { backendUrl } from '../../utils/apiBase';
 
 
 interface IconProps {
@@ -34,7 +35,7 @@ const ContestantIcon = (props:IconProps) => {
     const seasonNumber = `season_${props.season.seasonNumber}`;
     const contestantName = `${props.name?.replace(/\s+/g, '_').replace(/['']/g, '').toLowerCase()}.png`;
 
-    return `${prefix}${showFolder}/${seasonNumber}/contestants/${contestantName}`;
+    return backendUrl(`${prefix}${showFolder}/${seasonNumber}/contestants/${contestantName}`);
   }
   
   const style = {
