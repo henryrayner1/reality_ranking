@@ -22,7 +22,7 @@ export const  TwoCol = ({ children }: { children: React.ReactNode }) => {
 
 export const Card = ({ title, children }: { title: string; children: React.ReactNode }) => {
     return (
-        <div className="mb-4 rounded-xl border border-[#e5e5e5] bg-white p-5">
+        <div className="mb-4 rounded-xl border border-[#e5e5e5] bg-white py-5 px-3">
             <div className="mb-4 border-b border-[#e5e5e5] pb-3 text-sm font-medium">{title}</div>
             {children}
         </div>
@@ -49,6 +49,9 @@ export const PrimaryButton = ({ children, onClick, disabled }: { children: React
 export const DangerButton = ({ onClick }: { onClick: () => void }) => {
     return <button onClick={onClick} className="cursor-pointer rounded-lg border border-[#F7C1C1] bg-transparent px-[0.6rem] py-[0.3rem] text-xs text-[#A32D2D]">Remove</button>;
 };
+export const SecondaryButton = ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void; disabled?: boolean }) => {
+    return <button onClick={onClick} disabled={disabled} className={`rounded-lg border border-[#ccc] bg-transparent px-[0.6rem] py-[0.3rem] text-xs text-[#333] ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>{children}</button>;
+};
 export const ListItem = ({ left, right }: { left: React.ReactNode; right: React.ReactNode }) => {
     return <div className="flex items-center justify-between border-b border-[#e5e5e5] py-3">
             <div className="flex items-center gap-2.5">{left}</div>
@@ -57,10 +60,24 @@ export const ListItem = ({ left, right }: { left: React.ReactNode; right: React.
 };
 export const ItemInfo = ({ name, meta }: { name: string; meta: string }) =>{
     return <div>
-            <div className="text-sm font-medium">{name}</div>
+            <div className="text-sm font-medium text-left">{name}</div>
             <div className="mt-0.5 text-xs text-[#888] text-left">{meta}</div>
         </div>
 };
+export const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => {
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+            <div className="w-full max-w-sm rounded-xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="mb-4 flex items-center justify-between border-b border-[#e5e5e5] pb-3">
+                    <div className="text-sm font-medium">{title}</div>
+                    <button onClick={onClose} className="cursor-pointer border-none bg-transparent text-lg leading-none text-[#888]">&times;</button>
+                </div>
+                {children}
+            </div>
+        </div>
+    );
+};
+
 export const EmptyState = ({ message }: { message: string }) => {
     return <div className="p-8 text-center text-sm text-[#888]">{message}</div>;
 };

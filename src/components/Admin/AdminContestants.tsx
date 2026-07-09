@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Contestant, Season, Show } from "../../utils/Constants";
 import {
   addContestant,
@@ -7,6 +7,7 @@ import {
   getContestantsBySeason,
   getContestantsByShow,
   getSeasons,
+  updateContestantPhoto,
 } from "../../utils/util";
 import * as AdminUI from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
@@ -26,12 +27,33 @@ const AdminContestants = () => {
   const editorRef = useRef(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [editingContestant, setEditingContestant] = useState<Contestant | null>(null);
+  const [editImage, setEditImage] = useState<File | null>(null);
+  const [editScale, setEditScale] = useState(1.2);
+  const editEditorRef = useRef(null);
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+
   const handleFile = (f: File | null | undefined) => {
     if (f && f.type.startsWith("image/")) {
       setImage(f);
     }
   };
 
+  // Global listener so a headshot can be pasted from anywhere on the page,
+  // not just while the dropzone itself is focused.
+  useEffect(() => {
+    if (!currShow) return;
+    const onWindowPaste = (e: ClipboardEvent) => {
+      const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
+        i.type.startsWith("image/")
+      );
+      if (!item) return;
+      e.preventDefault();
+      handleFile(item.getAsFile());
+    };
+    window.addEventListener("paste", onWindowPaste);
+    return () => window.removeEventListener("paste", onWindowPaste);
+  }, [currShow]);
 
   const { data: seasons = [] } = useQuery({
     queryKey: ["seasons", currShow?.id],
@@ -55,6 +77,21 @@ const AdminContestants = () => {
     mutationFn: deleteContestant,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["contestants"] }),
   });
+  const updatePhoto = useMutation({
+    mutationFn: ({ id, photoUrl }: { id: string; photoUrl: string }) =>
+      updateContestantPhoto(id, photoUrl),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["contestants"] });
+      closeEditPhoto();
+    },
+  });
+
+  const closeEditPhoto = () => {
+    setEditingContestant(null);
+    setEditImage(null);
+    setEditScale(1.2);
+    if (editFileInputRef.current) editFileInputRef.current.value = "";
+  };
 
   const uploadAction = async (image: File, showName: string, seasonNumber: number) => {
     const fd = new FormData();
@@ -89,6 +126,18 @@ const AdminContestants = () => {
       setImage(null);
     }
   }
+
+  const handleEditPhotoSave = async () => {
+    if (!editingContestant || !editEditorRef.current) return;
+    const canvas = editEditorRef.current.getImageScaledToCanvas().toDataURL();
+    const res = await fetch(canvas);
+    const blob = await res.blob();
+    const fileName = `${editingContestant.name.replace(/\s+/g, "_").toLowerCase()}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+    const season = seasons.find((s) => s.id === editingContestant.seasonId);
+    const photoUrl = await uploadAction(file, currShow?.name ?? "", season?.seasonNumber ?? 0);
+    updatePhoto.mutate({ id: editingContestant.id, photoUrl });
+  };
 
   return (
     <div>
@@ -151,12 +200,6 @@ const AdminContestants = () => {
                   setIsDragging(false);
                   handleFile(e.dataTransfer.files?.[0]);
                 }}
-                onPaste={(e) => {
-                  const item = Array.from(e.clipboardData?.items ?? []).find((i) =>
-                    i.type.startsWith("image/")
-                  );
-                  handleFile(item?.getAsFile());
-                }}
                 style={{
                   border: `1.5px dashed ${isDragging ? "#4f8cff" : "var(--color-border-secondary,#ccc)"}`,
                   borderRadius: 8,
@@ -175,16 +218,7 @@ const AdminContestants = () => {
                   }}
                 >
                   {photoLabel}
-                </p>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  style={{ display: "none" }}
-                  onChange={async (e) => {
-                    handleFile(e.target.files?.[0]);
-                  }}
-                /></> : <div>
+                </p></> : <div>
                     <AvatarEditor
                         ref={editorRef}
                         image={image}
@@ -194,7 +228,34 @@ const AdminContestants = () => {
                       />
                       <input type="range" min="1" max="3" step="0.01"
         value={scale} onChange={(e) => setScale(parseFloat(e.target.value))} className="w-100"/>
+                      <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
+                        <AdminUI.SecondaryButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            fileInputRef.current?.click();
+                          }}
+                        >
+                          Replace photo
+                        </AdminUI.SecondaryButton>
+                        <AdminUI.SecondaryButton
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setImage(null);
+                            setScale(1.2);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                        >
+                          Remove
+                        </AdminUI.SecondaryButton>
+                      </div>
                   </div>}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={(e) => handleFile(e.target.files?.[0])}
+                />
               </div>
             </AdminUI.FormGroup>
             <AdminUI.PrimaryButton
@@ -208,41 +269,89 @@ const AdminContestants = () => {
             {create.isError && <AdminUI.ErrorMsg />}
           </div>
         </AdminUI.Card>
-        <AdminUI.Card title="All contestants">
-          {isLoading && <AdminUI.EmptyState message="Loading..." />}
-          {!isLoading && contestants.length === 0 && (
-            <AdminUI.EmptyState message="No contestants yet. Add one!" />
-          )}
-          {contestants.map((c) => {
-            const season = seasons.find((s) => s.id === c.seasonId);
-            return (
-              <AdminUI.ListItem
-                key={c.id}
-                left={
-                  <>
-                    <AdminUI.Avatar name={c.name} photoUrl={c.photoUrl} />
-                    <AdminUI.ItemInfo
-                      name={c.name}
-                      meta={`Season ${season?.seasonNumber || "?"}${c.age ? ` · Age ${c.age}` : ""}`}
-                    />
-                  </>
-                }
-                right={
-                  <>
-                    <AdminUI.Badge
-                      label={
-                        c.status === "ELIMINATED" ? "Eliminated" : "Active"
-                      }
-                      variant={c.status === "ELIMINATED" ? "red" : "green"}
-                    />
-                    <AdminUI.DangerButton onClick={() => remove.mutate(c.id)} />
-                  </>
-                }
-              />
-            );
-          })}
+        <AdminUI.Card title="All Contestants">
+          <div style={{ maxHeight: 480, overflowY: "auto" }}>
+            {isLoading && <AdminUI.EmptyState message="Loading..." />}
+            {!isLoading && contestants.length === 0 && (
+              <AdminUI.EmptyState message="No contestants yet. Add one!" />
+            )}
+            {contestants.map((c) => {
+              const season = seasons.find((s) => s.id === c.seasonId);
+              return (
+                <AdminUI.ListItem
+                  key={c.id}
+                  left={
+                    <>
+                      <AdminUI.Avatar name={c.name} photoUrl={c.photoUrl} />
+                      <AdminUI.ItemInfo
+                        name={c.name}
+                        meta={`Season ${season?.seasonNumber || "?"}${c.age ? ` · Age ${c.age}` : ""}`}
+                      />
+                    </>
+                  }
+                  right={
+                    <>
+                      <AdminUI.Badge
+                        label={
+                          c.status === "ELIMINATED" ? "Eliminated" : "Active"
+                        }
+                        variant={c.status === "ELIMINATED" ? "red" : "green"}
+                      />
+                      <AdminUI.SecondaryButton
+                        onClick={() => {
+                          setEditingContestant(c);
+                          editFileInputRef.current?.click();
+                        }}
+                      >
+                        Edit photo
+                      </AdminUI.SecondaryButton>
+                      <AdminUI.DangerButton onClick={() => remove.mutate(c.id)} />
+                    </>
+                  }
+                />
+              );
+            })}
+          </div>
+          <input
+            ref={editFileInputRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f && f.type.startsWith("image/")) setEditImage(f);
+            }}
+          />
         </AdminUI.Card>
       </AdminUI.TwoCol>}
+      {editingContestant && editImage && (
+        <AdminUI.Modal title={`Edit photo — ${editingContestant.name}`} onClose={closeEditPhoto}>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <AvatarEditor
+              ref={editEditorRef}
+              image={editImage}
+              width={200} height={200}
+              border={50} borderRadius={125}
+              scale={editScale}
+            />
+            <input
+              type="range" min="1" max="3" step="0.01"
+              value={editScale}
+              onChange={(e) => setEditScale(parseFloat(e.target.value))}
+              className="w-100"
+            />
+          </div>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
+            <AdminUI.SecondaryButton onClick={closeEditPhoto} disabled={updatePhoto.isPending}>
+              Cancel
+            </AdminUI.SecondaryButton>
+            <AdminUI.PrimaryButton onClick={handleEditPhotoSave} disabled={updatePhoto.isPending}>
+              {updatePhoto.isPending ? "Saving..." : "Save photo"}
+            </AdminUI.PrimaryButton>
+          </div>
+          {updatePhoto.isError && <AdminUI.ErrorMsg />}
+        </AdminUI.Modal>
+      )}
     </div>
   );
 };

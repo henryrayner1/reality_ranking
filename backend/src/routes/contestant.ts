@@ -56,6 +56,20 @@ export default function contestantsRouter(prisma: PrismaClient) {
         res.json(newContestant);
     });
 
+    router.patch("/:contestantId", async (req, res) => {
+        const { contestantId } = req.params;
+        const { photoUrl } = req.body;
+        const updatedContestant = await prisma.contestant.update({
+            where: {
+                id: contestantId
+            },
+            data: {
+                ...(photoUrl !== undefined && { photoUrl })
+            }
+        });
+        res.json(updatedContestant);
+    });
+
     router.delete("/delete/:contestantId", async (req, res) => {
         const { contestantId } = req.params;
         await prisma.contestant.delete({
