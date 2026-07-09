@@ -212,7 +212,12 @@ const RankingComponent2 = () => {
     <Tooltip id="rank-type-tooltip" positionStrategy="fixed" style={{ maxWidth: "14rem" }} />
   </div>
 
-  const rankingGrid = <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
+  const rankingGrid = <div className="ranking-grid-wrapper">
+    {/* Overlaid on top of the scrolling grid (not part of its scroll
+        content), so it's trivially centered within whatever's currently
+        visible — no need to track scroll position at all. */}
+    <div className="episode-title-overlay">Episode</div>
+    <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
     <div className="grid-heading rank-column-cell">Rank</div>
     <div className="episode-heading rank-column-cell rank-spacer"></div>
     {currSeason?.contestants?.map((contestant, index) => {
@@ -222,9 +227,7 @@ const RankingComponent2 = () => {
         </div>
       );
     })}
-    <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}`, justifyContent: "flex-start" }}>
-      <span className="episode-title-sticky">Episode</span>
-    </div>
+    <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}` }}></div>
       {rankableEpisodes.map((episode) => {
         const inPastRankings = checkPastRankings(episode.id);
         return !inPastRankings ? <EpisodeComponent id={episode.id}
@@ -241,6 +244,7 @@ const RankingComponent2 = () => {
           pastRankingsElements(inPastRankings, episode.episodeNumber);
       })}
     </div>
+  </div>
 
   const rowCount = currSeason?.contestants?.length ?? 0;
   const episodeCount = rankableEpisodes.length;

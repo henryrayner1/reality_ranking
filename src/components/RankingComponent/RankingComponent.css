@@ -76,14 +76,33 @@
   background-color: rgb(166, 233, 245);
 }
 
-/* The "Episode" title cell spans every episode column so its blue bar
-   still stretches across all of them, but the label itself is pinned
-   just after the frozen Rank column (2.5rem = Rank's own width) instead
-   of centering within — and scrolling with — however wide that whole
-   span happens to be. */
-.episode-title-sticky {
-  position: sticky;
+/* The grid's own "Episode" cell (spanning every episode column, giving
+   the continuous blue bar) is left empty — the visible label is this
+   overlay instead, positioned on top of the grid rather than inside its
+   horizontally-scrolling content. position:sticky doesn't stretch to
+   fill between left/right insets the way position:absolute does (it
+   stays in normal flow at rest, sized to its containing block, which
+   here is the very wide spanned cell) — so centering the label *within
+   whatever's currently visible* isn't achievable by making the label
+   itself sticky. An overlay sitting outside the scroll area entirely
+   sidesteps that: it never scrolls, so ordinary centering just works. */
+.ranking-grid-wrapper {
+  position: relative;
+}
+
+.episode-title-overlay {
+  position: absolute;
+  top: 0;
   left: 2.5rem;
+  right: 0;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: .875rem;
+  pointer-events: none;
 }
 
 .ranking-container {
