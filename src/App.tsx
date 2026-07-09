@@ -5,13 +5,14 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Admin from "./components/Admin/Admin";
 import Layout from "./components/Layout";
 import { useDispatch, useSelector } from "react-redux";
-import { checkUserLoggedIn, getShows, getEpisodes } from "./utils/util";
+import { checkUserLoggedIn, getShows, getEpisodes, userLogout } from "./utils/util";
 import { AccountTypes } from "./utils/Constants";
 import { setUser } from "./redux/slices/userSlice";
 import { fetchAllShows } from "./redux/thunks/showsThunks";
 import { useAppDispatch } from "./redux/hooks";
 import Navbar from "./components/Navbar";
 import LoginModal from "./components/modals/LoginModal";
+import LogoutConfirmModal from "./components/modals/LogoutConfirmModal";
 import RankingComponent2 from "./components/RankingComponent/RankingComponent2";
 import Insights from "./components/Insights/Insights";
 
@@ -21,6 +22,7 @@ function App() {
   const user = useSelector((state: any) => state.user.value);
   const [loginDisplayFlag, setLoginDisplayFlag] = useState(false);
   const [initialIsLogin, setInitialIsLogin] = useState(true);
+  const [logoutConfirmDisplayFlag, setLogoutConfirmDisplayFlag] = useState(false);
 
   const initializeData = async () => {
     if (checkUserLoggedIn() && !user) {
@@ -42,6 +44,12 @@ function App() {
     setLoginDisplayFlag(true);
   };
 
+  const handleLogout = () => {
+    userLogout();
+    dispatch(setUser(null));
+    setLogoutConfirmDisplayFlag(false);
+  };
+
   const HomepageProps = {
     openAuthModal,
   };
@@ -49,7 +57,12 @@ function App() {
   const isAdmin = user?.accountType === AccountTypes.ADMIN;
 
   return (<>
-    <Navbar loggedIn={!!user} isAdmin={isAdmin} />
+    <Navbar
+      loggedIn={!!user}
+      isAdmin={isAdmin}
+      onLoginClick={() => openAuthModal(true)}
+      onLogoutClick={() => setLogoutConfirmDisplayFlag(true)}
+    />
     <Routes>
         <Route path="/" element={<Homepage {...HomepageProps} />} />
         <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
@@ -57,6 +70,13 @@ function App() {
         <Route path="/insights" element={<Insights />} />
     </Routes>
     {loginDisplayFlag && <LoginModal displayFlag={loginDisplayFlag} setDisplayFlag={setLoginDisplayFlag} initialIsLogin={initialIsLogin} />}
+    {logoutConfirmDisplayFlag && (
+      <LogoutConfirmModal
+        displayFlag={logoutConfirmDisplayFlag}
+        setDisplayFlag={setLogoutConfirmDisplayFlag}
+        onConfirm={handleLogout}
+      />
+    )}
   </>);
 }
 

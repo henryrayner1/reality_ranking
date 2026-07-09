@@ -52,9 +52,17 @@ const Navbar = (props) => {
                             <NavLink className="nav-link" to="/insights">Insights</NavLink>
                         </li>
                     </ul>
-                    <ul className="navbar-nav ms-auto mb-2 mb-md-0">
+                    <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-md-center">
+                        {props.loggedIn && user?.email && (
+                            <li className="nav-item">
+                                <span className="navbar-text">{user.email}</span>
+                            </li>
+                        )}
                         <li className="nav-item">
-                            {props.loggedIn ? <a className="nav-link" href="#">Logout</a> : <a className="nav-link" href="#">Login</a>}
+                            {props.loggedIn
+                                ? <a className="nav-link" href="#" onClick={(e) => { e.preventDefault(); props.onLogoutClick(); }}>Logout</a>
+                                : <a className="nav-link" href="#" onClick={(e) => { e.preventDefault(); props.onLoginClick(); }}>Login</a>
+                            }
                         </li>
                     </ul>
                 </div>
