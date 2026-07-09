@@ -99,6 +99,15 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
 
   const sortedEpisodes = [...insights.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
 
+  if (sortedEpisodes.length === 0) {
+    return (
+      <div className="insights-panel">
+        {rankTypeTabs}
+        <p className="insights-placeholder">No rankings have been submitted for this season yet.</p>
+      </div>
+    );
+  }
+
   const episodeColumns = sortedEpisodes.map((episode) => ({
     episodeNumber: episode.episodeNumber,
     contestantIds: buildRankColumn(
