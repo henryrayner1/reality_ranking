@@ -92,9 +92,11 @@
 
 .episode-title-overlay {
   position: absolute;
-  top: 0;
-  left: 2.5rem;
-  right: 0;
+  /* .ranking-grid has a 5px border on every side, which top/left/right:0
+     ignored — offsetting the overlay from the grid's actual header row. */
+  top: 5px;
+  left: calc(2.5rem + 5px);
+  right: 5px;
   height: 2.5rem;
   display: flex;
   align-items: center;
