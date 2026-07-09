@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import "./Navbar.css";
 
 const Navbar = (props) => {
@@ -27,7 +27,7 @@ const Navbar = (props) => {
     return(
         <nav ref={navRef} className="navbar navbar-expand-md navbar-dark bg-dark app-navbar">
             <div className="container-fluid">
-                <a className="navbar-brand font-bold" href="/">Reality Ranking</a>
+                <Link className="navbar-brand font-bold" to="/">Reality Ranking</Link>
                 <button
                     className="navbar-toggler"
                     type="button"
