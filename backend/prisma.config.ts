@@ -6,7 +6,11 @@ export default defineConfig({
   migrations: {
     path: 'prisma/migrations',
   },
+  // Migrate/introspection go through the direct (unpooled) connection —
+  // Neon's pooler doesn't support the session-level operations Migrate
+  // needs. The app itself connects separately via its own pg adapter in
+  // server.ts, using DATABASE_URL (the pooled connection).
   datasource: {
-    url: env('DATABASE_URL'),
+    url: env('DIRECT_DATABASE_URL'),
   },
 })
