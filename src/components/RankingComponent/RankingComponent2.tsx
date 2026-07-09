@@ -222,7 +222,9 @@ const RankingComponent2 = () => {
         </div>
       );
     })}
-    <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}`, justifyContent: "center" }}>Episode</div>
+    <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}`, justifyContent: "flex-start" }}>
+      <span className="episode-title-sticky">Episode</span>
+    </div>
       {rankableEpisodes.map((episode) => {
         const inPastRankings = checkPastRankings(episode.id);
         return !inPastRankings ? <EpisodeComponent id={episode.id}

@@ -76,6 +76,16 @@
   background-color: rgb(166, 233, 245);
 }
 
+/* The "Episode" title cell spans every episode column so its blue bar
+   still stretches across all of them, but the label itself is pinned
+   just after the frozen Rank column (2.5rem = Rank's own width) instead
+   of centering within — and scrolling with — however wide that whole
+   span happens to be. */
+.episode-title-sticky {
+  position: sticky;
+  left: 2.5rem;
+}
+
 .ranking-container {
   min-width: 50vw;
   display: flex;
