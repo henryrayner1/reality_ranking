@@ -47,7 +47,7 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
 
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={chartData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
+      <LineChart data={chartData} margin={{ top: 25, right: 20, bottom: 10, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis dataKey="episodeNumber" label={{ value: "Episode", position: "insideBottom", offset: -5 }} />
         {/* Lower position = better rank, so the axis is reversed to put rank 1 at the top. */}
@@ -69,7 +69,7 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
             x={props.eliminationInfo.episodeNumber}
             stroke="red"
             strokeDasharray="4 4"
-            label={{ value: `Eliminated (${props.eliminationInfo.eliminationType})`, position: "top", fill: "red", fontSize: 11 }}
+            label={{ value: `Eliminated`, position: "top", fill: "red", fontSize: 11 }}
           />
         )}
       </LineChart>
