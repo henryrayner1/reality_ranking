@@ -59,6 +59,23 @@
   font-weight:550;
 }
 
+/* Freezes the Rank column (heading + numbers) in place while the episode
+   columns scroll horizontally beneath it, like a spreadsheet's frozen
+   first column. z-index keeps it painted above the scrolling columns,
+   which come later in DOM order. */
+.rank-column-cell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* .episode-heading has no background of its own (it's normally just a
+   transparent spacer), so without this the episode-number row would show
+   through the sticky cell as it scrolls past underneath. */
+.rank-spacer {
+  background-color: rgb(166, 233, 245);
+}
+
 .ranking-container {
   min-width: 50vw;
   display: flex;

@@ -213,11 +213,11 @@ const RankingComponent2 = () => {
   </div>
 
   const rankingGrid = <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
-    <div className="grid-heading">Rank</div>
-    <div className="episode-heading"></div>
+    <div className="grid-heading rank-column-cell">Rank</div>
+    <div className="episode-heading rank-column-cell rank-spacer"></div>
     {currSeason?.contestants?.map((contestant, index) => {
       return (
-        <div key={contestant.id} className="grid-item">
+        <div key={contestant.id} className="grid-item rank-column-cell">
           {index + 1}
         </div>
       );
