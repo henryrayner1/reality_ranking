@@ -101,7 +101,10 @@ export const isDailyRankable = (
   now: number = Date.now()
 ): boolean => {
   if (!dayKey) return false;
-  return dayKey === getTodayDayKey(now);
+  // Once a day's row opens it stays rankable forever after, mirroring
+  // isEpisodeRankable — otherwise past days drop out of rankableEpisodes
+  // entirely instead of surfacing as read-only pastRankings columns.
+  return dayKey <= getTodayDayKey(now);
 };
 
 // Next America/New_York-midnight timestamp after `now` — when today's daily

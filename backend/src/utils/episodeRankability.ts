@@ -15,13 +15,16 @@ export const isEpisodeRankable = (
   return now >= airTimeMs + EPISODE_DURATION_MS;
 };
 
-// DAILY-mode shows: rankable iff the row's dayKey is today (America/New_York calendar day).
+// DAILY-mode shows: rankable once the row's dayKey has opened (today or
+// earlier, America/New_York calendar day) — stays rankable afterward,
+// mirroring isEpisodeRankable, so a user can still submit for a past day
+// they haven't ranked yet.
 export const isDailyRankable = (
   dayKey: string | null | undefined,
   now: number = Date.now()
 ): boolean => {
   if (!dayKey) return false;
-  return dayKey === getTodayDayKey(new Date(now));
+  return dayKey <= getTodayDayKey(new Date(now));
 };
 
 export const isRankableNow = (

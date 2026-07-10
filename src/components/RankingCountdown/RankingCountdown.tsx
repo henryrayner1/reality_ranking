@@ -27,7 +27,7 @@ const DailyCountdown = ({ premiereDate, now }: { premiereDate?: string | null; n
   if (now < premiereAt) {
     return <div className="ranking-countdown"><span>Season premieres in {formatDuration(premiereAt - now)}</span></div>;
   }
-  return <div className="ranking-countdown"><span>Today's ranking resets in {formatDuration(getDailyResetAt(now) - now)}</span></div>;
+  return <div className="ranking-countdown"><span>Next ranking opens in {formatDuration(getDailyResetAt(now) - now)}</span></div>;
 };
 
 const RankingCountdown = ({ episodes, rankingMode, premiereDate }: RankingCountdownProps) => {
