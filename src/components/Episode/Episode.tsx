@@ -103,6 +103,17 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragEnd={(event) => handleDragEnd(event)}
+              autoScroll={{
+                // .ranking-grid sets overflow-x: auto (for horizontal episode
+                // scrolling), which also makes it a vertical auto-scroll
+                // candidate to dnd-kit even though overflow-y is hidden and
+                // it's never meant to scroll vertically. Programmatically
+                // scrolling it there triggers a layout feedback loop where
+                // scrollHeight keeps growing on every tick, so the drag
+                // "scrolls" into ever-expanding empty space with no real
+                // content. Restrict auto-scroll to the real page instead.
+                canScroll: (element) => element === document.scrollingElement,
+              }}
             >
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
                 <div className="episode-heading">{heading}</div>
