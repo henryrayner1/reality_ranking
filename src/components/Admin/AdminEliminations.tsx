@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useEffect, useState } from "react"
 import { EliminationTypes, type EliminationEntry, type EliminationType, type Season } from "../../utils/Constants"
-import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSeason, getEliminationsBySeason, getEpisodes } from "../../utils/util"
+import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSeason, getEliminationsBySeason, getEpisodes, getEpisodesByShow } from "../../utils/util"
 import * as AdminUI from "../../utils/AdminComponents"
 import { useAppSelector } from "../../redux/hooks"
 import ShowSelect from "../ShowSelect/ShowSelect"
@@ -12,7 +12,7 @@ const AdminEliminations = () => {
     const [elimination, setElimination] = useState<Partial<EliminationEntry>>({ eliminationType: EliminationTypes.ELIMINATED })
     const currShow = useAppSelector(selectCurrShow);
     const [currSeason, setCurrSeason] = useState<Partial<Season>>({})
-    const { data: episodes = [] } = useQuery({ queryKey: ['episodes', currSeason.id], queryFn: getEpisodes })
+    const { data: episodes = [] } = useQuery({ queryKey: ['episodes', currSeason.id], queryFn: () => getEpisodesByShow(currShow.id) })
     const { data: contestants = [] } = useQuery({ queryKey: ['contestants', currSeason.id], queryFn: () => getContestantsBySeason(currSeason.id) })
     const { data: eliminations = [], isLoading } = useQuery({ queryKey: ['eliminations', currSeason.id], queryFn: () => getEliminationsBySeason(currSeason.id) })
     const create = useMutation({ mutationFn: () => addElimination(elimination), onSuccess: () => { qc.invalidateQueries({ queryKey: ['eliminations', currSeason.id] }); qc.invalidateQueries({ queryKey: ['contestants', currSeason.id] }); setElimination({ eliminationType: EliminationTypes.ELIMINATED }) } })

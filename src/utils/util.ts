@@ -271,7 +271,7 @@ export const buildPastRankingColumn = (
   // A contestant eliminated during episode N is still active for episode N's own
   // ranking — they only show as eliminated starting episode N+1 — matching
   // Episode.tsx's EpisodeComponent, which uses the same episodeNumber - 1 offset.
-  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber - 1).reverse();
+  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber).reverse();
 
   const active = ranking.contestantIds
     .filter((contestantId) => !eliminatedIds.includes(contestantId))

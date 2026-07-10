@@ -58,7 +58,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
   // ranking yet, so lastOrder can be stale by the time the user gets here.
   useEffect(() => {
     if (!isActive) return;
-    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber-1).reverse();
+    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber).reverse();
 
     console.log("Eliminated Contestants for episode ", currEpisode.episodeNumber, ": ", elimIds);
     setEliminatedContestants(elimIds);
