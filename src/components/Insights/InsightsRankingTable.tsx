@@ -140,7 +140,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
         ))}
 
         {sortedEpisodes.length > 0 && (
-          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length}`, justifyContent: "center" }}>Episode</div>
+          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length}`, justifyContent: "center" }}>{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
         )}
         {episodeColumns.map((episode) => (
           <Fragment key={`episode-${episode.episodeNumber}`}>
