@@ -14,7 +14,7 @@ import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/se
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useParams } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { isEpisodeRankableNow } from "../../utils/episodeRankability";
+import { isRankableNow } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 
 const RankingComponent2 = () => {
@@ -51,7 +51,7 @@ const RankingComponent2 = () => {
   // rankable. Sorted explicitly since the API doesn't guarantee episode
   // order, so grid columns always render left-to-right in air order.
   const rankableEpisodes = [...(currSeason?.episodes ?? [])]
-    .filter((episode) => isEpisodeRankableNow(episode))
+    .filter((episode) => isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
   useEffect(() => {
@@ -186,8 +186,9 @@ const RankingComponent2 = () => {
 
   const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations);
+    const heading = String(episodeNumber);
     return [
-      <div className="episode-heading" key={`${ranking.id}-heading`}>{episodeNumber}</div>,
+      <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>,
       ...columnEntries.map((entry) => (
         <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
           <ContestantIcon name={getContestantName(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
@@ -216,7 +217,7 @@ const RankingComponent2 = () => {
     {/* Overlaid on top of the scrolling grid (not part of its scroll
         content), so it's trivially centered within whatever's currently
         visible — no need to track scroll position at all. */}
-    <div className="episode-title-overlay">Episode</div>
+    <div className="episode-title-overlay">{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
     <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
     <div className="grid-heading rank-column-cell">Rank</div>
     <div className="episode-heading rank-column-cell rank-spacer"></div>
@@ -257,11 +258,11 @@ const RankingComponent2 = () => {
           : rowCount === 0
             ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
             : episodeCount === 0
-              ? <p className="ranking-placeholder">No episodes have been added to this season yet.</p>
+              ? <p className="ranking-placeholder">{currShow?.rankingMode === "DAILY" ? "Ranking opens once the season premieres." : "No episodes have been added to this season yet."}</p>
               : rankingGrid}
       </div>
       {!loadingFlag && <div className="active-episodes-container">
-          {[...activeEpisodes].map((episodeId) => <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X Episode {rankableEpisodes.find(episode => episode.id === episodeId)?.episodeNumber}</div>)}
+          {[...activeEpisodes].map((episodeId) => <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X {currShow?.rankingMode === "DAILY" ? "Day" : "Episode"} {rankableEpisodes.find(episode => episode.id === episodeId)?.episodeNumber}</div>)}
         </div>}
       </div>
 
@@ -286,7 +287,7 @@ const RankingComponent2 = () => {
         {topBar}
         {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
             it needs to see not-yet-rankable episodes to find "next up". */}
-        <RankingCountdown episodes={currSeason?.episodes ?? []} />
+        <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} />
         <main className="rankings-main">
           {user && rankingContainer}
         </main>

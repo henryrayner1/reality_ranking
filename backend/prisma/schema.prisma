@@ -17,13 +17,14 @@ model User {
 }
 
 model Show {
-  id          String    @id @unique @default(cuid())
+  id          String      @id @unique @default(cuid())
   name        String
   seasons     Season[]
-  network     String    @default("")
-  currSeason  Int       @default(1)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  network     String      @default("")
+  currSeason  Int         @default(1)
+  rankingMode RankingMode @default(EPISODE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 }
 
 model Season {
@@ -32,6 +33,7 @@ model Season {
   show          Show         @relation(fields: [showId], references: [id], onDelete: Cascade)
   seasonNumber  Int
   isCurrent     Boolean      @default(false)
+  premiereDate  DateTime?
   contestants   Contestant[]
   episodes      Episode[]
   createdAt     DateTime     @default(now())
@@ -61,8 +63,13 @@ model Episode {
   rankings        Ranking[]
   season          Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   airDate         DateTime?
+  // "YYYY-MM-DD" (UTC calendar day), set only on rows auto-created for
+  // DAILY-mode shows. Null for ordinary admin-created EPISODE-mode rows.
+  dayKey          String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
+
+  @@unique([seasonId, dayKey])
 }
 
 model Elimination {
@@ -120,4 +127,9 @@ enum EliminationType {
 enum RankType {
   FAVORITE
   WINNER
+}
+
+enum RankingMode {
+  EPISODE
+  DAILY
 }

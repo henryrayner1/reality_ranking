@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Episode } from "../../utils/Constants";
-import { formatDuration, getEpisodeRankingOpensAt } from "../../utils/episodeRankability";
+import type { Episode, RankingMode } from "../../utils/Constants";
+import { formatDuration, getDailyResetAt, getEpisodeRankingOpensAt } from "../../utils/episodeRankability";
 import "./RankingCountdown.css";
 
 interface RankingCountdownProps {
   episodes: Episode[];
+  rankingMode?: RankingMode;
+  premiereDate?: string | null;
 }
 
 const useNowTick = (intervalMs: number) => {
@@ -16,7 +18,19 @@ const useNowTick = (intervalMs: number) => {
   return now;
 };
 
-const RankingCountdown = ({ episodes }: RankingCountdownProps) => {
+const DailyCountdown = ({ premiereDate, now }: { premiereDate?: string | null; now: number }) => {
+  const premiereAt = premiereDate ? new Date(premiereDate).getTime() : null;
+
+  if (!premiereAt) {
+    return <div className="ranking-countdown">Season premiere date not yet announced.</div>;
+  }
+  if (now < premiereAt) {
+    return <div className="ranking-countdown"><span>Season premieres in {formatDuration(premiereAt - now)}</span></div>;
+  }
+  return <div className="ranking-countdown"><span>Today's ranking resets in {formatDuration(getDailyResetAt(now) - now)}</span></div>;
+};
+
+const RankingCountdown = ({ episodes, rankingMode, premiereDate }: RankingCountdownProps) => {
   const now = useNowTick(15_000);
 
   const upcoming = useMemo(() => {
@@ -30,6 +44,10 @@ const RankingCountdown = ({ episodes }: RankingCountdownProps) => {
       .filter((e) => e.opensAt > now)
       .sort((a, b) => a.airAt - b.airAt)[0] ?? null;
   }, [episodes, now]);
+
+  if (rankingMode === "DAILY") {
+    return <DailyCountdown premiereDate={premiereDate} now={now} />;
+  }
 
   if (!upcoming) {
     return <div className="ranking-countdown">No upcoming episodes scheduled.</div>;

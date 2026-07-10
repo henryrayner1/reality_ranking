@@ -45,6 +45,26 @@ export const Input = (props: React.InputHTMLAttributes<HTMLInputElement>) => { r
 export const Select = (props: React.SelectHTMLAttributes<HTMLSelectElement>) => { return <select className={inputClassName} {...props} />; };
 export const Textarea = (props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) => { return <textarea className={`${inputClassName} min-h-20 resize-y`} {...props} />; };
 
+export const Toggle = ({ checked, onChange, disabled, title }: { checked: boolean; onChange: (checked: boolean) => void; disabled?: boolean; title?: string }) => {
+    return (
+        <button
+            type="button"
+            role="switch"
+            aria-checked={checked}
+            title={title}
+            disabled={disabled}
+            onClick={() => !disabled && onChange(!checked)}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border-none p-0 transition-colors duration-200 ${checked ? 'bg-[#596dff]' : 'bg-[#bcbcbc]'} ${disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+        >
+            <span
+                aria-hidden="true"
+                className={`absolute top-0.5 h-5 w-5 rounded-full shadow-md transition-transform duration-200 ease-in-out ${checked ? 'translate-x-[22px]' : 'translate-x-[2px]'}`}
+                style={{ background: '#ffffff' }}
+            />
+        </button>
+    );
+};
+
 export const PrimaryButton = ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => {
     return <button onClick={onClick} disabled={disabled} className={`rounded-lg border-none px-4 py-2 text-[13px] font-medium text-white ${disabled ? 'cursor-not-allowed bg-[#aaa]' : 'cursor-pointer bg-[#7F77DD]'}`}>{children}</button>;
 };

@@ -11,10 +11,13 @@ import contestantsRouter from "./routes/contestant.js";
 import showsRouter from "./routes/show.js";
 import process from "process";
 import imagesRouter from "./routes/images.js";
+import { startDailyEpisodeScheduler } from "./utils/dailyEpisodeScheduler.js";
 
 const app = express();
 const adapter = new PrismaPg({connectionString: process.env.DATABASE_URL});
 const db = new PrismaClient({adapter});
+
+startDailyEpisodeScheduler(db);
 
 app.use(cors({origin: process.env.CORS_ORIGIN ?? true}));
 // app.use(express.json());

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { ensureTodaysDailyEpisode } from "../utils/dailyEpisode.js";
 
 export default function episodesRouter(prisma: PrismaClient) {
   const router = Router();
@@ -16,6 +17,16 @@ export default function episodesRouter(prisma: PrismaClient) {
 
   router.get("/byShow/:showId", async (req, res) => {
     const { showId } = req.params;
+
+    const show = await prisma.show.findUnique({ where: { id: showId }, select: { rankingMode: true } });
+    if (show?.rankingMode === "DAILY") {
+      const currentSeason = await prisma.season.findFirst({
+        where: { showId, isCurrent: true },
+        select: { id: true, premiereDate: true },
+      });
+      if (currentSeason) await ensureTodaysDailyEpisode(prisma, currentSeason);
+    }
+
     const episodes = await prisma.episode.findMany({
       where: {
         season: {

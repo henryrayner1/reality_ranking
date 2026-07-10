@@ -47,6 +47,8 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
 
   const isActive = activeEpisodes?.has(currEpisode?.id);
 
+  const heading = String(currEpisode?.episodeNumber ?? "");
+
   // Re-seed from the latest saved order whenever this episode is opened for
   // ranking, rather than only once on mount — every unranked episode mounts
   // together up front, before earlier episodes necessarily have a saved
@@ -106,7 +108,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
               onDragEnd={(event) => handleDragEnd(event)}
             >
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
-                <div className="episode-heading">{currEpisode?.episodeNumber}</div>
+                <div className="episode-heading">{heading}</div>
                 {activeContestants.map((dancerId) => {
                     return <div key={dancerId} className="cell active-episode">
                     <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
@@ -120,7 +122,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
                 </div>)
               )}
             </div> : <>
-                <div className="episode-heading">{currEpisode?.episodeNumber}</div>
+                <div className="episode-heading">{heading}</div>
                 <div key={`${currEpisode?.id}-empty`} className="cell-default" style={{minHeight: `${season?.contestants?.length * 2.5}rem`}} onClick={() => toggleEpisode(currEpisode.id)}>
                   <img src={plusIcon} alt="Activate Episode" className="add-episode"/>
                 </div>

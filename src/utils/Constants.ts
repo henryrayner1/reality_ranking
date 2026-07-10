@@ -19,6 +19,7 @@ export interface Episode {
   seasonId: string;
   season?: Season;
   airDate?: string;
+  dayKey?: string | null;
   eliminations?: Elimination[];
 }
 
@@ -88,12 +89,20 @@ export const elimintatedDancers = {
   4: ["Corey", "Baron", "Lauren", "Hilaria"],
 }
 
+export const RankingModes = {
+  EPISODE: "EPISODE",
+  DAILY: "DAILY",
+} as const;
+
+export type RankingMode = typeof RankingModes[keyof typeof RankingModes];
+
 export interface Show {
   id: string;
   name: string;
   seasons?: Season[];
   currSeason: number;
   network?: string;
+  rankingMode?: RankingMode;
 }
 
 export interface Season {
@@ -103,6 +112,7 @@ export interface Season {
   contestants: Contestant[];
   seasonNumber: number;
   episodes?: Episode[];
+  premiereDate?: string | null;
 }
 
 export interface Contestant {

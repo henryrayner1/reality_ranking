@@ -289,19 +289,20 @@ export const addShow = async (show: Partial<Show>) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ 
-      name: show.name, 
+    body: JSON.stringify({
+      name: show.name,
       network: show.network,
-      currSeason: show.currSeason
+      currSeason: show.currSeason,
+      rankingMode: show.rankingMode
      }),
   });
 
   if (!response.ok) {
     throw new Error(`Failed to add show: ${response.status}`);
   }
-  
+
   const showRes = await response.json();
-  
+
   const seasonRes = await addSeason({ showId: showRes.id, seasonNumber: showRes.currSeason, contestants: [], isCurrent: true });
   return showRes;
 }
@@ -310,13 +311,29 @@ export const deleteShow = async (showId: string) => {
   const response = await apiFetch(`/api/shows/delete/${showId}`, {
     method: 'DELETE',
   });
-  
+
   if (!response.ok) {
     throw new Error(`Failed to delete show: ${response.status}`);
   }
-  
+
   const deleteRes = await response.json();
   return deleteRes;
+};
+
+export const updateShowRankingMode = async (showId: string, rankingMode: string) => {
+  const response = await apiFetch('/api/shows/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ showId, rankingMode }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update show: ${response.status}`);
+  }
+
+  return response.json();
 };
 
 export const addSeason = async (season: Partial<Season>) => {
@@ -325,7 +342,7 @@ export const addSeason = async (season: Partial<Season>) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ showId: season.showId, seasonNumber: season.seasonNumber, cast: season.contestants, isCurrent: season.isCurrent}),
+    body: JSON.stringify({ showId: season.showId, seasonNumber: season.seasonNumber, cast: season.contestants, isCurrent: season.isCurrent, premiereDate: season.premiereDate}),
   });
   if (!seasonRes.ok) {
     const msg = await seasonRes.text().catch(() => 'Failed to add season');
@@ -333,6 +350,22 @@ export const addSeason = async (season: Partial<Season>) => {
   }
   const seasonData = await seasonRes.json();
   return seasonData;
+};
+
+export const updateSeasonPremiereDate = async (seasonId: string, premiereDate: string | null) => {
+  const response = await apiFetch('/api/shows/updateSeason', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ seasonId, premiereDate }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update season: ${response.status}`);
+  }
+
+  return response.json();
 };
 
 export const deleteSeason = async (seasonId: string) => {

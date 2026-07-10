@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import fs from "fs";
 import path from "path";
+import { ensureTodaysDailyEpisode, ensureTodaysDailyEpisodesForAllShows } from "../utils/dailyEpisode.js";
 
 export default function showsRouter(prisma: PrismaClient) {
     const router = Router();
@@ -20,6 +21,8 @@ export default function showsRouter(prisma: PrismaClient) {
             .replace(/^-+|-+$/g, "") || "unknown";
 
     router.get("/", async (req, res) => {
+        await ensureTodaysDailyEpisodesForAllShows(prisma);
+
         const shows = await prisma.show.findMany({
             orderBy: { createdAt: 'asc' },
             include: {
@@ -57,6 +60,15 @@ export default function showsRouter(prisma: PrismaClient) {
 
     router.get("/current/:showId", async (req, res) => {
         const { showId } = req.params;
+        const show = await prisma.show.findUnique({ where: { id: showId }, select: { rankingMode: true } });
+        if (show?.rankingMode === "DAILY") {
+            const currentSeasonId = await prisma.season.findFirst({
+                where: { showId, isCurrent: true },
+                select: { id: true, premiereDate: true },
+            });
+            if (currentSeasonId) await ensureTodaysDailyEpisode(prisma, currentSeasonId);
+        }
+
         const currentSeason = await prisma.season.findFirst({
             where: {
                 showId: showId,
@@ -80,7 +92,8 @@ export default function showsRouter(prisma: PrismaClient) {
             data: {
                 name: payload.name,
                 network: payload.network ?? "",
-                currSeason: payload.currSeason ?? 1
+                currSeason: payload.currSeason ?? 1,
+                rankingMode: payload.rankingMode ?? "EPISODE"
             }
         });
 
@@ -89,6 +102,30 @@ export default function showsRouter(prisma: PrismaClient) {
         fs.mkdirSync(showFolderPath, { recursive: true });
 
         res.json(newShow);
+    });
+
+    router.post("/update", async (req, res) => {
+        const { showId, rankingMode } = req.body;
+        if (!showId || (rankingMode !== "EPISODE" && rankingMode !== "DAILY")) {
+            return res.status(400).json({ error: "showId and a valid rankingMode are required" });
+        }
+        const updatedShow = await prisma.show.update({
+            where: { id: showId },
+            data: { rankingMode }
+        });
+        res.json(updatedShow);
+    });
+
+    router.post("/updateSeason", async (req, res) => {
+        const { seasonId, premiereDate } = req.body;
+        if (!seasonId) {
+            return res.status(400).json({ error: "seasonId is required" });
+        }
+        const updatedSeason = await prisma.season.update({
+            where: { id: seasonId },
+            data: { premiereDate: premiereDate ?? null }
+        });
+        res.json(updatedSeason);
     });
 
     router.post("/changeCurrentSeason", async (req, res) => {
@@ -121,7 +158,7 @@ export default function showsRouter(prisma: PrismaClient) {
 
     router.post("/addSeason", async (req, res) => {
         const randomId = Math.random().toString(36).substring(2, 12);
-        const { showId, seasonNumber, isCurrent } = req.body;
+        const { showId, seasonNumber, isCurrent, premiereDate } = req.body;
         if (!showId || !seasonNumber) {
             return res.status(400).json({ error: "showId and seasonNumber are required" });
         }
@@ -130,7 +167,8 @@ export default function showsRouter(prisma: PrismaClient) {
                 id: randomId,
                 showId: showId,
                 seasonNumber: seasonNumber,
-                isCurrent: isCurrent ?? false
+                isCurrent: isCurrent ?? false,
+                premiereDate: premiereDate ?? null
             }
         });
 

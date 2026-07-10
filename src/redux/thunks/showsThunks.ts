@@ -21,6 +21,7 @@ export const fetchAllShows = createAsyncThunk(
         name: show.name,
         currSeason: show.currSeason,
         network: show.network,
+        rankingMode: show.rankingMode,
       });
       show.seasons?.forEach((season: any) => {
         flatSeasons.push({
@@ -28,7 +29,8 @@ export const fetchAllShows = createAsyncThunk(
           showId: season.showId,
           seasonNumber: season.seasonNumber,
           isCurrent: season.isCurrent,
-          contestants: season.contestants
+          contestants: season.contestants,
+          premiereDate: season.premiereDate,
         });
         season.episodes?.forEach((episode: any) => {
           flatEpisodes.push({
@@ -36,6 +38,7 @@ export const fetchAllShows = createAsyncThunk(
             episodeNumber: episode.episodeNumber,
             seasonId: season.id,
             airDate: episode.airDate,
+            dayKey: episode.dayKey,
             eliminations: episode.eliminations
           });
         });

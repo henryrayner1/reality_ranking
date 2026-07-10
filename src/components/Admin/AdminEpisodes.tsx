@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { addEpisode, deleteEpisode, getSeasons, getEpisodesByShow } from "../../utils/util";
-import type { Show, Episode } from "../../utils/Constants";
+import { RankingModes, type Show, type Episode } from "../../utils/Constants";
 import * as AdminUI from "../../utils/AdminComponents";
 import { Card } from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
@@ -34,6 +34,11 @@ const AdminEpisodes = () => {
         currSeason={currShow?.currSeason}
       />
         {currShow &&<AdminUI.TwoCol>
+            {currShow.rankingMode === RankingModes.DAILY ? (
+                <AdminUI.Card title="Add episode">
+                    <p className="text-sm text-[#888]">Episodes are created automatically each day for daily-ranking shows. Set the season's premiere date in Admin → Seasons to control when they start.</p>
+                </AdminUI.Card>
+            ) : (
             <AdminUI.Card title="Add episode">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <AdminUI.FormGroup label="Season">
@@ -48,6 +53,7 @@ const AdminEpisodes = () => {
                 {create.isError && <AdminUI.ErrorMsg />}
             </div>
             </AdminUI.Card>
+            )}
             <AdminUI.Card title="All episodes">
             {isLoading && <AdminUI.EmptyState message="Loading..." />}
             {!isLoading && episodes.length === 0 && <AdminUI.EmptyState message="No episodes yet. Add one!" />}
