@@ -104,8 +104,15 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
 
   const createEntries = () => activeContestants;
 
-  return <div className="" style={{gridRow: `span ${season?.contestants?.length+1}`}}>
-            {isActive ? <div>
+  // Raw grid items, not wrapped in a div with an explicit gridRow span —
+  // matching InsightsRankingTable's pattern. DndContext/SortableContext don't
+  // render any DOM element of their own (just context providers), so cells
+  // still end up as direct children of .ranking-grid. A wrapping div here
+  // would make every cell just a normal-flow child of one spanning grid item,
+  // which stops each cell's own height from being able to grow its row's 1fr
+  // track — every cell got silently squashed down to whatever the rank
+  // column's plain number cells needed.
+  return isActive ? <>
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
@@ -137,12 +144,11 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
                   <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
-            </div> : <>
+            </> : <>
                 <div className="episode-heading">{heading}</div>
-                <div key={`${currEpisode?.id}-empty`} className="cell-default" style={{minHeight: `${season?.contestants?.length * 2.5}rem`}} onClick={() => toggleEpisode(currEpisode.id)}>
+                <div key={`${currEpisode?.id}-empty`} className="cell-default" style={{gridRow: `span ${season?.contestants?.length}`}} onClick={() => toggleEpisode(currEpisode.id)}>
                   <img src={plusIcon} alt="Activate Episode" className="add-episode"/>
                 </div>
-                </>}
-  </div>
+                </>;
 });
 export default EpisodeComponent;
