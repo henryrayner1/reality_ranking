@@ -183,6 +183,9 @@ const RankingComponent2 = () => {
   const getContestantName = (contestantId: string) =>
     currSeason?.contestants?.find((c) => c.id === contestantId)?.name ?? "";
 
+  const getContestantPhotoUrl = (contestantId: string) =>
+    currSeason?.contestants?.find((c) => c.id === contestantId)?.photoUrl;
+
   const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations);
     const heading = String(episodeNumber);
@@ -190,7 +193,7 @@ const RankingComponent2 = () => {
       <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>,
       ...columnEntries.map((entry) => (
         <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
-          <ContestantIcon name={getContestantName(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
+          <ContestantIcon name={getContestantName(entry.contestantId)} photoUrl={getContestantPhotoUrl(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
         </div>
       )),
     ];

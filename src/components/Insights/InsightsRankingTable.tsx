@@ -150,6 +150,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
                 {contestantId && (
                   <ContestantIcon
                     name={contestantsById[contestantId]?.name ?? ""}
+                    photoUrl={contestantsById[contestantId]?.photoUrl}
                     id={contestantId}
                     isActive={false}
                     isEliminated={isEliminatedByEpisode(contestantId, episode.episodeNumber)}
@@ -169,6 +170,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
             {contestantId && (
               <ContestantIcon
                 name={contestantsById[contestantId]?.name ?? ""}
+                photoUrl={contestantsById[contestantId]?.photoUrl}
                 id={contestantId}
                 isActive={false}
                 isEliminated={eliminationByContestant.has(contestantId)}

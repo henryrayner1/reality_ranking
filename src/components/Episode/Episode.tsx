@@ -45,6 +45,9 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
   const getContestantName = (contestantId: string) =>
     contestants.find(c => c.id === contestantId)?.name ?? "";
 
+  const getContestantPhotoUrl = (contestantId: string) =>
+    contestants.find(c => c.id === contestantId)?.photoUrl;
+
   const isActive = activeEpisodes?.has(currEpisode?.id);
 
   const heading = String(currEpisode?.episodeNumber ?? "");
@@ -105,14 +108,14 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
                 <div className="episode-heading">{heading}</div>
                 {activeContestants.map((dancerId) => {
                     return <div key={dancerId} className="cell active-episode">
-                    <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
+                    <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
             </DndContext>
             {eliminatedContestants.map((dancerId) => (
                 <div key={`${dancerId}-elim`} className="cell eliminated-episode">
-                  <ContestantIcon name={getContestantName(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
+                  <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
             </div> : <>

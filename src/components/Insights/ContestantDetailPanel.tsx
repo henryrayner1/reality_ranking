@@ -44,6 +44,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
             <div className="insights-contestant-thumb">
               <ContestantIcon
                 name={contestant.name}
+                photoUrl={contestant.photoUrl}
                 id={contestant.id}
                 isActive={false}
                 isEliminated={eliminationByContestant.has(contestant.id)}
@@ -65,6 +66,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
               <div className="contestant-detail-photo">
                 <ContestantIcon
                   name={selected.name}
+                  photoUrl={selected.photoUrl}
                   id={selected.id}
                   isActive={false}
                   isEliminated={!!selectedEliminationInfo}

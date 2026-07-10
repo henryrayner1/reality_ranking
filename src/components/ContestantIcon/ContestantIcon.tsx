@@ -12,6 +12,7 @@ interface IconProps {
     isEliminated?: boolean;
     season: Season;
   show?: Show;
+  photoUrl?: string;
 }
 
 
@@ -25,6 +26,10 @@ const ContestantIcon = (props:IconProps) => {
   } = useSortable({id: props.id});
 
   const getImagePath = () => {
+    if (props.photoUrl) {
+      return backendUrl(props.photoUrl);
+    }
+
     const prefix = `/uploads/`;
     const showFolder = (props.show?.name)
       .trim()
