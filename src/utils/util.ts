@@ -134,7 +134,7 @@ export const submitRanking = async (userId: string, episodeId: string, rankings:
   return submitData;
 };
 
-export const submitRankings = async (rankingsList: { userId: string; episodeId: string; rankings: {}; type: string }[]) => {
+export const submitRankings = async (rankingsList: { userId: string; episodeId: string; rankings: string[]; type: string }[]) => {
   
   const submitRes = await apiFetch('/api/rankings/createMany', {
     method: 'POST',
@@ -273,10 +273,9 @@ export const buildPastRankingColumn = (
   // Episode.tsx's EpisodeComponent, which uses the same episodeNumber - 1 offset.
   const eliminatedIds = getEliminationOrder(eliminations, episodeNumber - 1).reverse();
 
-  const active = [...ranking.entries]
-    .sort((a, b) => a.position - b.position)
-    .filter((entry) => !eliminatedIds.includes(entry.contestantId))
-    .map((entry) => ({ contestantId: entry.contestantId, eliminated: false }));
+  const active = ranking.contestantIds
+    .filter((contestantId) => !eliminatedIds.includes(contestantId))
+    .map((contestantId) => ({ contestantId, eliminated: false }));
 
   const eliminated = eliminatedIds.map((id) => ({ contestantId: id, eliminated: true }));
 

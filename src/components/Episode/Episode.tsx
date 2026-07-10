@@ -22,7 +22,7 @@ interface EpisodeComponentProps {
 }
 
 export type EpisodeRef = {
-  createEntries: () => { contestantId: string; position: number }[];
+  createEntries: () => string[];
 }
 
 const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEpisode, activeEpisodes, setActiveEpisodes, lastOrder, eliminations, contestants, season, show }: EpisodeComponentProps, ref) => {
@@ -92,13 +92,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
     }
   };
 
-  const createEntries = () => {
-    const entries = activeContestants.map((dancerId, index) => ({
-      contestantId: dancerId,
-      position: index + 1,
-    }));
-    return entries;
-  }
+  const createEntries = () => activeContestants;
 
   return <div className="" style={{gridRow: `span ${season?.contestants?.length+1}`}}>
             {isActive ? <div>

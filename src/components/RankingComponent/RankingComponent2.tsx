@@ -170,8 +170,7 @@ const RankingComponent2 = () => {
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(contestant => contestant.id);
     if (lastRanking) {
-      const sortedEntries = lastRanking.entries.sort((a, b) => a.position - b.position);
-      const orderedIds = sortedEntries.map(entry => entry.contestantId);
+      const orderedIds = lastRanking.contestantIds;
       // Contestants added to the season after this ranking was submitted
       // won't be in orderedIds — append them so they're still rankable
       // instead of silently disappearing from every future episode.

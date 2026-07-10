@@ -9,7 +9,7 @@ export interface Ranking {
   userId: string;
   episodeId: string;
   type: string;
-  entries: { contestantId: string; position: number }[];
+  contestantIds: string[];
   episode?: Episode;
 }
 
