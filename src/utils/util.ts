@@ -268,16 +268,23 @@ export const buildPastRankingColumn = (
   episodeNumber: number,
   eliminations: Elimination[]
 ): RankingColumnEntry[] => {
-  // A contestant eliminated during episode N is still active for episode N's own
-  // ranking — they only show as eliminated starting episode N+1 — matching
-  // Episode.tsx's EpisodeComponent, which uses the same episodeNumber - 1 offset.
-  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber).reverse();
+  // Contestants eliminated in a *prior* episode are grouped at the bottom, in
+  // elimination order, out of their submitted rank position. A contestant
+  // eliminated during episode N itself stays at their submitted position for
+  // N's own column (just flagged eliminated so it renders locked) and only
+  // drops into the bottom group starting episode N+1 — otherwise every
+  // contestant ranked below them would shift up a row the week they're
+  // eliminated. Matches Episode.tsx's EpisodeComponent, which draws the same
+  // prior-vs-this-episode distinction.
+  const priorElimIds = getEliminationOrder(eliminations, episodeNumber - 1).reverse();
+  const elimIdsThroughThisEpisode = getEliminationOrder(eliminations, episodeNumber).reverse();
+  const thisEpisodeElimIds = elimIdsThroughThisEpisode.filter((id) => !priorElimIds.includes(id));
 
   const active = ranking.contestantIds
-    .filter((contestantId) => !eliminatedIds.includes(contestantId))
-    .map((contestantId) => ({ contestantId, eliminated: false }));
+    .filter((contestantId) => !priorElimIds.includes(contestantId))
+    .map((contestantId) => ({ contestantId, eliminated: thisEpisodeElimIds.includes(contestantId) }));
 
-  const eliminated = eliminatedIds.map((id) => ({ contestantId: id, eliminated: true }));
+  const eliminated = priorElimIds.map((id) => ({ contestantId: id, eliminated: true }));
 
   return [...active, ...eliminated];
 };
