@@ -43,10 +43,12 @@ const ShowSelect = (props:ShowSelectProps) => {
             <div className="flex my-3 items-center justify-center">
                 <h1 className="font-bold text-gray-800 pr-2 whitespace-nowrap">Current Show:</h1>
                 <Dropdown>
-                <Dropdown.Toggle variant="" id="dropdown-basic" className="custom-button min-w-[10vw] min-h-[2.5rem]">{currShow?.name || "Select a Show"}</Dropdown.Toggle>
-                <Dropdown.Menu className="">
+                <Dropdown.Toggle variant="" id="dropdown-basic" className="custom-button min-w-[10vw] max-w-[50vw] min-h-[2.5rem] flex items-center gap-2">
+                    <span className="truncate min-w-0 flex-1 text-left">{currShow?.name || "Select a Show"}</span>
+                </Dropdown.Toggle>
+                <Dropdown.Menu className="max-w-[80vw]">
                     {shows?.map((show) => (
-                    <Dropdown.Item key={show.name} onClick={() => {dispatch(setCurrShow(show))}} className="m-0">{show.name}</Dropdown.Item>
+                    <Dropdown.Item key={show.name} onClick={() => {dispatch(setCurrShow(show))}} className="m-0 truncate" title={show.name}>{show.name}</Dropdown.Item>
                     ))}
                     {/* <Dropdown.Item onClick={() => setAddShowModalFlag(true)} className="m-0 border-top">+ Add New Show</Dropdown.Item> */}
                 </Dropdown.Menu>
