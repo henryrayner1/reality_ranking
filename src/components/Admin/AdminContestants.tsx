@@ -227,7 +227,7 @@ const AdminContestants = () => {
                         border={50} borderRadius={125} // Circular mask
                         scale={scale}
                       />
-                      <input type="range" min="1" max="3" step="0.01"
+                      <input type="range" min="1" max="6" step="0.01"
         value={scale} onChange={(e) => setScale(parseFloat(e.target.value))} className="w-100"/>
                       <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
                         <AdminUI.SecondaryButton

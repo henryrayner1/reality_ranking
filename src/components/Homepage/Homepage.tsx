@@ -2,6 +2,7 @@ import survivorLogo from "../../assets/logos/survivorLogo.jpeg";
 import bigBrotherLogo from "../../assets/logos/bigBrotherLogo.jpg";
 import dwtsLogo from "../../assets/logos/dwtsLogo.jpg";
 import dragRaceLogo from "../../assets/logos/dragRaceLogo.jpg";
+import downUnderLogo from "../../assets/logos/downUnderLogo.jpg";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useAppDispatch, useAppSelector } from "../../redux/hooks";
@@ -16,6 +17,7 @@ const SHOW_LOGOS: Record<string, string> = {
   "big brother": bigBrotherLogo,
   "dancing with the stars": dwtsLogo,
   "rupaul's drag race": dragRaceLogo,
+  "drag race down under vs the world": downUnderLogo,
 };
 
 const FALLBACK_GRADIENTS = [
