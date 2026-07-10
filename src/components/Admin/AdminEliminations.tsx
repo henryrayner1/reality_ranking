@@ -19,7 +19,7 @@ const AdminEliminations = () => {
     const remove = useMutation({ mutationFn: deleteElimination, onSuccess: () => { qc.invalidateQueries({ queryKey: ['eliminations', currSeason.id] }); qc.invalidateQueries({ queryKey: ['contestants', currSeason.id] }) } })
 
     const ELIM_LABELS: Record<EliminationType, string> = {
-        ELIMINATED: 'Voted out', QUIT: 'Quit', MEDICAL: 'Medical removal', WINNER: 'Winner', RUNNER_UP: 'Runner-up',
+        ELIMINATED: 'Eliminated', QUIT: 'Quit', MEDICAL: 'Medical removal', WINNER: 'Winner', RUNNER_UP: 'Runner-up',
     }
     const ELIM_VARIANTS: Record<EliminationType, AdminUI.BadgeVariant> = {
         ELIMINATED: 'red', QUIT: 'amber', MEDICAL: 'amber', WINNER: 'green', RUNNER_UP: 'purple',
