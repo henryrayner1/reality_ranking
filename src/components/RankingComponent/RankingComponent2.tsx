@@ -187,7 +187,8 @@ const RankingComponent2 = () => {
     currSeason?.contestants?.find((c) => c.id === contestantId)?.photoUrl;
 
   const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
-    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations);
+    const seasonContestantIds = currSeason?.contestants?.map((contestant) => contestant.id) ?? [];
+    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations, seasonContestantIds);
     const heading = String(episodeNumber);
     // Wrapped in a single grid item spanning exactly contestants.length + 1 rows
     // (matching EpisodeComponent's own wrapper) so that a stray or missing entry

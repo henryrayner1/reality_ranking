@@ -273,7 +273,8 @@ export interface RankingColumnEntry {
 export const buildPastRankingColumn = (
   ranking: Ranking,
   episodeNumber: number,
-  eliminations: Elimination[]
+  eliminations: Elimination[],
+  seasonContestantIds: string[] = []
 ): RankingColumnEntry[] => {
   // Contestants eliminated in a *prior* episode are grouped at the bottom, in
   // elimination order, out of their submitted rank position. A contestant
@@ -304,7 +305,22 @@ export const buildPastRankingColumn = (
 
   const eliminated = priorElimIds.map((id) => ({ contestantId: id, eliminated: true }));
 
-  return [...active, ...stranded, ...eliminated];
+  // Some historical rankings are just missing a contestant altogether — not
+  // because they were eliminated, but because they weren't included in that
+  // particular submission for unrelated reasons. Anyone on the season roster
+  // not otherwise accounted for still isn't eliminated as of this episode
+  // (we'd have caught that above), so append them as active rather than
+  // dropping them from the grid entirely.
+  const stillUncoveredIds = new Set([
+    ...active.map((entry) => entry.contestantId),
+    ...stranded.map((entry) => entry.contestantId),
+    ...eliminated.map((entry) => entry.contestantId),
+  ]);
+  const unaccountedFor = seasonContestantIds
+    .filter((id) => !stillUncoveredIds.has(id))
+    .map((id) => ({ contestantId: id, eliminated: false }));
+
+  return [...active, ...stranded, ...eliminated, ...unaccountedFor];
 };
 
 export const addShow = async (show: Partial<Show>) => {
