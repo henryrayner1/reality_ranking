@@ -189,14 +189,20 @@ const RankingComponent2 = () => {
   const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations);
     const heading = String(episodeNumber);
-    return [
-      <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>,
-      ...columnEntries.map((entry) => (
-        <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
-          <ContestantIcon name={getContestantName(entry.contestantId)} photoUrl={getContestantPhotoUrl(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
-        </div>
-      )),
-    ];
+    // Wrapped in a single grid item spanning exactly contestants.length + 1 rows
+    // (matching EpisodeComponent's own wrapper) so that a stray or missing entry
+    // in columnEntries can only clip/gap *this* column, instead of cascading
+    // into every later episode column via the grid's column auto-flow.
+    return (
+      <div key={`${ranking.id}-column`} style={{ gridRow: `span ${(currSeason?.contestants?.length ?? 0) + 1}` }}>
+        <div className="episode-heading">{heading}</div>
+        {columnEntries.map((entry) => (
+          <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
+            <ContestantIcon name={getContestantName(entry.contestantId)} photoUrl={getContestantPhotoUrl(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   const rankTypeTabs = <div className="rank-tabs">

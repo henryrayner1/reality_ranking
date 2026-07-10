@@ -243,11 +243,18 @@ export const getContestantEliminationStatus = (eliminations: any, contestantId: 
 };
 
 export const getEliminationOrder = (eliminations: Elimination[], episodeNumber: number) => {
+  // Deduped: a contestant appearing in more than one elimination record (e.g. a
+  // duplicate admin entry) must only ever occupy one row in the ranking grid —
+  // otherwise every later episode column drifts by however many times they're
+  // double-counted.
   const eliminatedContestants: string[] = [];
-  console.log(episodeNumber, eliminations);
   for (const episodeData of eliminations) {
     if (episodeData.episodeNumber <= episodeNumber) {
-      eliminatedContestants.push(...episodeData.contestantIds);
+      for (const contestantId of episodeData.contestantIds) {
+        if (!eliminatedContestants.includes(contestantId)) {
+          eliminatedContestants.push(contestantId);
+        }
+      }
     }
   }
   return eliminatedContestants;
