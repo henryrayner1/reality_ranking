@@ -291,9 +291,20 @@ export const buildPastRankingColumn = (
     .filter((contestantId) => !priorElimIds.includes(contestantId))
     .map((contestantId) => ({ contestantId, eliminated: thisEpisodeElimIds.includes(contestantId) }));
 
+  // A contestant eliminated this episode is normally still present in
+  // ranking.contestantIds (submitted while still active) and picked up by
+  // `active` above. Some past rankings were saved by an earlier version of
+  // this logic that excluded that week's eliminee from contestantIds
+  // entirely — append any such contestant here so they still render instead
+  // of silently vanishing from the grid (this is what leaves one row short).
+  const coveredIds = new Set(active.map((entry) => entry.contestantId));
+  const stranded = thisEpisodeElimIds
+    .filter((id) => !coveredIds.has(id))
+    .map((id) => ({ contestantId: id, eliminated: true }));
+
   const eliminated = priorElimIds.map((id) => ({ contestantId: id, eliminated: true }));
 
-  return [...active, ...eliminated];
+  return [...active, ...stranded, ...eliminated];
 };
 
 export const addShow = async (show: Partial<Show>) => {
