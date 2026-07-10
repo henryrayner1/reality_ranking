@@ -190,20 +190,21 @@ const RankingComponent2 = () => {
     const seasonContestantIds = currSeason?.contestants?.map((contestant) => contestant.id) ?? [];
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations, seasonContestantIds);
     const heading = String(episodeNumber);
-    // Wrapped in a single grid item spanning exactly contestants.length + 1 rows
-    // (matching EpisodeComponent's own wrapper) so that a stray or missing entry
-    // in columnEntries can only clip/gap *this* column, instead of cascading
-    // into every later episode column via the grid's column auto-flow.
-    return (
-      <div key={`${ranking.id}-column`} style={{ gridRow: `span ${(currSeason?.contestants?.length ?? 0) + 1}` }}>
-        <div className="episode-heading">{heading}</div>
-        {columnEntries.map((entry) => (
-          <div key={`${ranking.id}-${entry.contestantId}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
+    // Raw grid items, not wrapped in a single spanning container — matching
+    // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
+    // every column to exactly the season's contestant count, so each column
+    // always contributes the same number of grid cells and there's nothing
+    // for grid-auto-flow: column to drift on.
+    return [
+      <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>,
+      ...columnEntries.map((entry, index) => (
+        <div key={`${ranking.id}-${entry.contestantId ?? `blank-${index}`}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
+          {entry.contestantId && (
             <ContestantIcon name={getContestantName(entry.contestantId)} photoUrl={getContestantPhotoUrl(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
-          </div>
-        ))}
-      </div>
-    );
+          )}
+        </div>
+      )),
+    ];
   };
 
   const rankTypeTabs = <div className="rank-tabs">

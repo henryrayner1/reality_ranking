@@ -261,7 +261,7 @@ export const getEliminationOrder = (eliminations: Elimination[], episodeNumber: 
 }
 
 export interface RankingColumnEntry {
-  contestantId: string;
+  contestantId: string | null;
   eliminated: boolean;
 }
 
@@ -320,7 +320,21 @@ export const buildPastRankingColumn = (
     .filter((id) => !stillUncoveredIds.has(id))
     .map((id) => ({ contestantId: id, eliminated: false }));
 
-  return [...active, ...stranded, ...eliminated, ...unaccountedFor];
+  const column: RankingColumnEntry[] = [...active, ...stranded, ...eliminated, ...unaccountedFor];
+
+  // Pad/truncate to exactly the season's row count (mirrors
+  // InsightsRankingTable's buildRankColumn) so every column contributes the
+  // same number of grid cells regardless of any remaining data quirks — a
+  // mismatched count is what drifts every later column out of alignment
+  // under grid-auto-flow: column.
+  if (seasonContestantIds.length > 0) {
+    while (column.length < seasonContestantIds.length) {
+      column.push({ contestantId: null, eliminated: false });
+    }
+    column.length = seasonContestantIds.length;
+  }
+
+  return column;
 };
 
 export const addShow = async (show: Partial<Show>) => {
