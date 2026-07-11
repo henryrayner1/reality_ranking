@@ -16,12 +16,16 @@ export default function eliminationsRouter(prisma: PrismaClient) {
             }
         })
 
-        // Group eliminations by episodeId
+        // Group eliminations by episodeId. seasonId is included so callers can
+        // scope this globally-fetched (not season-filtered) list down to a
+        // single season — episodeNumber alone collides across shows/seasons,
+        // e.g. every show has an "episode 1".
         const episodeEliminationsMap = eliminations.reduce((acc, elim) => {
             if (!acc[elim.episodeId]) {
                 acc[elim.episodeId] = {
                     episodeId: elim.episodeId,
                     episodeNumber: elim.episode.episodeNumber,
+                    seasonId: elim.episode.seasonId,
                     contestantIds: []
                 };
             }
@@ -29,7 +33,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
                 acc[elim.episodeId].contestantIds.push(elim.contestantId);
             }
             return acc;
-        }, {} as { [key: string]: { episodeId: string, episodeNumber: number, contestantIds: string[] } });
+        }, {} as { [key: string]: { episodeId: string, episodeNumber: number, seasonId: string, contestantIds: string[] } });
 
         // Convert to array and sort by episodeNumber to guarantee order
         const episodeEliminations = Object.values(episodeEliminationsMap).sort((a, b) => a.episodeNumber - b.episodeNumber);

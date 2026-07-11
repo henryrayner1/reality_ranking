@@ -137,6 +137,7 @@ export type EliminationType = typeof EliminationTypes[keyof typeof EliminationTy
 export interface Elimination {
   episodeId: string;
   episodeNumber: number;
+  seasonId: string;
   contestantIds: string[];
   eliminationType: string;
 }

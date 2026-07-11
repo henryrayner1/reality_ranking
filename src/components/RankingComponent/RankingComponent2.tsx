@@ -54,6 +54,12 @@ const RankingComponent2 = () => {
     .filter((episode) => isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
+  // eliminations is fetched once per user across every show/season (see
+  // ensureEliminationsLoaded above), so raw episodeNumber comparisons collide
+  // across shows — nearly every show has an "episode 1". Scope to the season
+  // actually being displayed before it's used for any threshold logic.
+  const currentSeasonEliminations = eliminations.filter((e) => e.seasonId === currSeason?.id);
+
   useEffect(() => {
     if (currShow) {
       //setNamesToImage(nameToImage[currShow?.id][currSeason?.seasonNumber] || {});
@@ -188,7 +194,7 @@ const RankingComponent2 = () => {
 
   const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
     const seasonContestantIds = currSeason?.contestants?.map((contestant) => contestant.id) ?? [];
-    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, eliminations, seasonContestantIds);
+    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds);
     const heading = String(episodeNumber);
     // Raw grid items, not wrapped in a single spanning container — matching
     // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
@@ -248,7 +254,7 @@ const RankingComponent2 = () => {
               key={`episode-${episode.episodeNumber}`}
               ref={setEpisodeRef(episode.id)}
               lastOrder={getLastRankingNames(episode.episodeNumber)}
-              eliminations={eliminations}
+              eliminations={currentSeasonEliminations}
               contestants={currSeason?.contestants}
               season={currSeason}
               show={currShow}/> :
