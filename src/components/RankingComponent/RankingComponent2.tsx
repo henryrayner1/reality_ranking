@@ -1,4 +1,4 @@
-import { type Contestant, type Elimination, nameToImage, type Ranking, type RankType, type Season, type Show } from "../../utils/Constants";
+import { type Contestant, type Elimination, type Episode, nameToImage, type Ranking, type RankType, type Season, type Show } from "../../utils/Constants";
 import { use, useCallback, useEffect, useRef, useState, type JSX } from "react";
 import { useSelector } from "react-redux";
 import { buildPastRankingColumn, getContestantEliminationStatus, getEliminations, getRanking, getUserRankings, submitRanking, submitRankings } from "../../utils/util";
@@ -14,7 +14,7 @@ import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/se
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useParams } from "react-router-dom";
 import { useLocation } from "react-router-dom";
-import { isRankableNow } from "../../utils/episodeRankability";
+import { isRankableNow, getTodayDayKey } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 
 const RankingComponent2 = () => {
@@ -200,9 +200,31 @@ const RankingComponent2 = () => {
   const getContestantPhotoUrl = (contestantId: string) =>
     currSeason?.contestants?.find((c) => c.id === contestantId)?.photoUrl;
 
-  const pastRankingsElements = (ranking: Ranking, episodeNumber: number) => {
+  // A contestant added to the season after a given episode already happened
+  // (e.g. a cast newcomer added mid-season) shouldn't retroactively appear in
+  // that episode's past-rankings column — they weren't rankable yet. Compares
+  // the contestant's creation date to the episode's air date (or, for DAILY
+  // shows, calendar day) rather than assuming every roster member was always
+  // there.
+  const wasContestantOnRosterFor = (contestant: Contestant, episode: Episode) => {
+    if (!contestant.createdAt) return true;
+    const createdAtMs = new Date(contestant.createdAt).getTime();
+    if (Number.isNaN(createdAtMs)) return true;
+    if (currShow?.rankingMode === "DAILY") {
+      if (!episode.dayKey) return true;
+      return getTodayDayKey(createdAtMs) <= episode.dayKey;
+    }
+    if (!episode.airDate) return true;
+    return createdAtMs <= new Date(episode.airDate).getTime();
+  };
+
+  const pastRankingsElements = (ranking: Ranking, episode: Episode) => {
+    const episodeNumber = episode.episodeNumber;
     const seasonContestantIds = currSeason?.contestants?.map((contestant) => contestant.id) ?? [];
-    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds);
+    const eligibleContestantIds = (currSeason?.contestants ?? [])
+      .filter((contestant) => wasContestantOnRosterFor(contestant, episode))
+      .map((contestant) => contestant.id);
+    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds);
     const heading = String(episodeNumber);
     // Raw grid items, not wrapped in a single spanning container — matching
     // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
@@ -266,7 +288,7 @@ const RankingComponent2 = () => {
               contestants={currSeason?.contestants}
               season={currSeason}
               show={currShow}/> :
-          pastRankingsElements(inPastRankings, episode.episodeNumber);
+          pastRankingsElements(inPastRankings, episode);
       })}
     </div>
   </div>

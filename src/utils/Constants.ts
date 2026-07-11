@@ -121,6 +121,7 @@ export interface Contestant {
   seasonId: string;
   photoUrl?: string;
   status?: 'ACTIVE' | 'ELIMINATED';
+  createdAt?: string;
 }
 
 export const EliminationTypes = {
