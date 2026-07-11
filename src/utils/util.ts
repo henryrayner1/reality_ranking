@@ -277,34 +277,20 @@ export const buildPastRankingColumn = (
   seasonContestantIds: string[] = [],
   eligibleContestantIds: string[] = seasonContestantIds
 ): RankingColumnEntry[] => {
-  // Contestants eliminated in a *prior* episode are grouped at the bottom, in
-  // elimination order, out of their submitted rank position. A contestant
-  // eliminated during episode N itself stays at their submitted position for
-  // N's own column (just flagged eliminated so it renders locked) and only
-  // drops into the bottom group starting episode N+1 — otherwise every
-  // contestant ranked below them would shift up a row the week they're
-  // eliminated. Matches Episode.tsx's EpisodeComponent, which draws the same
-  // prior-vs-this-episode distinction.
-  const priorElimIds = getEliminationOrder(eliminations, episodeNumber - 1).reverse();
-  const elimIdsThroughThisEpisode = getEliminationOrder(eliminations, episodeNumber).reverse();
-  const thisEpisodeElimIds = elimIdsThroughThisEpisode.filter((id) => !priorElimIds.includes(id));
+  // Eliminations are immutable at the bottom of the column starting the same
+  // episode/day a contestant is eliminated — matches Episode.tsx's
+  // EpisodeComponent, which uses the same single threshold.
+  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber).reverse();
 
   const active = ranking.contestantIds
-    .filter((contestantId) => !priorElimIds.includes(contestantId))
-    .map((contestantId) => ({ contestantId, eliminated: thisEpisodeElimIds.includes(contestantId) }));
+    .filter((contestantId) => !eliminatedIds.includes(contestantId))
+    .map((contestantId) => ({ contestantId, eliminated: false }));
 
-  // A contestant eliminated this episode is normally still present in
-  // ranking.contestantIds (submitted while still active) and picked up by
-  // `active` above. Some past rankings were saved by an earlier version of
-  // this logic that excluded that week's eliminee from contestantIds
-  // entirely — append any such contestant here so they still render instead
-  // of silently vanishing from the grid (this is what leaves one row short).
-  const coveredIds = new Set(active.map((entry) => entry.contestantId));
-  const stranded = thisEpisodeElimIds
-    .filter((id) => !coveredIds.has(id))
-    .map((id) => ({ contestantId: id, eliminated: true }));
-
-  const eliminated = priorElimIds.map((id) => ({ contestantId: id, eliminated: true }));
+  // Unconditional over eliminatedIds (not filtered by ranking.contestantIds)
+  // so a contestant eliminated this episode still renders even if the
+  // ranking they were part of happens to be missing them for some
+  // unrelated data reason.
+  const eliminated = eliminatedIds.map((id) => ({ contestantId: id, eliminated: true }));
 
   // Some historical rankings are just missing a contestant altogether — not
   // because they were eliminated, but because they weren't included in that
@@ -318,14 +304,13 @@ export const buildPastRankingColumn = (
   // padding below, just not an active one.
   const stillUncoveredIds = new Set([
     ...active.map((entry) => entry.contestantId),
-    ...stranded.map((entry) => entry.contestantId),
     ...eliminated.map((entry) => entry.contestantId),
   ]);
   const unaccountedFor = eligibleContestantIds
     .filter((id) => !stillUncoveredIds.has(id))
     .map((id) => ({ contestantId: id, eliminated: false }));
 
-  const column: RankingColumnEntry[] = [...active, ...stranded, ...eliminated, ...unaccountedFor];
+  const column: RankingColumnEntry[] = [...active, ...eliminated, ...unaccountedFor];
 
   // Pad/truncate to exactly the season's row count (mirrors
   // InsightsRankingTable's buildRankColumn) so every column contributes the

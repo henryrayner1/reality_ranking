@@ -41,7 +41,6 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
 
   const [eliminatedContestants, setEliminatedContestants] = useState<string[]>([]);
   const [activeContestants, setActiveContestants] = useState<string[]>(lastOrder ?? []);
-  const [lockedThisEpisode, setLockedThisEpisode] = useState<Set<string>>(new Set());
 
   const getContestantName = (contestantId: string) =>
     contestants.find(c => c.id === contestantId)?.name ?? "";
@@ -59,17 +58,13 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
   // ranking yet, so lastOrder can be stale by the time the user gets here.
   useEffect(() => {
     if (!isActive) return;
-    // Contestants eliminated in a prior episode drop to the locked "eliminated"
-    // section below; a contestant eliminated in *this* episode stays in the
-    // draggable list at their last position (just rendered locked/unclickable)
-    // so the rest of the ranking doesn't shift up a row for their own elimination week.
-    const priorElimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber - 1).reverse();
-    const elimIdsThroughThisEpisode = getEliminationOrder(eliminations, currEpisode.episodeNumber).reverse();
-    const thisEpisodeElimIds = elimIdsThroughThisEpisode.filter(id => !priorElimIds.includes(id));
+    // A contestant eliminated in this episode drops to the locked "eliminated"
+    // section immediately, in the same episode/day they're eliminated —
+    // eliminations are immutable at the bottom of the column from that point on.
+    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber).reverse();
 
-    setEliminatedContestants(priorElimIds);
-    setLockedThisEpisode(new Set(thisEpisodeElimIds));
-    setActiveContestants((lastOrder ?? []).filter(dancerId => !priorElimIds.includes(dancerId)));
+    setEliminatedContestants(elimIds);
+    setActiveContestants((lastOrder ?? []).filter(dancerId => !elimIds.includes(dancerId)));
   }, [isActive]);
 
   const toggleEpisode = (episodeId: string) => {
@@ -132,9 +127,8 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
                 <div className="episode-heading">{heading}</div>
                 {activeContestants.map((dancerId) => {
-                    const isLocked = lockedThisEpisode.has(dancerId);
-                    return <div key={dancerId} className={`cell active-episode${isLocked ? ' eliminated-episode' : ''}`}>
-                    <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={!isLocked} isEliminated={isLocked} season={season} show={show}/>
+                    return <div key={dancerId} className="cell active-episode">
+                    <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
