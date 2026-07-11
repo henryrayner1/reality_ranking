@@ -129,6 +129,14 @@ const RankingComponent2 = () => {
     setActiveEpisodes(new Set<string>());
   }, [rankingType]);
 
+  // activeEpisodes holds episode ids from whichever show was previously
+  // selected — without this, switching shows leaves stale ids behind, and
+  // rankableEpisodes.find(...) for them comes up empty, showing an
+  // "Active Week"/remove-button chip with no episode number.
+  useEffect(() => {
+    setActiveEpisodes(new Set<string>());
+  }, [currShow?.id]);
+
   useEffect(() => {
     console.log("Past Rankings updated:", pastRankings);
     setFavoriteRankings(pastRankings.filter((r) => r.type === "FAVORITE").sort());
