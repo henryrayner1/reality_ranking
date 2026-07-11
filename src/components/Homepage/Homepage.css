@@ -13,11 +13,17 @@
 .homepage-hero {
   width: 100%;
   background: linear-gradient(160deg, rgb(202, 194, 245) 0%, rgb(223, 221, 235) 100%);
-  padding: 4rem 1.5rem 3rem;
+  padding: 2rem 1.5rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
+}
+
+.homepage-hero a {
+  text-decoration:underline;
+  font-style: italic;
+  color: #2a1f5c;
 }
 
 .homepage-hero-title {
@@ -29,11 +35,11 @@
 }
 
 .homepage-hero-subtitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: #4a4468;
-  max-width: 36rem;
-  margin: 0 0 2rem;
-  line-height: 1.6;
+  max-width: 50rem;
+  margin: 1rem 0 2rem;
+  line-height: 1.5;
 }
 
 .homepage-hero-actions {
@@ -76,7 +82,16 @@
 .homepage-shows-section {
   width: 100%;
   max-width: 72rem;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 0.5rem 1.5rem 4rem;
+}
+
+.homepage-shows-section h2 {
+  width: 100%;
+  padding: 1rem 0 1.5rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #2a1f5c;
+  font-style: italic;
 }
 
 .homepage-section-heading {

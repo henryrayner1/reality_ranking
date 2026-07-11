@@ -56,8 +56,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
       <section className="homepage-hero">
         <h1 className="homepage-hero-title">Reality Ranking</h1>
         <p className="homepage-hero-subtitle">
-          Rank your favorites, track eliminations, and see how your predictions stack up
-          episode to episode across your favorite reality shows.
+          Inspired by <a href="https://jokersupdates.com" target="_blank" rel="noopener noreferrer">Joker's Updates</a>' online Big Brother user survey rankings, this application allows you to rank contestants on your favorite reality shows as they air.
         </p>
         {!user && (
           <div className="homepage-hero-actions">
@@ -72,6 +71,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
       </section>
 
       <section className="homepage-shows-section">
+        <h2>Select a show to view insights on its user rankings.</h2>
         {shows.length === 0 ? (
           <p className="homepage-empty-state">No shows have been added yet.</p>
         ) : (
