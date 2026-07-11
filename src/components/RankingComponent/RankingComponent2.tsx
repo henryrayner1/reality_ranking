@@ -232,7 +232,7 @@ const RankingComponent2 = () => {
     <div className="episode-heading rank-column-cell rank-spacer"></div>
     {currSeason?.contestants?.map((contestant, index) => {
       return (
-        <div key={contestant.id} className="grid-item rank-column-cell">
+        <div key={`rank-${index+1}`} className="grid-item rank-column-cell">
           {index + 1}
         </div>
       );

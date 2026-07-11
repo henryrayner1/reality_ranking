@@ -76,7 +76,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
           <p className="homepage-empty-state">No shows have been added yet.</p>
         ) : (
           <div className="shows-grid">
-            {shows.map((show) => {
+            {shows.map((show, index) => {
               const logo = SHOW_LOGOS[show.name.toLowerCase()];
               return (
                 <div
@@ -84,6 +84,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
                   className="show-card"
                   role="button"
                   tabIndex={0}
+                  style={{ animationDelay: `${index * 200}ms` }}
                   onClick={() => goToShow(show)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") goToShow(show);
