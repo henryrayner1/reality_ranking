@@ -10,6 +10,7 @@ import { useSelector } from "react-redux";
 import { useShows } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
+import PageLoading from "../PageLoading";
 import './Homepage.css';
 
 // Keyed by lowercased show name so lookups aren't broken by casing
@@ -39,12 +40,16 @@ const fallbackGradientFor = (name: string) => {
 
 const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   const navigate = useNavigate();
-  const { data: shows = [] } = useShows();
+  const { data: shows = [], isLoading } = useShows();
   const user = useSelector((state: any) => state.user.value);
 
   const goToShow = (show: Show) => {
     navigate(`/insights/${slugifyShowName(show.name)}`);
   };
+
+  if (isLoading) {
+    return <PageLoading />;
+  }
 
   return (
     <div className="homepage">

@@ -16,6 +16,7 @@ import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
+import PageLoading from "../PageLoading";
 
 const RankingComponent2 = () => {
   const [activeEpisodes, setActiveEpisodes] = useState<Set<string>>(new Set<string>());
@@ -106,6 +107,15 @@ const RankingComponent2 = () => {
       setPastRankingForType(winnerRankings);
     }
   },[favoriteRankings, winnerRankings]);
+
+  if (loadingFlag) {
+    return (
+      <div className="rankings-page">
+        <h1 className="font-bold text-gray-800 page-header">Ranking Page</h1>
+        <PageLoading />
+      </div>
+    );
+  }
 
   const removeActiveEpisode = (episodeId: string) => {
     const newSet = new Set(activeEpisodes);
@@ -252,17 +262,15 @@ const RankingComponent2 = () => {
   const rankingContainer = <div className="ranking-container">
       <div className="ranking-panel">
         {rankTypeTabs}
-        {loadingFlag
-          ? <div className="ranking-grid-loading"><div className="loading-circle" /></div>
-          : rowCount === 0
-            ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
-            : episodeCount === 0
-              ? <p className="ranking-placeholder">{currShow?.rankingMode === "DAILY" ? "Ranking opens once the season premieres." : "No episodes have been added to this season yet."}</p>
-              : rankingGrid}
+        {rowCount === 0
+          ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
+          : episodeCount === 0
+            ? <p className="ranking-placeholder">{currShow?.rankingMode === "DAILY" ? "Ranking opens once the season premieres." : "No episodes have been added to this season yet."}</p>
+            : rankingGrid}
       </div>
-      {!loadingFlag && <div className="active-episodes-container">
+      <div className="active-episodes-container">
           {[...activeEpisodes].map((episodeId) => <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X {currShow?.rankingMode === "DAILY" ? "Day" : "Episode"} {rankableEpisodes.find(episode => episode.id === episodeId)?.episodeNumber}</div>)}
-        </div>}
+        </div>
       </div>
 
   const topBar = <div className="ranking-top-bar">

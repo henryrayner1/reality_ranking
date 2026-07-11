@@ -7,6 +7,7 @@ import ShowSelect from "../ShowSelect/ShowSelect";
 import SeasonSelect from "./SeasonSelect";
 import InsightsRankingTable from "./InsightsRankingTable";
 import ContestantDetailPanel from "./ContestantDetailPanel";
+import PageLoading from "../PageLoading";
 import "./Insights.css";
 
 type PageMode = "table" | "contestant";
@@ -34,8 +35,8 @@ const Insights = () => {
   const favoriteInsights = favoriteInsightsQuery.data ?? null;
   const winnerInsights = winnerInsightsQuery.data ?? null;
   const eliminations = eliminationsQuery.data ?? [];
-  const loadingFlag = !!currSeason?.id &&
-    (favoriteInsightsQuery.isLoading || winnerInsightsQuery.isLoading || eliminationsQuery.isLoading);
+  const loadingFlag = currShowTree.isLoading || (!!currSeason?.id &&
+    (favoriteInsightsQuery.isLoading || winnerInsightsQuery.isLoading || eliminationsQuery.isLoading));
 
   // Default the season picker to the show's current season whenever the
   // show changes (not on every currShowTree recompute), so a user's manual
@@ -49,6 +50,15 @@ const Insights = () => {
   useEffect(() => {
     setSelectedContestantId(null);
   }, [currSeason?.id]);
+
+  if (loadingFlag) {
+    return (
+      <div className="insights-page">
+        <h1 className="font-bold text-gray-800 page-header">Insights</h1>
+        <PageLoading />
+      </div>
+    );
+  }
 
   const topBar = (
     <div className="insights-top-bar">
