@@ -129,7 +129,13 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
       <div
         className="insights-grid"
         style={{
-          gridTemplateColumns: `repeat(${sortedEpisodes.length + 2}, 2.5rem) 1fr`,
+          // An extra fixed-width spacer column sits between the episode
+          // columns and AVG. With few episodes, the "Episode"/"Day" title
+          // (spanning only the episode columns) has barely 2.5rem to work
+          // with and crowds right up against AVG — the title spans into this
+          // spacer too, so it always has room to breathe regardless of
+          // episode count.
+          gridTemplateColumns: `repeat(${sortedEpisodes.length + 1}, 2.5rem) 1.5rem 2.5rem 1fr`,
           gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
         }}
       >
@@ -140,7 +146,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
         ))}
 
         {sortedEpisodes.length > 0 && (
-          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length}`, justifyContent: "center" }}>{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
+          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length + 1}`, justifyContent: "center" }}>{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
         )}
         {episodeColumns.map((episode) => (
           <Fragment key={`episode-${episode.episodeNumber}`}>
@@ -161,6 +167,15 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
               </div>
             ))}
           </Fragment>
+        ))}
+
+        {/* Explicitly claims the spacer column's remaining rows so
+            auto-placement can't slot the AVG heading or overall column into
+            them instead — same deterministic-count approach as every other
+            column here. */}
+        <div className="insights-episode-heading"></div>
+        {Array.from({ length: rowCount }, (_, index) => (
+          <div key={`spacer-cell-${index}`} className="insights-cell" />
         ))}
 
         <div className="insights-grid-heading insights-overall-heading" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
