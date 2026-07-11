@@ -1,7 +1,7 @@
-import { type Contestant, type Elimination, type Episode, nameToImage, type Ranking, type RankType, type Season, type Show } from "../../utils/Constants";
-import { use, useCallback, useEffect, useRef, useState, type JSX } from "react";
+import { type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { buildPastRankingColumn, getContestantEliminationStatus, getEliminations, getRanking, getUserRankings, submitRanking, submitRankings } from "../../utils/util";
+import { buildPastRankingColumn, submitRankings } from "../../utils/util";
 import {type EpisodeRef} from "../Episode/Episode";
 import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
@@ -9,43 +9,44 @@ import './RankingComponent.css';
 import SubmitRankingsModal from "../modals/SubmitRankingsModal";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/selectors";
 import ShowSelect from "../ShowSelect/ShowSelect";
-import { useParams } from "react-router-dom";
-import { useLocation } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { isRankableNow, getTodayDayKey } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
+import { slugifyShowName } from "../../utils/slug";
 
 const RankingComponent2 = () => {
-  const [allUserRankings, setAllUserRankings] = useState<Ranking[] | null>(null);
-  const [pastRankings, setPastRankings] = useState<Ranking[]>([]);
   const [activeEpisodes, setActiveEpisodes] = useState<Set<string>>(new Set<string>());
-  const [loadingFlag, setLoadingFlag] = useState(true);
   const [submitModalDisplayFlag, setSubmitModalDisplayFlag] = useState(false);
   const [rankingType, setRankingType] = useState<RankType>("FAVORITE");
   const [favoriteRankings, setFavoriteRankings] = useState<Ranking[]>([]);
   const [winnerRankings, setWinnerRankings] = useState<Ranking[]>([]);
+  const [pastRankings, setPastRankings] = useState<Ranking[]>([]);
   const [pastRankingForType, setPastRankingForType] = useState<Ranking[]>([]);
-  const [eliminations, setEliminations] = useState<Elimination[]>([]);
-  const [namesToImage, setNamesToImage] = useState<Record<string,string>>({});
 
-  // Both endpoints below return the user's *entire* ranking/elimination history
-  // unfiltered by show/season, so once fetched for a user this session there's
-  // no need to re-hit the API just because they switched shows/seasons — we
-  // only refetch when the logged-in user changes or after a new submission.
-  const rankingsLoadedForUserRef = useRef<string | null>(null);
-  const eliminationsLoadedRef = useRef(false);
+  const { showSlug } = useParams<{ showSlug: string }>();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  const { showId } = useParams<{ showId: string }>();
+  const user = useSelector((state: any) => state.user.value);
 
-  const currShow = useAppSelector(selectCurrShow);
+  const { data: shows = [] } = useShows();
+  const showId = shows.find(s => slugifyShowName(s.name) === showSlug)?.id;
+  const currShowTree = useShowTree(showId);
+  const currShow = currShowTree.data;
 
-  const currShowTree = useAppSelector(state =>
-    selectShowWithSeasonsAndEpisodes(state, currShow?.id || "")
-  );
+  const currSeason = currShow?.seasons?.find(s => s.seasonNumber === currShow?.currSeason) ?? null;
+  const hasRankableSeason = !!currSeason?.episodes?.length;
 
-  const currSeason = currShowTree?.seasons?.find(s => s.seasonNumber === currShow?.currSeason) ?? null;
+  const userRankingsQuery = useUserRankings(user?.id);
+  const eliminationsQuery = useEliminations(!!user?.id);
+  const allUserRankings = userRankingsQuery.data ?? null;
+  const eliminations = eliminationsQuery.data ?? [];
+
+  const loadingFlag = currShowTree.isLoading ||
+    (!!user && hasRankableSeason && (userRankingsQuery.isLoading || eliminationsQuery.isLoading));
 
   // Only episodes whose airDate + assumed runtime has already passed are
   // rankable. Sorted explicitly since the API doesn't guarantee episode
@@ -60,69 +61,24 @@ const RankingComponent2 = () => {
   // actually being displayed before it's used for any threshold logic.
   const currentSeasonEliminations = eliminations.filter((e) => e.seasonId === currSeason?.id);
 
-  useEffect(() => {
-    if (currShow) {
-      //setNamesToImage(nameToImage[currShow?.id][currSeason?.seasonNumber] || {});
-    }
-  }, [currSeason])
-
-  const user = useSelector((state: any) => state.user.value);
   let refs = useRef({});
 
   const setEpisodeRef = useCallback((episodeId: string) => (inst: EpisodeRef | null) => {
     refs.current[episodeId] = inst;
   }, []);
 
-  const refreshUserRankings = async (userId: string) => {
-    const prevRanks = await getUserRankings(userId);
-    setAllUserRankings(prevRanks || []);
-    rankingsLoadedForUserRef.current = userId;
-  };
-
-  const ensureEliminationsLoaded = async () => {
-    if (eliminationsLoadedRef.current) return;
-    const elimRes = await getEliminations();
-    setEliminations(elimRes);
-    eliminationsLoadedRef.current = true;
-  };
-
-  useEffect(() => {
-    const loadIfNeeded = async () => {
-      if (!currShow) return; // shows haven't loaded from Redux yet — stay in loading state
-      if (!user) { setLoadingFlag(false); return; }
-      if (!(currSeason?.episodes?.length > 0)) { setLoadingFlag(false); return; }
-
-      const needsRankings = rankingsLoadedForUserRef.current !== user.id;
-      const needsEliminations = !eliminationsLoadedRef.current;
-      if (!needsRankings && !needsEliminations) { setLoadingFlag(false); return; }
-
-      try {
-        setLoadingFlag(true);
-        await Promise.all([
-          needsRankings ? refreshUserRankings(user.id) : Promise.resolve(),
-          needsEliminations ? ensureEliminationsLoaded() : Promise.resolve(),
-        ]);
-      } catch (error) {
-        console.error("Error fetching user rankings:", error);
-      } finally {
-        setTimeout(() => {setLoadingFlag(false);}, 1000);
-      }
-    };
-    loadIfNeeded();
-  },[currSeason?.id, user?.id]);
+  const submitRankingsMutation = useMutation({
+    mutationFn: submitRankings,
+    // Awaited by handleSubmit so the submitted episodes have already moved
+    // into pastRankingForType (no longer draggable) by the time the modal
+    // reports success.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: userRankingsQueryKey(user?.id) }),
+  });
 
   useEffect(() => {
     if (!allUserRankings || !currSeason?.id) { setPastRankings([]); return; }
     setPastRankings(allUserRankings.filter((r: Ranking) => r.episode?.seasonId === currSeason.id));
   }, [allUserRankings, currSeason?.id]);
-
-  useEffect(() => {
-    if (currShowTree && currShowTree.seasons) {
-      const currentSeason = currShowTree.seasons.find((season: any) => season.is_current);
-      const newSeason = currentSeason || null;
-    }
-  },[currShow?.id, currShowTree]);
-
 
   useEffect(() => {
     setPastRankingForType(rankingType === "FAVORITE" ? favoriteRankings : winnerRankings);
@@ -159,12 +115,9 @@ const RankingComponent2 = () => {
 
   const handleSubmit = async () => {
     const activeEpisodesArr = Array.from(activeEpisodes);
-    const rankingsList = await Promise.all(activeEpisodesArr.map(episode => ({ userId: user.id, episodeId: episode, rankings: refs.current[episode]?.createEntries?.(), type: rankingType})));
-    await submitRankings(rankingsList);
+    const rankingsList = activeEpisodesArr.map(episode => ({ userId: user.id, episodeId: episode, rankings: refs.current[episode]?.createEntries?.(), type: rankingType}));
+    await submitRankingsMutation.mutateAsync(rankingsList);
     setActiveEpisodes(new Set<string>());
-    // Awaited so the submitted episodes have already moved into pastRankingForType
-    // (no longer draggable) by the time the modal reports success.
-    await refreshUserRankings(user.id);
   };
 
   const checkPastRankings = (episodeId) => {
@@ -315,8 +268,12 @@ const RankingComponent2 = () => {
   const topBar = <div className="ranking-top-bar">
     <div className="ranking-top-bar-left">
       <ShowSelect
-          currShow={currShow}
-          currSeason={currSeason}
+          shows={shows}
+          currShowId={showId}
+          onSelectShow={(id) => {
+            const show = shows.find(s => s.id === id);
+            if (show) navigate(`/ranking/${slugifyShowName(show.name)}`);
+          }}
         />
       <h1 className="font-bold rank-type-heading">Current Season: {currShow?.currSeason}</h1>
     </div>

@@ -1,14 +1,13 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addSeason, deleteSeason, getSeasons, getShows, updateSeasonPremiereDate } from "../../utils/util";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addSeason, changeCurrentSeason, deleteSeason, updateSeasonPremiereDate } from "../../utils/util";
+import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { RankingModes, type Season } from "../../utils/Constants";
 import * as AdminUI from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { deleteSeasonAndCleanup } from "../../redux/thunks/showsThunks";
-import { upsertSeason } from "../../redux/slices/seasonsSlice";
-import { selectCurrShow } from "../../redux/selectors";
+import { showsQueryKey, useSeasons, useShows } from "../../hooks/queries";
 import { dayKeyToEasternMidnightMs } from "../../utils/episodeRankability";
+import { slugifyShowName } from "../../utils/slug";
 
 // Premiere date is stored/edited as a plain "YYYY-MM-DD" date-input value but
 // persisted as an Eastern-midnight ISO timestamp — not UTC midnight — so it
@@ -19,28 +18,47 @@ import { dayKeyToEasternMidnightMs } from "../../utils/episodeRankability";
 const dateInputToIso = (value: string): string => new Date(dayKeyToEasternMidnightMs(value)).toISOString();
 const isoToDateInput = (value?: string | null): string => value ? value.slice(0, 10) : '';
 
-const AdminSeasons = () => {
+interface AdminSeasonsProps {
+  showId?: string;
+}
 
-  const dispatch = useAppDispatch();
-  const currShow = useAppSelector(selectCurrShow);
+const AdminSeasons = ({ showId }: AdminSeasonsProps) => {
 
+  const navigate = useNavigate();
   const qc = useQueryClient()
   const [form, setForm] = useState<Partial<Season> & { premiereDateInput?: string }>({})
-  const { data: shows = [] } = useQuery({ queryKey: ['shows'], queryFn: getShows })
-  const { data: seasons = [], isLoading } = useQuery({ queryKey: ['seasons', currShow], queryFn: () => getSeasons(currShow.id) })
-  const create = useMutation({ mutationFn: addSeason, onSuccess: (season) => { dispatch(upsertSeason(season)); qc.invalidateQueries({ queryKey: ['seasons'] }); setForm({}) } })
+  const { data: shows = [] } = useShows()
+  const currShow = shows.find(s => s.id === showId);
+  const { data: seasons = [], isLoading } = useSeasons(showId)
+  const create = useMutation({
+    mutationFn: addSeason,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: showsQueryKey() }); setForm({}) }
+  })
   const remove = useMutation({
     mutationFn: async (seasonId: string) => {
       await deleteSeason(seasonId);
-      return dispatch(deleteSeasonAndCleanup(seasonId)).unwrap();
+      // The backend doesn't automatically move a show off a season that
+      // just got deleted — if it was the current one, point the show at
+      // whichever remaining season has the highest number (mirrors the
+      // old deleteSeasonAndCleanup Redux thunk's fallback logic).
+      const removedSeason = seasons.find(s => s.id === seasonId);
+      if (currShow && removedSeason && removedSeason.seasonNumber === currShow.currSeason) {
+        const nextSeason: Season | null = seasons
+          .filter(s => s.id !== seasonId)
+          .reduce((max: Season | null, s: Season) => (!max || s.seasonNumber > max.seasonNumber ? s : max), null);
+        if (nextSeason) {
+          await changeCurrentSeason(currShow.id, nextSeason.id);
+        }
+      }
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ['seasons'] })
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
+    }
   });
   const updatePremiereDate = useMutation({
     mutationFn: ({ seasonId, premiereDate }: { seasonId: string; premiereDate: string | null }) => updateSeasonPremiereDate(seasonId, premiereDate),
-    onSuccess: (season) => {
-      dispatch(upsertSeason(season));
-      qc.invalidateQueries({ queryKey: ['seasons'] });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
     }
   });
 
@@ -48,8 +66,12 @@ const AdminSeasons = () => {
     <div>
       <AdminUI.PageHeader title="Seasons" subtitle="Attach seasons to existing shows" />
       <ShowSelect
-        currShow={currShow}
-        currSeason={currShow?.currSeason}
+        shows={shows}
+        currShowId={showId}
+        onSelectShow={(id) => {
+          const show = shows.find(s => s.id === id);
+          if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
+        }}
       />
       {currShow && <AdminUI.TwoCol>
         <AdminUI.Card title="Add new season">

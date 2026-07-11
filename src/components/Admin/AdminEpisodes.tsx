@@ -1,22 +1,28 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { addEpisode, deleteEpisode, getSeasons, getEpisodesByShow } from "../../utils/util";
-import { RankingModes, type Show, type Episode } from "../../utils/Constants";
+import { addEpisode, deleteEpisode } from "../../utils/util";
+import { RankingModes, type Episode } from "../../utils/Constants";
 import * as AdminUI from "../../utils/AdminComponents";
-import { Card } from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
-import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow } from "../../redux/selectors";
+import { useNavigate } from "react-router-dom";
+import { showsQueryKey, useEpisodesByShow, useSeasons, useShows } from "../../hooks/queries";
+import { slugifyShowName } from "../../utils/slug";
 
-const AdminEpisodes = () => {
-    const currShow = useAppSelector(selectCurrShow);
+interface AdminEpisodesProps {
+    showId?: string;
+}
+
+const AdminEpisodes = ({ showId }: AdminEpisodesProps) => {
+    const navigate = useNavigate();
+    const { data: shows = [] } = useShows();
+    const currShow = shows.find(s => s.id === showId);
     const qc = useQueryClient()
     const [episode, setEpisode] = useState<Partial<Episode>>({})
     const [airTime, setAirTime] = useState("20:00");
-    const { data: seasons = [] } = useQuery({ queryKey: ['seasons', currShow?.id], queryFn: () => getSeasons(currShow?.id), enabled: !!currShow?.id })
-    const { data: episodes = [], isLoading } = useQuery({ queryKey: ['episodes', currShow?.id], queryFn: () => getEpisodesByShow(currShow.id), enabled: !!currShow?.id })
-    const create = useMutation({ mutationFn: (newEpisode: Partial<Episode>) => addEpisode(newEpisode), onSuccess: () => { qc.invalidateQueries({ queryKey: ['episodes', currShow?.id] }); setEpisode({}); setAirTime("20:00"); } })
-    const remove = useMutation({ mutationFn: (episodeId: string) => deleteEpisode(episodeId), onSuccess: () => qc.invalidateQueries({ queryKey: ['episodes', currShow?.id] }) })
+    const { data: seasons = [] } = useSeasons(showId)
+    const { data: episodes = [], isLoading } = useEpisodesByShow(showId)
+    const create = useMutation({ mutationFn: (newEpisode: Partial<Episode>) => addEpisode(newEpisode), onSuccess: () => { qc.invalidateQueries({ queryKey: showsQueryKey() }); setEpisode({}); setAirTime("20:00"); } })
+    const remove = useMutation({ mutationFn: (episodeId: string) => deleteEpisode(episodeId), onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }) })
 
     const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'
 
@@ -30,8 +36,12 @@ const AdminEpisodes = () => {
         <div>
         <AdminUI.PageHeader title="Episodes" subtitle="Log episodes for each season" />
         <ShowSelect
-        currShow={currShow}
-        currSeason={currShow?.currSeason}
+        shows={shows}
+        currShowId={showId}
+        onSelectShow={(id) => {
+          const show = shows.find(s => s.id === id);
+          if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
+        }}
       />
         {currShow &&<AdminUI.TwoCol>
             {currShow.rankingMode === RankingModes.DAILY ? (

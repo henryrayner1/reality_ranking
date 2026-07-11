@@ -3,26 +3,36 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { Provider } from 'react-redux'
-import { persistor, store } from './redux/store.ts'
+import { store } from './redux/store.ts'
 import { BrowserRouter } from 'react-router-dom'
-import { PersistGate } from 'redux-persist/integration/react'
 import ScrollToTop from './utils/ScrollToTop.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
-const queryClient = new QueryClient()
+// Mirrors how Redux used to hold this data: fetched once, never silently
+// refetched, and only ever updated by an explicit invalidateQueries call
+// after a mutation (the React Query equivalent of dispatching an upsert).
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: Infinity,
+      gcTime: Infinity,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClient}>
         <BrowserRouter basename={import.meta.env.BASE_URL}>
           <ScrollToTop />
           <App />
         </BrowserRouter>
-        </QueryClientProvider>
-      </PersistGate>
+      </QueryClientProvider>
     </Provider>
   </StrictMode>,
 )

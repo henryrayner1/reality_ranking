@@ -1,33 +1,29 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addShow, deleteShow, getShows, updateShowRankingMode } from "../../utils/util";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addShow, deleteShow, updateShowRankingMode } from "../../utils/util";
 import { useState } from "react";
 import { RankingModes, type Show } from "../../utils/Constants";
 import * as AdminUI from "../../utils/AdminComponents";
 import UploadImage from "../UploadImage";
-import { useAppDispatch } from "../../redux/hooks";
-import { deleteShowAndCleanup } from "../../redux/thunks/showsThunks";
-import { upsertShow } from "../../redux/slices/showsSlice";
+import { showsQueryKey, useShows } from "../../hooks/queries";
 
 const AdminShows = () => {
-    const dispatch = useAppDispatch();
     const qc = useQueryClient()
     const [form, setForm] = useState<Partial<Show>>({ currSeason: 1, rankingMode: RankingModes.EPISODE })
-    const { data: shows = [], isLoading } = useQuery({ queryKey: ['shows'], queryFn: getShows })
-    const create = useMutation({ mutationFn: addShow, onSuccess: (show) => { dispatch(upsertShow(show)); qc.invalidateQueries({ queryKey: ['shows'] }); setForm({ currSeason: 1, rankingMode: RankingModes.EPISODE }) } })
+    const { data: shows = [], isLoading } = useShows()
+    const create = useMutation({ mutationFn: addShow, onSuccess: () => { qc.invalidateQueries({ queryKey: showsQueryKey() }); setForm({ currSeason: 1, rankingMode: RankingModes.EPISODE }) } })
     const remove = useMutation({
         mutationFn: async (showId: string) => {
             await deleteShow(showId);
-            return dispatch(deleteShowAndCleanup(showId)).unwrap();
+            return showId;
         },
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: ['shows'] });
+            qc.invalidateQueries({ queryKey: showsQueryKey() });
         }
     })
     const updateMode = useMutation({
         mutationFn: ({ showId, rankingMode }: { showId: string; rankingMode: string }) => updateShowRankingMode(showId, rankingMode),
-        onSuccess: (show) => {
-            dispatch(upsertShow(show));
-            qc.invalidateQueries({ queryKey: ['shows'] });
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: showsQueryKey() });
         }
     })
 

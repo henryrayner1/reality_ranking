@@ -7,8 +7,8 @@ import cdrAllStarsLogo from "../../assets/logos/cdrAllStarsLogo.png"
 import projectRunwayLogo from "../../assets/logos/projectRunwayLogo.jpeg"
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import { useAppDispatch, useAppSelector } from "../../redux/hooks";
-import { showsSelectors, setCurrShow } from "../../redux/slices/showsSlice";
+import { useShows } from "../../hooks/queries";
+import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
 import './Homepage.css';
 
@@ -39,13 +39,11 @@ const fallbackGradientFor = (name: string) => {
 
 const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const shows = useAppSelector(showsSelectors.selectAll);
+  const { data: shows = [] } = useShows();
   const user = useSelector((state: any) => state.user.value);
 
   const goToShow = (show: Show) => {
-    dispatch(setCurrShow(show));
-    navigate("/insights");
+    navigate(`/insights/${slugifyShowName(show.name)}`);
   };
 
   return (

@@ -1,7 +1,3 @@
-import { createAsyncThunk } from "@reduxjs/toolkit";
-import { upsertShows } from "../redux/slices/showsSlice";
-import { upsertSeasons } from "../redux/slices/seasonsSlice";
-import { upsertEpisodes } from "../redux/slices/episodesSlice";
 import type { Contestant, Elimination, EliminationEntry, Episode, Ranking, Season, Show } from "./Constants";
 import { backendUrl } from "./apiBase";
 

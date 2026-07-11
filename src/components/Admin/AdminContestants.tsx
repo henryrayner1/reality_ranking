@@ -1,26 +1,30 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef, useState } from "react";
-import type { Contestant, Season, Show } from "../../utils/Constants";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { Contestant, Season } from "../../utils/Constants";
 import {
   addContestant,
   deleteContestant,
-  getContestantsBySeason,
-  getContestantsByShow,
-  getSeasons,
   updateContestantPhoto,
 } from "../../utils/util";
 import { backendUrl } from "../../utils/apiBase";
 import * as AdminUI from "../../utils/AdminComponents";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import AvatarEditor from "react-avatar-editor";
-import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow } from "../../redux/selectors";
+import { useNavigate } from "react-router-dom";
+import { showsQueryKey, useSeasons, useShows } from "../../hooks/queries";
+import { slugifyShowName } from "../../utils/slug";
 
-const AdminContestants = () => {
+interface AdminContestantsProps {
+  showId?: string;
+}
+
+const AdminContestants = ({ showId }: AdminContestantsProps) => {
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [contestant, setContestant] = useState<Partial<Contestant>>({});
   const [photoLabel, setPhotoLabel] = useState("Click, drag & drop, or paste to upload headshot");
-  const currShow = useAppSelector(selectCurrShow);
+  const { data: shows = [] } = useShows();
+  const currShow = shows.find(s => s.id === showId);
   const [currSeason, setCurrSeason] = useState<Season>();
   const [image, setImage] = useState<File | null>(null);
   const [scale, setScale] = useState(1.2);
@@ -56,33 +60,29 @@ const AdminContestants = () => {
     return () => window.removeEventListener("paste", onWindowPaste);
   }, [currShow]);
 
-  const { data: seasons = [] } = useQuery({
-    queryKey: ["seasons", currShow?.id],
-    queryFn: () => getSeasons(currShow.id),
-    enabled: !!currShow?.id,
-  });
-  const { data: contestants = [], isLoading } = useQuery({
-    queryKey: ["contestants", currShow?.id],
-    queryFn: () => getContestantsByShow(currShow.id),
-    enabled: !!currShow?.id,
-  });
+  const { data: seasons = [], isLoading } = useSeasons(showId);
+  // Contestants live nested on each season (getSeasons already returns them)
+  // rather than in a separate cache — this is the single source of truth
+  // that Ranking/Insights also read via useShowTree, so a create/edit/delete
+  // here is immediately visible there without a page reload.
+  const contestants = useMemo(() => seasons.flatMap((s) => s.contestants ?? []), [seasons]);
   const create = useMutation({
     mutationFn: addContestant,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["contestants"] });
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
       setContestant((c) => ({ seasonId: c.seasonId }));
       setPhotoLabel("Click, drag & drop, or paste to upload headshot");
     },
   });
   const remove = useMutation({
     mutationFn: deleteContestant,
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["contestants"] }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }),
   });
   const updatePhoto = useMutation({
     mutationFn: ({ id, photoUrl }: { id: string; photoUrl: string }) =>
       updateContestantPhoto(id, photoUrl),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["contestants"] });
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
       closeEditPhoto();
     },
   });
@@ -146,9 +146,13 @@ const AdminContestants = () => {
         title="Contestants"
         subtitle="Add contestants and photos to a season"
       />
-      <ShowSelect 
-        currShow={currShow} 
-        currSeason={currShow?.currSeason} 
+      <ShowSelect
+        shows={shows}
+        currShowId={showId}
+        onSelectShow={(id) => {
+          const show = shows.find(s => s.id === id);
+          if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
+        }}
       />
      {currShow && <AdminUI.TwoCol>
         <AdminUI.Card title="Add contestant">

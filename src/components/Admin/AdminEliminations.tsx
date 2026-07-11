@@ -1,22 +1,43 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { useEffect, useState } from "react"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
+import { useState } from "react"
 import { EliminationTypes, type EliminationEntry, type EliminationType, type Season } from "../../utils/Constants"
-import { addElimination, deleteElimination, getContestantsBySeason, getCurrentSeason, getEliminationsBySeason, getEpisodes, getEpisodesByShow } from "../../utils/util"
+import { addElimination, deleteElimination } from "../../utils/util"
 import * as AdminUI from "../../utils/AdminComponents"
-import { useAppSelector } from "../../redux/hooks"
+import { useNavigate } from "react-router-dom"
 import ShowSelect from "../ShowSelect/ShowSelect"
-import { selectCurrShow } from "../../redux/selectors"
+import { eliminationsBySeasonQueryKey, showsQueryKey, useEliminationsBySeason, useEpisodesByShow, useSeasons, useShows } from "../../hooks/queries"
+import { slugifyShowName } from "../../utils/slug"
 
-const AdminEliminations = () => {
+interface AdminEliminationsProps {
+    showId?: string;
+}
+
+const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
+    const navigate = useNavigate();
     const qc = useQueryClient()
     const [elimination, setElimination] = useState<Partial<EliminationEntry>>({ eliminationType: EliminationTypes.ELIMINATED })
-    const currShow = useAppSelector(selectCurrShow);
-    const [currSeason, setCurrSeason] = useState<Partial<Season>>({})
-    const { data: episodes = [] } = useQuery({ queryKey: ['episodes', currSeason.id], queryFn: () => getEpisodesByShow(currShow.id) })
-    const { data: contestants = [] } = useQuery({ queryKey: ['contestants', currSeason.id], queryFn: () => getContestantsBySeason(currSeason.id) })
-    const { data: eliminations = [], isLoading } = useQuery({ queryKey: ['eliminations', currSeason.id], queryFn: () => getEliminationsBySeason(currSeason.id) })
-    const create = useMutation({ mutationFn: () => addElimination(elimination), onSuccess: () => { qc.invalidateQueries({ queryKey: ['eliminations', currSeason.id] }); qc.invalidateQueries({ queryKey: ['contestants', currSeason.id] }); setElimination({ eliminationType: EliminationTypes.ELIMINATED }) } })
-    const remove = useMutation({ mutationFn: deleteElimination, onSuccess: () => { qc.invalidateQueries({ queryKey: ['eliminations', currSeason.id] }); qc.invalidateQueries({ queryKey: ['contestants', currSeason.id] }) } })
+    const { data: shows = [] } = useShows();
+    const currShow = shows.find(s => s.id === showId);
+    const { data: seasons = [] } = useSeasons(showId);
+    const currSeason: Partial<Season> = seasons.find(s => s.seasonNumber === currShow?.currSeason) ?? {};
+    const { data: episodes = [] } = useEpisodesByShow(showId)
+    const contestants = currSeason.contestants ?? [];
+    const { data: eliminations = [], isLoading } = useEliminationsBySeason(currSeason.id)
+    const create = useMutation({
+        mutationFn: () => addElimination(elimination),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(currSeason.id) });
+            qc.invalidateQueries({ queryKey: showsQueryKey() });
+            setElimination({ eliminationType: EliminationTypes.ELIMINATED });
+        }
+    })
+    const remove = useMutation({
+        mutationFn: deleteElimination,
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(currSeason.id) });
+            qc.invalidateQueries({ queryKey: showsQueryKey() });
+        }
+    })
 
     const ELIM_LABELS: Record<EliminationType, string> = {
         ELIMINATED: 'Eliminated', QUIT: 'Quit', MEDICAL: 'Medical removal', WINNER: 'Winner', RUNNER_UP: 'Runner-up',
@@ -25,22 +46,16 @@ const AdminEliminations = () => {
         ELIMINATED: 'red', QUIT: 'amber', MEDICAL: 'amber', WINNER: 'green', RUNNER_UP: 'purple',
     }
 
-    useEffect(() => {
-        const fetchCurrentSeason = async () => {
-            if (currShow?.currSeason) {
-                let season = await getCurrentSeason(currShow.id);
-                setCurrSeason(season);
-            }
-        };
-        fetchCurrentSeason();
-    }, [currShow])
-
     return (
         <div>
         <AdminUI.PageHeader title="Eliminations" subtitle="Record which contestants were eliminated each episode" />
         <ShowSelect
-            currShow={currShow}
-            currSeason={currShow?.currSeason}
+            shows={shows}
+            currShowId={showId}
+            onSelectShow={(id) => {
+              const show = shows.find(s => s.id === id);
+              if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
+            }}
         />
         {currShow && <AdminUI.TwoCol>
             <AdminUI.Card title="Log elimination">

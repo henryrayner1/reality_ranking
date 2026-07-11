@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { type InsightsResponse, type RankType } from "../../utils/Constants";
-import { getEliminationsBySeason, getRankingsInsights } from "../../utils/util";
-import { useAppSelector } from "../../redux/hooks";
-import { selectCurrShow, selectShowWithSeasonsAndEpisodes } from "../../redux/selectors";
+import { type RankType } from "../../utils/Constants";
+import { useNavigate, useParams } from "react-router-dom";
+import { useEliminationsBySeason, useRankingsInsights, useShowTree, useShows } from "../../hooks/queries";
+import { slugifyShowName } from "../../utils/slug";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import SeasonSelect from "./SeasonSelect";
 import InsightsRankingTable from "./InsightsRankingTable";
@@ -16,18 +16,26 @@ const Insights = () => {
   const [rankingType, setRankingType] = useState<RankType>("FAVORITE");
   const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
   const [selectedContestantId, setSelectedContestantId] = useState<string | null>(null);
-  const [favoriteInsights, setFavoriteInsights] = useState<InsightsResponse | null>(null);
-  const [winnerInsights, setWinnerInsights] = useState<InsightsResponse | null>(null);
-  const [eliminations, setEliminations] = useState<any[]>([]);
-  const [loadingFlag, setLoadingFlag] = useState(true);
 
-  const currShow = useAppSelector(selectCurrShow);
-  const currShowTree = useAppSelector((state) =>
-    selectShowWithSeasonsAndEpisodes(state, currShow?.id || "")
-  );
+  const { showSlug } = useParams<{ showSlug: string }>();
+  const navigate = useNavigate();
 
-  const seasons = currShowTree?.seasons ?? [];
+  const { data: shows = [] } = useShows();
+  const showId = shows.find(s => slugifyShowName(s.name) === showSlug)?.id;
+  const currShowTree = useShowTree(showId);
+  const currShow = currShowTree.data;
+
+  const seasons = currShow?.seasons ?? [];
   const currSeason = seasons.find((s) => s.id === selectedSeasonId) ?? null;
+
+  const favoriteInsightsQuery = useRankingsInsights(currSeason?.id, "FAVORITE");
+  const winnerInsightsQuery = useRankingsInsights(currSeason?.id, "WINNER");
+  const eliminationsQuery = useEliminationsBySeason(currSeason?.id);
+  const favoriteInsights = favoriteInsightsQuery.data ?? null;
+  const winnerInsights = winnerInsightsQuery.data ?? null;
+  const eliminations = eliminationsQuery.data ?? [];
+  const loadingFlag = !!currSeason?.id &&
+    (favoriteInsightsQuery.isLoading || winnerInsightsQuery.isLoading || eliminationsQuery.isLoading);
 
   // Default the season picker to the show's current season whenever the
   // show changes (not on every currShowTree recompute), so a user's manual
@@ -40,31 +48,19 @@ const Insights = () => {
 
   useEffect(() => {
     setSelectedContestantId(null);
-    if (!currSeason?.id) {
-      setFavoriteInsights(null);
-      setWinnerInsights(null);
-      setEliminations([]);
-      return;
-    }
-    setLoadingFlag(true);
-    Promise.all([
-      getRankingsInsights(currSeason.id, "FAVORITE"),
-      getRankingsInsights(currSeason.id, "WINNER"),
-      getEliminationsBySeason(currSeason.id),
-    ])
-      .then(([fav, win, elims]) => {
-        setFavoriteInsights(fav);
-        setWinnerInsights(win);
-        setEliminations(elims);
-      })
-      .catch((error) => console.error("Error fetching insights:", error))
-      .finally(() => setLoadingFlag(false));
   }, [currSeason?.id]);
 
   const topBar = (
     <div className="insights-top-bar">
       <div className="insights-top-bar-left">
-        <ShowSelect currShow={currShow} currSeason={currSeason} />
+        <ShowSelect
+          shows={shows}
+          currShowId={showId}
+          onSelectShow={(id) => {
+            const show = shows.find(s => s.id === id);
+            if (show) navigate(`/insights/${slugifyShowName(show.name)}`);
+          }}
+        />
         <SeasonSelect seasons={seasons} selectedSeasonId={selectedSeasonId} onChange={setSelectedSeasonId} />
       </div>
     </div>

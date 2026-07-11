@@ -1,58 +1,20 @@
-import { combineReducers, configureStore } from '@reduxjs/toolkit';
+import { configureStore } from '@reduxjs/toolkit';
 import userReducer from './slices/userSlice';
-import episodesReducer from './slices/episodesSlice';
-import storage from 'redux-persist/lib/storage'
-import persistReducer from 'redux-persist/es/persistReducer';
-import persistStore from 'redux-persist/lib/persistStore';
-import rankingsReducer from './slices/rankingsSlice';
-import showReducer from './slices/showsSlice';
-import seasonsReducer from './slices/seasonsSlice';
 
-import {
-  FLUSH,
-  REHYDRATE,
-  PAUSE,
-  PERSIST,
-  PURGE,
-  REGISTER,
-} from 'redux-persist'
-
-const rootReducer = {
-  user: userReducer,
-  episodes: episodesReducer,
-  activeRankings: rankingsReducer,
-  shows: showReducer,
-  seasons: seasonsReducer
-};
-
-const persistConfig = {
-  key: 'root',
-  storage,
-  // 'user' is deliberately NOT persisted here — it's already restored
-  // synchronously from its own localStorage key at store-creation time
-  // (see userSlice's initialState), which is authoritative. Also
-  // persisting it here via redux-persist's own (asynchronous) rehydration
-  // created two competing copies of the same state that could go stale
-  // relative to each other, e.g. a fresh login could get silently
-  // clobbered back to a previous (or logged-out) session once
-  // redux-persist's rehydration resolved a moment later.
-  whitelist: ['episodes']
-};
-
-const persistedReducer = persistReducer(persistConfig, combineReducers(rootReducer));
-
+// user is the only slice left in Redux — shows/seasons/episodes/rankings all
+// moved to React Query. It's deliberately not persisted here: it's already
+// restored synchronously from its own localStorage key at store-creation
+// time (see userSlice's initialState), which is authoritative. Persisting it
+// here too via redux-persist's own (asynchronous) rehydration created two
+// competing copies of the same state that could go stale relative to each
+// other, e.g. a fresh login could get silently clobbered back to a previous
+// (or logged-out) session once redux-persist's rehydration resolved a moment
+// later.
 export const store = configureStore({
-  reducer: persistedReducer,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-      },
-    }),
+  reducer: {
+    user: userReducer,
+  },
 });
 
-export const persistor = persistStore(store);
-
-// ✅ export these types for hooks
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
