@@ -1,12 +1,23 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation } from "react-router-dom";
 import "./Navbar.css";
 
 const Navbar = (props) => {
 
     const user = useSelector((state: any) => state.user.value);
     const navRef = useRef<HTMLElement>(null);
+    const location = useLocation();
+
+    // Navbar sits above <Routes>, so it can't read the active route's
+    // :showSlug via useParams — pull it straight out of the URL instead, so
+    // switching between Admin/My Rankings/Insights carries the show you're
+    // currently looking at along with you rather than bouncing back to
+    // whichever show happens to be first in the list.
+    const currentShowSlug = location.pathname.match(/^\/(?:ranking|insights|admin)\/([^/]+)/)?.[1];
+    const rankingPath = currentShowSlug ? `/ranking/${currentShowSlug}` : "/ranking";
+    const insightsPath = currentShowSlug ? `/insights/${currentShowSlug}` : "/insights";
+    const adminPath = currentShowSlug ? `/admin/${currentShowSlug}` : "/admin";
 
     // Exposed as a CSS var so other sticky elements (e.g. .page-header) can
     // sit flush beneath the navbar regardless of its actual rendered height,
@@ -43,13 +54,13 @@ const Navbar = (props) => {
                 <div className="collapse navbar-collapse" id="mainNavbar">
                     <ul className="navbar-nav me-auto mb-2 mb-md-0">
                         {props.isAdmin && <li className="nav-item">
-                            <NavLink className="nav-link" to="/admin">Admin</NavLink>
+                            <NavLink className="nav-link" to={adminPath}>Admin</NavLink>
                         </li>}
                         {props.loggedIn && <li className="nav-item">
-                            <NavLink className="nav-link" to="/ranking">My Rankings</NavLink>
+                            <NavLink className="nav-link" to={rankingPath}>My Rankings</NavLink>
                         </li>}
                         <li className="nav-item">
-                            <NavLink className="nav-link" to="/insights">Insights</NavLink>
+                            <NavLink className="nav-link" to={insightsPath}>Insights</NavLink>
                         </li>
                     </ul>
                     <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-md-center">
