@@ -285,7 +285,7 @@ const RankingComponent2 = () => {
         />
       <h1 className="font-bold rank-type-heading">Current Season: {currShow?.currSeason}</h1>
     </div>
-    <div className={`button ${checkSubmitDisabled() ? 'inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
+    <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
           Submit Rankings
         </div>
   </div>

@@ -281,6 +281,16 @@
   font-weight: bold;
 }
 
+.contestant-list::-webkit-scrollbar {
+    width: 0.5rem;
+  }
+
+.contestant-list::-webkit-scrollbar-thumb {
+    background-color: #1b1374; /* Indigo thumb */
+    border-radius: 0.3rem;
+    border: 0.1rem solid #f1f1f1; /* creates spacing effect */
+  }
+
 .contestant-detail-panel {
   flex: 1 1 0;
   min-width: 0;

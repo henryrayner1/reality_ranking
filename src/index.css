@@ -93,6 +93,28 @@ body {
   cursor:default;
 }
 
+.inactive:hover {
+  cursor: default;
+  background-color: rgba(0,0,128,0.2);
+  border-color: rgba(0,0,128,0.0);
+}
+
+.button-inactive {
+  background-color: rgba(0,0,128,0.2);
+  border-color: rgba(0,0,128,0.0);
+  cursor:default;
+  color: white;
+  border-radius: 0.9rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  max-height: 2.7rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap:nowrap;
+}
+
+
 .submit-container {
   z-index: 10;
   bottom: 0;
