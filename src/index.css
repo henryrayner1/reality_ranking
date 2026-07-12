@@ -101,7 +101,7 @@ body {
 
 .button-inactive {
   background-color: rgba(0,0,128,0.2);
-  border: 3px solid rgba(0,0,128,0.2);
+  border: 3px solid rgba(0,0,128,0.0);
   cursor:default;
   color: white;
   border-radius: 0.9rem;
