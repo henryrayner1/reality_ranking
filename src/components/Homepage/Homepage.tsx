@@ -5,6 +5,7 @@ import dragRaceLogo from "../../assets/logos/dragRaceLogo.jpg";
 import downUnderLogo from "../../assets/logos/downUnderLogo.jpg";
 import cdrAllStarsLogo from "../../assets/logos/cdrAllStarsLogo.png"
 import projectRunwayLogo from "../../assets/logos/projectRunwayLogo.jpeg"
+import dwtsNextProLogo from "../../assets/logos/dwtsNextProLogo.png"
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useShows } from "../../hooks/queries";
@@ -23,6 +24,7 @@ const SHOW_LOGOS: Record<string, string> = {
   "drag race down under vs the world": downUnderLogo,
   "canada's drag race: all stars": cdrAllStarsLogo,
   "project runway": projectRunwayLogo,
+  "dancing with the stars: the next pro": dwtsNextProLogo
 };
 
 const FALLBACK_GRADIENTS = [
