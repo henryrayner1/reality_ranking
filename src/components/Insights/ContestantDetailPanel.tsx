@@ -1,5 +1,6 @@
 import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../utils/Constants";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
+import PageLoading from "../PageLoading";
 import ContestantTrendChart from "./ContestantTrendChart";
 
 interface ContestantDetailPanelProps {
@@ -17,7 +18,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
   const { currSeason, currShow, favoriteInsights, winnerInsights, loadingFlag } = props;
 
   if (loadingFlag || !currSeason) {
-    return <div className="insights-grid-loading"><div className="loading-circle" /></div>;
+    return <PageLoading />;
   }
 
   const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();

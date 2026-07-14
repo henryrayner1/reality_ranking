@@ -51,7 +51,7 @@ const Insights = () => {
     setSelectedContestantId(null);
   }, [currSeason?.id]);
 
-  if (loadingFlag) {
+  if (currShowTree.isLoading || !currShow) {
     return (
       <div className="insights-page">
         <h1 className="font-bold text-gray-800 page-header">Insights</h1>
