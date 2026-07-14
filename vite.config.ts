@@ -17,6 +17,14 @@ export default defineConfig(({ command }) => ({
         target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
+      },
+      // uploaded contestant photos live in backend/uploads (outside this
+      // project's root), so unlike before they need an explicit proxy
+      // rather than Vite's dev server picking them up as static files
+      '/uploads': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        secure: false,
       }
     }
   }
