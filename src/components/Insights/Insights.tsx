@@ -27,7 +27,14 @@ const Insights = () => {
   const currShow = currShowTree.data;
 
   const seasons = currShow?.seasons ?? [];
-  const currSeason = seasons.find((s) => s.id === selectedSeasonId) ?? null;
+  // Falls back to the show's current season instead of null when
+  // selectedSeasonId still belongs to the previously-selected show (state
+  // hasn't caught up yet — the effect below fixes it a render later). Without
+  // this fallback, that one intermediate render hits the !currSeason branch
+  // in InsightsRankingTable/ContestantDetailPanel and flashes their loading
+  // circle even though every relevant query is already cached.
+  const defaultSeason = seasons.find((s) => s.seasonNumber === currShow?.currSeason) ?? seasons[seasons.length - 1] ?? null;
+  const currSeason = seasons.find((s) => s.id === selectedSeasonId) ?? defaultSeason;
 
   const favoriteInsightsQuery = useRankingsInsights(currSeason?.id, "FAVORITE");
   const winnerInsightsQuery = useRankingsInsights(currSeason?.id, "WINNER");
@@ -42,8 +49,6 @@ const Insights = () => {
   // show changes (not on every currShowTree recompute), so a user's manual
   // season choice persists until they switch shows again.
   useEffect(() => {
-    if (seasons.length === 0) { setSelectedSeasonId(null); return; }
-    const defaultSeason = seasons.find((s) => s.seasonNumber === currShow?.currSeason) ?? seasons[seasons.length - 1];
     setSelectedSeasonId(defaultSeason?.id ?? null);
   }, [currShow?.id]);
 
@@ -71,7 +76,7 @@ const Insights = () => {
             if (show) navigate(`/insights/${slugifyShowName(show.name)}`);
           }}
         />
-        <SeasonSelect seasons={seasons} selectedSeasonId={selectedSeasonId} onChange={setSelectedSeasonId} />
+        <SeasonSelect seasons={seasons} selectedSeasonId={currSeason?.id ?? null} onChange={setSelectedSeasonId} />
       </div>
     </div>
   );
