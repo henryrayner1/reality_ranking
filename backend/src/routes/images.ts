@@ -6,7 +6,7 @@ import multer from "multer";
 
 export default function imagesRouter(prisma: PrismaClient) {
     const router = Router();
-    const uploadsDirectory = path.resolve(process.cwd(), "../uploads");
+    const uploadsDirectory = path.resolve(process.cwd(), "uploads");
 
     const slugify = (value: string) =>
         value

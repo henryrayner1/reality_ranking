@@ -6,7 +6,7 @@ import { ensureTodaysDailyEpisode, ensureTodaysDailyEpisodesForAllShows } from "
 
 export default function showsRouter(prisma: PrismaClient) {
     const router = Router();
-    const uploadsDirectory = path.resolve(process.cwd(), "../uploads");
+    const uploadsDirectory = path.resolve(process.cwd(), "uploads");
 
     if (!fs.existsSync(uploadsDirectory)) {
         fs.mkdirSync(uploadsDirectory, { recursive: true });
