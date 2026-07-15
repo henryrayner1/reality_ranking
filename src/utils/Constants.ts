@@ -80,9 +80,9 @@ export const nameToImage: Record<string,Record<string, Record<string,string>>> =
   "rpdr": rpdr_nameToImage
 }
 
-export const totalDancers = Object.keys(dwts_nameToImage[34]).length;
+export const totalContestants = Object.keys(dwts_nameToImage[34]).length;
 
-export const elimintatedDancers = {
+export const eliminatedContestants = {
   1: [],
   2: ["Corey", "Baron"],
   3: ["Corey", "Baron", "Lauren"],

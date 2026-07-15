@@ -14,7 +14,6 @@ import LoginModal from "./components/modals/LoginModal";
 import LogoutConfirmModal from "./components/modals/LogoutConfirmModal";
 import RankingComponent2 from "./components/RankingComponent/RankingComponent2";
 import Insights from "./components/Insights/Insights";
-import DefaultShowRedirect from "./components/DefaultShowRedirect";
 
 function App() {
   const dispatch = useAppDispatch();
@@ -67,9 +66,9 @@ function App() {
         <Route path="/" element={<Homepage {...HomepageProps} />} />
         <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
         <Route path="/admin/:showSlug" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
-        <Route path="/ranking" element={<DefaultShowRedirect basePath="/ranking" />} />
+        <Route path="/ranking" element={<RankingComponent2 />} />
         <Route path="/ranking/:showSlug" element={<RankingComponent2 />} />
-        <Route path="/insights" element={<DefaultShowRedirect basePath="/insights" />} />
+        <Route path="/insights" element={<Insights />} />
         <Route path="/insights/:showSlug" element={<Insights />} />
         <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

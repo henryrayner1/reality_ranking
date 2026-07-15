@@ -64,7 +64,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
     const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber).reverse();
 
     setEliminatedContestants(elimIds);
-    setActiveContestants((lastOrder ?? []).filter(dancerId => !elimIds.includes(dancerId)));
+    setActiveContestants((lastOrder ?? []).filter(contestantId => !elimIds.includes(contestantId)));
   }, [isActive]);
 
   const toggleEpisode = (episodeId: string) => {
@@ -126,16 +126,16 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
             >
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
                 <div className="episode-heading">{heading}</div>
-                {activeContestants.map((dancerId) => {
-                    return <div key={dancerId} className="cell active-episode">
-                    <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={true} isEliminated={false} season={season} show={show}/>
+                {activeContestants.map((contestantId) => {
+                    return <div key={contestantId} className="cell active-episode">
+                    <ContestantIcon name={getContestantName(contestantId)} photoUrl={getContestantPhotoUrl(contestantId)} id={contestantId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
             </DndContext>
-            {eliminatedContestants.map((dancerId) => (
-                <div key={`${dancerId}-elim`} className="cell eliminated-episode">
-                  <ContestantIcon name={getContestantName(dancerId)} photoUrl={getContestantPhotoUrl(dancerId)} id={dancerId} isActive={false} isEliminated={true} season={season} show={show}/>
+            {eliminatedContestants.map((contestantId) => (
+                <div key={`${contestantId}-elim`} className="cell eliminated-episode">
+                  <ContestantIcon name={getContestantName(contestantId)} photoUrl={getContestantPhotoUrl(contestantId)} id={contestantId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
             </> : <>

@@ -260,13 +260,13 @@ const RankingComponent2 = () => {
       className={`rank-tab${rankingType == "FAVORITE" ? ' rank-tab-active' : ""}`}
       onClick={()=>setRankingType("FAVORITE")}
       data-tooltip-id="rank-type-tooltip"
-      data-tooltip-content="Order the dancers from favorite to least favorite"
+      data-tooltip-content="Order the contestants from favorite to least favorite"
     >Favorite</div>
     <div
       className={`rank-tab${rankingType == "WINNER" ? ' rank-tab-active' : ""}`}
       onClick={()=>setRankingType("WINNER")}
       data-tooltip-id="rank-type-tooltip"
-      data-tooltip-content="Order the dancers based on who you think will win the competition"
+      data-tooltip-content="Order the contestants based on who you think will win the competition"
     >Winner</div>
     <Tooltip id="rank-type-tooltip" positionStrategy="fixed" style={{ maxWidth: "14rem" }} />
   </div>
@@ -350,11 +350,13 @@ const RankingComponent2 = () => {
             if (show) navigate(`/ranking/${slugifyShowName(show.name)}`);
           }}
         />
-      <h1 className="font-bold rank-type-heading">Current Season: {currShow?.currSeason}</h1>
+      {currShow && <h1 className="font-bold rank-type-heading">Current Season: {currShow.currSeason}</h1>}
     </div>
-    <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
-          Submit Rankings
-        </div>
+    {currShow && (
+      <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
+            Submit Rankings
+          </div>
+    )}
   </div>
 
   return (
@@ -363,24 +365,30 @@ const RankingComponent2 = () => {
 
       <div className="rankings-content">
         {topBar}
-        {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
-            it needs to see not-yet-rankable episodes to find "next up". */}
-        <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} />
-        <main className="rankings-main">
-          {user && pageModeTabs}
-          {user && (pageMode === "table" ? rankingContainer : (
-            <ContestantDetailPanel
-              currSeason={currSeason}
-              currShow={currShow}
-              favoriteInsights={ownFavoriteInsights}
-              winnerInsights={ownWinnerInsights}
-              eliminations={eliminationsBySeason}
-              selectedContestantId={selectedContestantId}
-              setSelectedContestantId={setSelectedContestantId}
-              loadingFlag={eliminationsBySeasonQuery.isLoading}
-            />
-          ))}
-        </main>
+        {!showId ? (
+          <p className="ranking-placeholder">Please select a show.</p>
+        ) : (
+          <>
+            {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
+                it needs to see not-yet-rankable episodes to find "next up". */}
+            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} />
+            <main className="rankings-main">
+              {user && pageModeTabs}
+              {user && (pageMode === "table" ? rankingContainer : (
+                <ContestantDetailPanel
+                  currSeason={currSeason}
+                  currShow={currShow}
+                  favoriteInsights={ownFavoriteInsights}
+                  winnerInsights={ownWinnerInsights}
+                  eliminations={eliminationsBySeason}
+                  selectedContestantId={selectedContestantId}
+                  setSelectedContestantId={setSelectedContestantId}
+                  loadingFlag={eliminationsBySeasonQuery.isLoading}
+                />
+              ))}
+            </main>
+          </>
+        )}
       </div>
       {submitModalDisplayFlag && <SubmitRankingsModal displayFlag={submitModalDisplayFlag} setDisplayFlag={setSubmitModalDisplayFlag} handleSubmit={handleSubmit}/>}
     </div>

@@ -56,7 +56,7 @@ const Insights = () => {
     setSelectedContestantId(null);
   }, [currSeason?.id]);
 
-  if (currShowTree.isLoading || !currShow) {
+  if (currShowTree.isLoading) {
     return (
       <div className="insights-page">
         <h1 className="font-bold text-gray-800 page-header">Insights</h1>
@@ -99,32 +99,36 @@ const Insights = () => {
       <h1 className="font-bold text-gray-800 page-header">Insights</h1>
       <div className="insights-content">
         {topBar}
-        <main className="insights-main">
-          {pageModeTabs}
-          {pageMode === "table" ? (
-            <InsightsRankingTable
-              currSeason={currSeason}
-              currShow={currShow}
-              favoriteInsights={favoriteInsights}
-              winnerInsights={winnerInsights}
-              eliminations={eliminations}
-              rankingType={rankingType}
-              setRankingType={setRankingType}
-              loadingFlag={loadingFlag}
-            />
-          ) : (
-            <ContestantDetailPanel
-              currSeason={currSeason}
-              currShow={currShow}
-              favoriteInsights={favoriteInsights}
-              winnerInsights={winnerInsights}
-              eliminations={eliminations}
-              selectedContestantId={selectedContestantId}
-              setSelectedContestantId={setSelectedContestantId}
-              loadingFlag={loadingFlag}
-            />
-          )}
-        </main>
+        {!currShow ? (
+          <p className="insights-placeholder">Please select a show.</p>
+        ) : (
+          <main className="insights-main">
+            {pageModeTabs}
+            {pageMode === "table" ? (
+              <InsightsRankingTable
+                currSeason={currSeason}
+                currShow={currShow}
+                favoriteInsights={favoriteInsights}
+                winnerInsights={winnerInsights}
+                eliminations={eliminations}
+                rankingType={rankingType}
+                setRankingType={setRankingType}
+                loadingFlag={loadingFlag}
+              />
+            ) : (
+              <ContestantDetailPanel
+                currSeason={currSeason}
+                currShow={currShow}
+                favoriteInsights={favoriteInsights}
+                winnerInsights={winnerInsights}
+                eliminations={eliminations}
+                selectedContestantId={selectedContestantId}
+                setSelectedContestantId={setSelectedContestantId}
+                loadingFlag={loadingFlag}
+              />
+            )}
+          </main>
+        )}
       </div>
     </div>
   );

@@ -54,7 +54,7 @@ const ContestantIcon = (props:IconProps) => {
   const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
 
   return (
-    <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...dragProps} className='flex flex-col relative overflow-hidden dancer-icon'>
+    <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...dragProps} className='flex flex-col relative overflow-hidden contestant-icon'>
       <img
         src={getImagePath()}
         alt={props.name}
