@@ -1,7 +1,7 @@
 import { StrictMode, useEffect, useState } from "react";
 import "./App.css";
 import Homepage from "./components/Homepage/Homepage";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Admin from "./components/Admin/Admin";
 import Layout from "./components/Layout";
 import { useSelector } from "react-redux";
@@ -18,6 +18,7 @@ import DefaultShowRedirect from "./components/DefaultShowRedirect";
 
 function App() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const user = useSelector((state: any) => state.user.value);
   const [loginDisplayFlag, setLoginDisplayFlag] = useState(false);
@@ -46,6 +47,7 @@ function App() {
     userLogout();
     dispatch(setUser(null));
     setLogoutConfirmDisplayFlag(false);
+    navigate("/");
   };
 
   const HomepageProps = {
