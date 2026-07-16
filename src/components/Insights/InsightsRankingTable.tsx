@@ -135,13 +135,19 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
 
   const episodeColumns = sortedEpisodes.map((episode) => {
     const presentIds = new Set(episode.contestantAverages.map((ca) => ca.contestantId));
+    const backfillIds = getEliminationBackfillIds(eliminationByContestant, contestantsById, presentIds, episode.episodeNumber);
     return {
       episodeNumber: episode.episodeNumber,
+      // Backfilled entries have no real ranking data for this episode — they're
+      // shown only because the contestant was already eliminated by this point —
+      // so they should always render grayed, regardless of isEliminatedByEpisode's
+      // usual "next episode onward" threshold for contestants with real data.
+      backfillIds: new Set(backfillIds),
       contestantIds: buildRankColumn(
         episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
         contestantsById,
         rowCount,
-        getEliminationBackfillIds(eliminationByContestant, contestantsById, presentIds, episode.episodeNumber)
+        backfillIds
       ),
     };
   });
@@ -197,7 +203,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
                     photoUrl={contestantsById[contestantId]?.photoUrl}
                     id={contestantId}
                     isActive={false}
-                    isEliminated={isEliminatedByEpisode(contestantId, episode.episodeNumber)}
+                    isEliminated={episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber)}
                     season={currSeason}
                     show={currShow}
                   />
