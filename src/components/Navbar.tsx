@@ -1,7 +1,12 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { Collapse } from "bootstrap";
+// Import from the exact same bundle file main.tsx already loads for side effects
+// (not the bare "bootstrap" specifier, which resolves to bootstrap.esm.js — a
+// second, independent copy of Bootstrap's JS with its own document-level click
+// listeners, causing every toggler click to double-fire and always net "open").
+import Bootstrap from "bootstrap/dist/js/bootstrap.bundle.min.js";
+const { Collapse } = Bootstrap;
 import "./Navbar.css";
 
 const Navbar = (props) => {
