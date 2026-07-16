@@ -46,7 +46,7 @@ const Navbar = (props) => {
     return(
         <nav ref={navRef} className="navbar navbar-expand-md navbar-dark bg-dark app-navbar">
             <div className="container-fluid">
-                <Link className="navbar-brand font-bold" to="/">Reality Ranking</Link>
+                <Link className="navbar-brand font-bold" to="/" onClick={collapseMobileMenu}>Reality Ranking</Link>
                 <button
                     className="navbar-toggler"
                     type="button"
