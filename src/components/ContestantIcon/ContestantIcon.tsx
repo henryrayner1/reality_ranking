@@ -60,7 +60,7 @@ const ContestantIcon = (props:IconProps) => {
         alt={props.name}
         className='mt-[-5px] mb-[5px]'
         style={{
-          touchAction: 'none',
+          ...(props.isActive ? { touchAction: 'none' } : {}),
           ...(props.isEliminated ? { filter: 'grayscale(100%)', pointerEvents: 'none' } : {}),
         }}
       />

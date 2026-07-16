@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { useSelector } from "react-redux";
 import { NavLink, Link, useLocation } from "react-router-dom";
+import { Collapse } from "bootstrap";
 import "./Navbar.css";
 
 const Navbar = (props) => {
@@ -18,6 +19,13 @@ const Navbar = (props) => {
     const rankingPath = currentShowSlug ? `/ranking/${currentShowSlug}` : "/ranking";
     const insightsPath = currentShowSlug ? `/insights/${currentShowSlug}` : "/insights";
     const adminPath = currentShowSlug ? `/admin/${currentShowSlug}` : "/admin";
+
+    // On mobile the menu is a Bootstrap .collapse toggled via data-bs-toggle;
+    // clicking a NavLink navigates but doesn't collapse it back down on its own.
+    const collapseMobileMenu = () => {
+        const collapseEl = document.getElementById("mainNavbar");
+        if (collapseEl) Collapse.getOrCreateInstance(collapseEl, { toggle: false }).hide();
+    };
 
     // Exposed as a CSS var so other sticky elements (e.g. .page-header) can
     // sit flush beneath the navbar regardless of its actual rendered height,
@@ -54,13 +62,13 @@ const Navbar = (props) => {
                 <div className="collapse navbar-collapse" id="mainNavbar">
                     <ul className="navbar-nav me-auto mb-2 mb-md-0">
                         {props.isAdmin && <li className="nav-item">
-                            <NavLink className="nav-link" to={adminPath}>Admin</NavLink>
+                            <NavLink className="nav-link" to={adminPath} onClick={collapseMobileMenu}>Admin</NavLink>
                         </li>}
                         {props.loggedIn && <li className="nav-item">
-                            <NavLink className="nav-link" to={rankingPath}>My Rankings</NavLink>
+                            <NavLink className="nav-link" to={rankingPath} onClick={collapseMobileMenu}>My Rankings</NavLink>
                         </li>}
                         <li className="nav-item">
-                            <NavLink className="nav-link" to={insightsPath}>Insights</NavLink>
+                            <NavLink className="nav-link" to={insightsPath} onClick={collapseMobileMenu}>Insights</NavLink>
                         </li>
                     </ul>
                     <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-md-center">
