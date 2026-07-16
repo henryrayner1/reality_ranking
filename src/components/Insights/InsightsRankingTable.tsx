@@ -18,12 +18,17 @@ interface InsightsRankingTableProps {
 
 // Sorts contestants by their averaged position (ascending — lower is better)
 // into rank-ordered rows, tie-breaking by name for a deterministic order.
-// Contestants with no data (no submissions that episode / ever) sort to the
-// bottom and render as blank cells rather than being force-placed.
+// Contestants with no data for an unrelated reason (no submissions that
+// episode / ever) sort to the bottom and render as blank cells rather than
+// being force-placed. Contestants missing only because they were eliminated
+// before anyone had a chance to rank them (eliminationBackfillIds, already
+// ordered most-recently-eliminated first) are appended below that instead of
+// vanishing from the table entirely.
 const buildRankColumn = (
   items: { contestantId: string; value: number | null }[],
   contestantsById: Record<string, Contestant>,
-  rowCount: number
+  rowCount: number,
+  eliminationBackfillIds: string[] = []
 ): (string | null)[] => {
   const withData = items
     .filter((i) => i.value !== null)
@@ -35,10 +40,30 @@ const buildRankColumn = (
     })
     .map((i) => i.contestantId);
 
-  const column: (string | null)[] = [...withData];
+  const column: (string | null)[] = [...withData, ...eliminationBackfillIds];
   while (column.length < rowCount) column.push(null);
   return column.slice(0, rowCount);
 };
+
+// Contestants eliminated as of a given episode who don't already have an
+// entry in `presentIds` — most-recently-eliminated first, tie-broken by name,
+// matching the elimination-bucket ordering convention used elsewhere (e.g.
+// buildPastRankingColumn on the Ranking page).
+const getEliminationBackfillIds = (
+  eliminationByContestant: Map<string, { episodeNumber: number; eliminationType: string }>,
+  contestantsById: Record<string, Contestant>,
+  presentIds: Set<string>,
+  asOfEpisodeNumber: number
+): string[] =>
+  Array.from(eliminationByContestant.entries())
+    .filter(([id, elim]) => elim.episodeNumber <= asOfEpisodeNumber && !presentIds.has(id))
+    .sort(([idA, elimA], [idB, elimB]) => {
+      if (elimA.episodeNumber !== elimB.episodeNumber) return elimB.episodeNumber - elimA.episodeNumber;
+      const nameA = contestantsById[idA]?.name ?? "";
+      const nameB = contestantsById[idB]?.name ?? "";
+      return nameA.localeCompare(nameB);
+    })
+    .map(([id]) => id);
 
 const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   const { currSeason, currShow, rankingType, setRankingType, loadingFlag } = props;
@@ -108,19 +133,32 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
     );
   }
 
-  const episodeColumns = sortedEpisodes.map((episode) => ({
-    episodeNumber: episode.episodeNumber,
-    contestantIds: buildRankColumn(
-      episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
-      contestantsById,
-      rowCount
-    ),
-  }));
+  const episodeColumns = sortedEpisodes.map((episode) => {
+    const presentIds = new Set(episode.contestantAverages.map((ca) => ca.contestantId));
+    return {
+      episodeNumber: episode.episodeNumber,
+      contestantIds: buildRankColumn(
+        episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
+        contestantsById,
+        rowCount,
+        getEliminationBackfillIds(eliminationByContestant, contestantsById, presentIds, episode.episodeNumber)
+      ),
+    };
+  });
 
+  // Unlike per-episode contestantAverages (which omits a contestant entirely
+  // if they have no submissions that episode), the backend's overall array
+  // has one entry per roster contestant always, with overallAveragePosition
+  // left null for anyone with no data at all — so "present" here means having
+  // a non-null value, not just an entry.
+  const overallPresentIds = new Set(
+    insights.overall.filter((o) => o.overallAveragePosition !== null).map((o) => o.contestantId)
+  );
   const overallColumn = buildRankColumn(
     insights.overall.map((o) => ({ contestantId: o.contestantId, value: o.overallAveragePosition })),
     contestantsById,
-    rowCount
+    rowCount,
+    getEliminationBackfillIds(eliminationByContestant, contestantsById, overallPresentIds, Infinity)
   );
 
   return (
