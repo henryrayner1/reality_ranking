@@ -238,7 +238,11 @@ export const getContestantEliminationStatus = (eliminations: any, contestantId: 
   return false;
 };
 
-export const getEliminationOrder = (eliminations: Elimination[], episodeNumber: number) => {
+export const getEliminationOrder = (
+  eliminations: Elimination[],
+  episodeNumber: number,
+  getContestantName: (contestantId: string) => string = () => ""
+) => {
   // Deduped: a contestant appearing in more than one elimination record (e.g. a
   // duplicate admin entry) must only ever occupy one row in the ranking grid —
   // otherwise every later episode column drifts by however many times they're
@@ -246,7 +250,18 @@ export const getEliminationOrder = (eliminations: Elimination[], episodeNumber: 
   const eliminatedContestants: string[] = [];
   for (const episodeData of eliminations) {
     if (episodeData.episodeNumber <= episodeNumber) {
-      for (const contestantId of episodeData.contestantIds) {
+      // Both callers immediately .reverse() the full returned array to render
+      // the eliminated bucket most-recent-elimination-first, which also flips
+      // each same-episode tie group's internal order — sort descending here
+      // so a double (or larger) elimination ends up ascending alphabetically
+      // (A→Z, top-to-bottom) in the actual rendered bucket, matching the
+      // tie-break convention used by the Insights table's elimination backfill
+      // (InsightsRankingTable.tsx's getEliminationBackfillIds) instead of the
+      // arbitrary order eliminations happen to be stored in the backend.
+      const tiedContestantIds = [...episodeData.contestantIds].sort((a, b) =>
+        getContestantName(b).localeCompare(getContestantName(a))
+      );
+      for (const contestantId of tiedContestantIds) {
         if (!eliminatedContestants.includes(contestantId)) {
           eliminatedContestants.push(contestantId);
         }
@@ -271,12 +286,13 @@ export const buildPastRankingColumn = (
   episodeNumber: number,
   eliminations: Elimination[],
   seasonContestantIds: string[] = [],
-  eligibleContestantIds: string[] = seasonContestantIds
+  eligibleContestantIds: string[] = seasonContestantIds,
+  getContestantName: (contestantId: string) => string = () => ""
 ): RankingColumnEntry[] => {
   // Eliminations are immutable at the bottom of the column starting the same
   // episode/day a contestant is eliminated — matches Episode.tsx's
   // EpisodeComponent, which uses the same single threshold.
-  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber).reverse();
+  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber, getContestantName).reverse();
 
   const active = ranking.contestantIds
     .filter((contestantId) => !eliminatedIds.includes(contestantId))

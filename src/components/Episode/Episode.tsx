@@ -61,7 +61,7 @@ const EpisodeComponent = forwardRef<EpisodeRef, EpisodeComponentProps>(({ currEp
     // A contestant eliminated in this episode drops to the locked "eliminated"
     // section immediately, in the same episode/day they're eliminated —
     // eliminations are immutable at the bottom of the column from that point on.
-    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber).reverse();
+    const elimIds = getEliminationOrder(eliminations, currEpisode.episodeNumber, getContestantName).reverse();
 
     setEliminatedContestants(elimIds);
     setActiveContestants((lastOrder ?? []).filter(contestantId => !elimIds.includes(contestantId)));

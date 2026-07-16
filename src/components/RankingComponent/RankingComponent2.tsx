@@ -236,7 +236,7 @@ const RankingComponent2 = () => {
     const eligibleContestantIds = (currSeason?.contestants ?? [])
       .filter((contestant) => wasContestantOnRosterFor(contestant, episode))
       .map((contestant) => contestant.id);
-    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds);
+    const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
     const heading = String(episodeNumber);
     // Raw grid items, not wrapped in a single spanning container — matching
     // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
