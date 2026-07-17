@@ -18,7 +18,7 @@ const ContestantSelect = ({ contestants, selectedContestantId, onChange }: Conte
         <Dropdown.Toggle variant="" id="contestant-select-dropdown" className="custom-button min-w-[13vw] max-w-[50vw] min-h-[2.5rem]">
           <span className="truncate min-w-0 flex-1 text-left">{selected?.name.split(' ')[0] ?? "All Contestants"}</span>
         </Dropdown.Toggle>
-        <Dropdown.Menu>
+        <Dropdown.Menu className="z-50 max-h-[50vh] overflow-y-auto">
           <Dropdown.Item onClick={() => onChange(null)} className="m-0">
             All Contestants
           </Dropdown.Item>
