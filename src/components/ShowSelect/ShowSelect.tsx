@@ -19,7 +19,7 @@ const ShowSelect = ({ shows, currShowId, onSelectShow }: ShowSelectProps) => {
                 <Dropdown.Toggle variant="" id="dropdown-basic" className="custom-button min-w-[20vw] max-w-[20vw] min-h-[2.5rem] flex items-center gap-2">
                     <span className="truncate min-w-0 flex-1 text-left">{currShow?.name || "Select a Show"}</span>
                 </Dropdown.Toggle>
-                <Dropdown.Menu className="max-w-[80vw]">
+                <Dropdown.Menu className="max-w-[80vw] z-50">
                     {shows?.map((show) => (
                     <Dropdown.Item key={show.id} onClick={() => onSelectShow(show.id)} className="m-0 truncate" title={show.name}>{show.name}</Dropdown.Item>
                     ))}

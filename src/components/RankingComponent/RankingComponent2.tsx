@@ -1,8 +1,7 @@
 import { type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { buildPastRankingColumn, submitRankings } from "../../utils/util";
-import {type EpisodeRef} from "../Episode/Episode";
+import { buildPastRankingColumn, getEliminationOrder, submitRankings } from "../../utils/util";
 import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import ContestantSelect from "../ContestantSelect/ContestantSelect";
@@ -19,8 +18,22 @@ import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQu
 import { slugifyShowName } from "../../utils/slug";
 import PageLoading from "../PageLoading";
 
+const emptyActiveEpisodesByType = (): Record<RankType, Set<string>> => ({
+  FAVORITE: new Set<string>(),
+  WINNER: new Set<string>(),
+});
+
+const emptyActiveOrdersByType = (): Record<RankType, Record<string, string[]>> => ({
+  FAVORITE: {},
+  WINNER: {},
+});
+
 const RankingComponent2 = () => {
-  const [activeEpisodes, setActiveEpisodes] = useState<Set<string>>(new Set<string>());
+  // Kept separate per RankType (rather than one shared Set/order map) so
+  // switching the Favorite/Winner tab no longer discards which episodes are
+  // active or the in-progress drag order the user built up for them.
+  const [activeEpisodesByType, setActiveEpisodesByType] = useState<Record<RankType, Set<string>>>(emptyActiveEpisodesByType());
+  const [activeOrdersByType, setActiveOrdersByType] = useState<Record<RankType, Record<string, string[]>>>(emptyActiveOrdersByType());
   const [submitModalDisplayFlag, setSubmitModalDisplayFlag] = useState(false);
   const [rankingType, setRankingType] = useState<RankType>("FAVORITE");
   const [favoriteRankings, setFavoriteRankings] = useState<Ranking[]>([]);
@@ -67,11 +80,7 @@ const RankingComponent2 = () => {
   // actually being displayed before it's used for any threshold logic.
   const currentSeasonEliminations = eliminations.filter((e) => e.seasonId === currSeason?.id);
 
-  let refs = useRef({});
-
-  const setEpisodeRef = useCallback((episodeId: string) => (inst: EpisodeRef | null) => {
-    refs.current[episodeId] = inst;
-  }, []);
+  const activeEpisodes = activeEpisodesByType[rankingType];
 
   const submitRankingsMutation = useMutation({
     mutationFn: submitRankings,
@@ -88,15 +97,19 @@ const RankingComponent2 = () => {
 
   useEffect(() => {
     setPastRankingForType(rankingType === "FAVORITE" ? favoriteRankings : winnerRankings);
-    setActiveEpisodes(new Set<string>());
   }, [rankingType]);
 
-  // activeEpisodes holds episode ids from whichever show was previously
-  // selected — without this, switching shows leaves stale ids behind, and
+  // activeEpisodesByType/activeOrdersByType hold episode ids (and their
+  // in-progress drag order) from whichever show was previously selected —
+  // without this, switching shows leaves stale ids behind, and
   // rankableEpisodes.find(...) for them comes up empty, showing an
-  // "Active Week"/remove-button chip with no episode number.
+  // "Active Week"/remove-button chip with no episode number. Switching the
+  // Favorite/Winner tab, on the other hand, deliberately does NOT reset
+  // these anymore — each RankType keeps its own independent active set/order
+  // so in-progress rankings survive tab switches.
   useEffect(() => {
-    setActiveEpisodes(new Set<string>());
+    setActiveEpisodesByType(emptyActiveEpisodesByType());
+    setActiveOrdersByType(emptyActiveOrdersByType());
   }, [currShow?.id]);
 
   useEffect(() => {
@@ -127,16 +140,26 @@ const RankingComponent2 = () => {
   }
 
   const removeActiveEpisode = (episodeId: string) => {
-    const newSet = new Set(activeEpisodes);
-    newSet.delete(episodeId);
-    setActiveEpisodes(newSet);
+    setActiveEpisodesByType((prev) => {
+      const newSet = new Set(prev[rankingType]);
+      newSet.delete(episodeId);
+      return { ...prev, [rankingType]: newSet };
+    });
+    // Explicit removal (vs. just switching tabs) discards progress — a
+    // future re-activation should reseed from the last submitted ranking
+    // rather than resuming wherever this one left off.
+    setActiveOrdersByType((prev) => {
+      const { [episodeId]: _removed, ...rest } = prev[rankingType];
+      return { ...prev, [rankingType]: rest };
+    });
   };
 
   const handleSubmit = async () => {
     const activeEpisodesArr = Array.from(activeEpisodes);
-    const rankingsList = activeEpisodesArr.map(episode => ({ userId: user.id, episodeId: episode, rankings: refs.current[episode]?.createEntries?.(), type: rankingType}));
+    const rankingsList = activeEpisodesArr.map(episodeId => ({ userId: user.id, episodeId, rankings: activeOrdersByType[rankingType][episodeId] ?? [], type: rankingType }));
     await submitRankingsMutation.mutateAsync(rankingsList);
-    setActiveEpisodes(new Set<string>());
+    setActiveEpisodesByType((prev) => ({ ...prev, [rankingType]: new Set<string>() }));
+    setActiveOrdersByType((prev) => ({ ...prev, [rankingType]: {} }));
   };
 
   const checkPastRankings = (episodeId) => {
@@ -171,6 +194,35 @@ const RankingComponent2 = () => {
 
   const getContestantPhotoUrl = (contestantId: string) =>
     currSeason?.contestants?.find((c) => c.id === contestantId)?.photoUrl;
+
+  // Contestants eliminated as of this episode, most-recently-eliminated
+  // first — locked at the bottom of an active episode's column, same
+  // threshold Episode.tsx used to compute internally.
+  const getEpisodeEliminatedIds = (episode: Episode) =>
+    getEliminationOrder(currentSeasonEliminations, episode.episodeNumber, getContestantName).reverse();
+
+  const activateEpisode = (episode: Episode) => {
+    setActiveEpisodesByType((prev) => {
+      const newSet = new Set(prev[rankingType]);
+      newSet.add(episode.id);
+      return { ...prev, [rankingType]: newSet };
+    });
+    setActiveOrdersByType((prev) => {
+      // Already has an in-progress order for this type (e.g. re-activated
+      // after just switching tabs) — leave it alone instead of reseeding.
+      if (prev[rankingType][episode.id]) return prev;
+      const elimIds = getEpisodeEliminatedIds(episode);
+      const seedOrder = getLastRankingNames(episode.episodeNumber).filter((id) => !elimIds.includes(id));
+      return { ...prev, [rankingType]: { ...prev[rankingType], [episode.id]: seedOrder } };
+    });
+  };
+
+  const reorderActiveEpisode = (episodeId: string, newOrder: string[]) => {
+    setActiveOrdersByType((prev) => ({
+      ...prev,
+      [rankingType]: { ...prev[rankingType], [episodeId]: newOrder },
+    }));
+  };
 
   // A contestant added to the season after a given episode already happened
   // (e.g. a cast newcomer added mid-season) shouldn't retroactively appear in
@@ -258,18 +310,20 @@ const RankingComponent2 = () => {
     <div className="grid-heading" style={{ gridColumn: `span ${rankableEpisodes.length + 1}` }}></div>
       {rankableEpisodes.map((episode) => {
         const inPastRankings = checkPastRankings(episode.id);
-        return !inPastRankings ? <EpisodeComponent id={episode.id}
-              setActiveEpisodes={setActiveEpisodes}
-              activeEpisodes={activeEpisodes}
+        if (inPastRankings) return pastRankingsElements(inPastRankings, episode);
+        const isActive = activeEpisodes.has(episode.id);
+        const eliminatedIds = getEpisodeEliminatedIds(episode);
+        return <EpisodeComponent
               currEpisode={episode}
               key={`episode-${episode.episodeNumber}`}
-              ref={setEpisodeRef(episode.id)}
-              lastOrder={getLastRankingNames(episode.episodeNumber)}
-              eliminations={currentSeasonEliminations}
+              isActive={isActive}
+              activeContestants={activeOrdersByType[rankingType][episode.id] ?? getLastRankingNames(episode.episodeNumber).filter((id) => !eliminatedIds.includes(id))}
+              eliminatedContestants={eliminatedIds}
+              onReorder={(newOrder) => reorderActiveEpisode(episode.id, newOrder)}
+              onActivate={() => activateEpisode(episode)}
               contestants={currSeason?.contestants}
               season={currSeason}
-              show={currShow}/> :
-          pastRankingsElements(inPastRankings, episode);
+              show={currShow}/>;
       })}
     </div>
   </div>

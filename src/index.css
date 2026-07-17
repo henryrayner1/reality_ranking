@@ -154,7 +154,7 @@ body {
   width: 100%;
   position: sticky;
   top: var(--navbar-height, 59px);
-  z-index: 20;
+  z-index: 1000;
 }
 
 .episode {
