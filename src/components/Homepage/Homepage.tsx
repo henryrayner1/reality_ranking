@@ -46,7 +46,11 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   const user = useSelector((state: any) => state.user.value);
 
   const goToShow = (show: Show) => {
-    navigate(`/insights/${slugifyShowName(show.name)}`);
+    if (user) {
+      navigate(`/ranking/${slugifyShowName(show.name)}`);
+    } else {
+      navigate(`/insights/${slugifyShowName(show.name)}`);
+    }
   };
 
   if (isLoading) {

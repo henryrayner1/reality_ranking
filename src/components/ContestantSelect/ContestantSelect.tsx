@@ -15,8 +15,8 @@ const ContestantSelect = ({ contestants, selectedContestantId, onChange }: Conte
     <div className="flex align-items-center">
       <h1 className="font-bold text-gray-800 pr-2">Highlight:</h1>
       <Dropdown>
-        <Dropdown.Toggle variant="" id="contestant-select-dropdown" className="custom-button min-w-[10vw] min-h-[2.5rem]">
-          {selected?.name ?? "All Contestants"}
+        <Dropdown.Toggle variant="" id="contestant-select-dropdown" className="custom-button min-w-[13vw] max-w-[50vw] min-h-[2.5rem]">
+          <span className="truncate min-w-0 flex-1 text-left">{selected?.name.split(' ')[0] ?? "All Contestants"}</span>
         </Dropdown.Toggle>
         <Dropdown.Menu>
           <Dropdown.Item onClick={() => onChange(null)} className="m-0">
@@ -24,7 +24,7 @@ const ContestantSelect = ({ contestants, selectedContestantId, onChange }: Conte
           </Dropdown.Item>
           {sortedContestants.map((contestant) => (
             <Dropdown.Item key={contestant.id} onClick={() => onChange(contestant.id)} className="m-0">
-              {contestant.name}
+              {contestant.name.split(' ')[0]}
             </Dropdown.Item>
           ))}
         </Dropdown.Menu>
