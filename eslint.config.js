@@ -17,7 +17,16 @@ export default defineConfig([
     ],
     languageOptions: {
       ecmaVersion: 2020,
-      globals: globals.browser,
+      globals: { ...globals.browser, ...globals.vitest },
+    },
+  },
+  {
+    // Test files legitimately reach for `any` constantly (mocked query
+    // results, partial fixtures, `vi.fn()` return values) — enforcing the
+    // same strictness as production code here would just force noisy casts.
+    files: ['**/*.test.{ts,tsx}', 'src/test/**/*.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 ])

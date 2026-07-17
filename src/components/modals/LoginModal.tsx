@@ -4,7 +4,7 @@ import { createUser, userLogin } from '../../utils/util';
 import type { ModalProps } from '../../utils/Constants';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../redux/slices/userSlice';
-import PageLoading from '../PageLoading';
+import PageLoading from '../PageLoading/PageLoading';
 
 const LoginModal = (props: ModalProps) => {
 

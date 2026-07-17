@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
-import ImageContainer from "./ImageContainer";
-import ImageForm from "./ImageForm";
+import ImageContainer from "../ImageContainer/ImageContainer";
+import ImageForm from "../ImageForm/ImageForm";
 
 const UploadImage = () => {
   const [newImage, setNewImage] = useState([]);

@@ -11,7 +11,7 @@ import { useSelector } from "react-redux";
 import { useShows } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
-import PageLoading from "../PageLoading";
+import PageLoading from "../PageLoading/PageLoading";
 import './Homepage.css';
 
 // Keyed by lowercased show name so lookups aren't broken by casing

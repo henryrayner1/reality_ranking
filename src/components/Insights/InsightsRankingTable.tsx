@@ -3,7 +3,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../utils/Constants";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
-import PageLoading from "../PageLoading";
+import PageLoading from "../PageLoading/PageLoading";
 
 interface InsightsRankingTableProps {
   currSeason: Season | null;

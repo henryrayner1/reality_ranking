@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { backendUrl } from '../utils/apiBase';
+import { backendUrl } from '../../utils/apiBase';
 
 const ImageForm = ({handleNewImage}) => {
 

@@ -1,6 +1,6 @@
 import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../utils/Constants";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
-import PageLoading from "../PageLoading";
+import PageLoading from "../PageLoading/PageLoading";
 import ContestantTrendChart from "./ContestantTrendChart";
 
 interface ContestantDetailPanelProps {

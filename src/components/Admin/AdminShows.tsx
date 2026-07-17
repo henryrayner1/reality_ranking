@@ -3,7 +3,7 @@ import { addShow, deleteShow, updateShowRankingMode } from "../../utils/util";
 import { useState } from "react";
 import { RankingModes, type Show } from "../../utils/Constants";
 import * as AdminUI from "../../utils/AdminComponents";
-import UploadImage from "../UploadImage";
+import UploadImage from "../UploadImage/UploadImage";
 import { showsQueryKey, useShows } from "../../hooks/queries";
 
 const AdminShows = () => {

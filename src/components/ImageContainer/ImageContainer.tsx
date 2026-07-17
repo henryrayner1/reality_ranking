@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { backendUrl } from "../utils/apiBase";
+import { backendUrl } from "../../utils/apiBase";
 
 
 const ImageContainer = ({ newImage }) => {

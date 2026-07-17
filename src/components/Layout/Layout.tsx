@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Outlet, useNavigate } from "react-router-dom";
-import { setUser } from "../redux/slices/userSlice";
-import LoginModal from "./modals/LoginModal";
-import { checkUserLoggedIn, userLogout } from "../utils/util";
+import { setUser } from "../../redux/slices/userSlice";
+import LoginModal from "../modals/LoginModal";
+import { checkUserLoggedIn, userLogout } from "../../utils/util";
 
 export interface LayoutContext {
   loginDisplayFlag: boolean;

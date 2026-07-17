@@ -16,7 +16,7 @@ import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
-import PageLoading from "../PageLoading";
+import PageLoading from "../PageLoading/PageLoading";
 
 const emptyActiveEpisodesByType = (): Record<RankType, Set<string>> => ({
   FAVORITE: new Set<string>(),

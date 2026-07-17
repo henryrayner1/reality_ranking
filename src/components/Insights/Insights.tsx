@@ -9,7 +9,7 @@ import ShowSelect from "../ShowSelect/ShowSelect";
 import SeasonSelect from "./SeasonSelect";
 import InsightsRankingTable from "./InsightsRankingTable";
 import ContestantDetailPanel from "./ContestantDetailPanel";
-import PageLoading from "../PageLoading";
+import PageLoading from "../PageLoading/PageLoading";
 import "./Insights.css";
 
 type PageMode = "table" | "contestant";
