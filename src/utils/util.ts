@@ -1,4 +1,4 @@
-import type { Contestant, Elimination, EliminationEntry, Episode, Ranking, Season, Show } from "./Constants";
+import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Ranking, RankType, Season, Show } from "./Constants";
 import { backendUrl } from "./apiBase";
 
 const apiFetch = (path: string, init?: RequestInit) => fetch(backendUrl(path), init);
@@ -337,6 +337,40 @@ export const buildPastRankingColumn = (
   }
 
   return column;
+};
+
+// Builds an InsightsResponse-shaped object from only a single user's own
+// submitted rankings (as opposed to /api/rankings/insights, which averages
+// across every user in the season) so the shared ContestantTrendChart /
+// InsightsRankingTable components can be fed a "my submissions only" view
+// without needing to know the difference.
+export const buildOwnInsights = (rankings: Ranking[], type: RankType, seasonId: string): InsightsResponse => {
+  const episodes = rankings
+    .filter((r) => r.episode?.episodeNumber != null)
+    .map((r) => ({
+      episodeId: r.episodeId,
+      episodeNumber: r.episode!.episodeNumber,
+      contestantAverages: r.contestantIds.map((contestantId, index) => ({
+        contestantId,
+        averagePosition: index + 1,
+      })),
+    }))
+    .sort((a, b) => a.episodeNumber - b.episodeNumber);
+
+  const positionsByContestant = new Map<string, number[]>();
+  episodes.forEach((episode) =>
+    episode.contestantAverages.forEach(({ contestantId, averagePosition }) => {
+      const positions = positionsByContestant.get(contestantId) ?? [];
+      positions.push(averagePosition);
+      positionsByContestant.set(contestantId, positions);
+    })
+  );
+  const overall = [...positionsByContestant.entries()].map(([contestantId, positions]) => ({
+    contestantId,
+    overallAveragePosition: positions.reduce((sum, p) => sum + p, 0) / positions.length,
+  }));
+
+  return { seasonId, type, episodes, overall };
 };
 
 export const addShow = async (show: Partial<Show>) => {

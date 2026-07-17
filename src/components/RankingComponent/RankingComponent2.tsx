@@ -1,10 +1,11 @@
-import { type Contestant, type Episode, type InsightsResponse, type Ranking, type RankType } from "../../utils/Constants";
+import { type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { buildPastRankingColumn, submitRankings } from "../../utils/util";
 import {type EpisodeRef} from "../Episode/Episode";
 import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
+import ContestantSelect from "../ContestantSelect/ContestantSelect";
 import './RankingComponent.css';
 import SubmitRankingsModal from "../modals/SubmitRankingsModal";
 import { Tooltip } from "react-tooltip";
@@ -14,47 +15,9 @@ import { useNavigate, useParams } from "react-router-dom";
 import { isRankableNow, getTodayDayKey } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEliminations, useEliminationsBySeason, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
+import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import PageLoading from "../PageLoading";
-import ContestantDetailPanel from "../Insights/ContestantDetailPanel";
-import "../Insights/Insights.css";
-
-type PageMode = "table" | "contestant";
-
-// Builds an InsightsResponse-shaped object from only the current user's own
-// submitted rankings (as opposed to /api/rankings/insights, which averages
-// across every user in the season) so the "By Contestant" trend chart on the
-// ranking page can be fed straight into the shared ContestantTrendChart
-// component without it needing to know the difference.
-const buildOwnInsights = (rankings: Ranking[], type: RankType, seasonId: string): InsightsResponse => {
-  const episodes = rankings
-    .filter((r) => r.episode?.episodeNumber != null)
-    .map((r) => ({
-      episodeId: r.episodeId,
-      episodeNumber: r.episode!.episodeNumber,
-      contestantAverages: r.contestantIds.map((contestantId, index) => ({
-        contestantId,
-        averagePosition: index + 1,
-      })),
-    }))
-    .sort((a, b) => a.episodeNumber - b.episodeNumber);
-
-  const positionsByContestant = new Map<string, number[]>();
-  episodes.forEach((episode) =>
-    episode.contestantAverages.forEach(({ contestantId, averagePosition }) => {
-      const positions = positionsByContestant.get(contestantId) ?? [];
-      positions.push(averagePosition);
-      positionsByContestant.set(contestantId, positions);
-    })
-  );
-  const overall = [...positionsByContestant.entries()].map(([contestantId, positions]) => ({
-    contestantId,
-    overallAveragePosition: positions.reduce((sum, p) => sum + p, 0) / positions.length,
-  }));
-
-  return { seasonId, type, episodes, overall };
-};
 
 const RankingComponent2 = () => {
   const [activeEpisodes, setActiveEpisodes] = useState<Set<string>>(new Set<string>());
@@ -64,7 +27,9 @@ const RankingComponent2 = () => {
   const [winnerRankings, setWinnerRankings] = useState<Ranking[]>([]);
   const [pastRankings, setPastRankings] = useState<Ranking[]>([]);
   const [pastRankingForType, setPastRankingForType] = useState<Ranking[]>([]);
-  const [pageMode, setPageMode] = useState<PageMode>("table");
+  // Highlights one contestant's icon across every already-submitted (past
+  // rankings) column by dimming everyone else's; null = no highlight ("All
+  // Contestants").
   const [selectedContestantId, setSelectedContestantId] = useState<string | null>(null);
 
   const { showSlug } = useParams<{ showSlug: string }>();
@@ -83,13 +48,8 @@ const RankingComponent2 = () => {
 
   const userRankingsQuery = useUserRankings(user?.id);
   const eliminationsQuery = useEliminations(!!user?.id);
-  // Separate from `eliminations` below (which is grouped by episode for the
-  // ranking grid) — ContestantDetailPanel expects the per-contestant
-  // EliminationEntry[] shape that this season-scoped endpoint returns.
-  const eliminationsBySeasonQuery = useEliminationsBySeason(currSeason?.id);
   const allUserRankings = userRankingsQuery.data ?? null;
   const eliminations = eliminationsQuery.data ?? [];
-  const eliminationsBySeason = eliminationsBySeasonQuery.data ?? [];
 
   const loadingFlag = currShowTree.isLoading ||
     (!!user && hasRankableSeason && (userRankingsQuery.isLoading || eliminationsQuery.isLoading));
@@ -248,7 +208,16 @@ const RankingComponent2 = () => {
       ...columnEntries.map((entry, index) => (
         <div key={`${ranking.id}-${entry.contestantId ?? `blank-${index}`}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
           {entry.contestantId && (
-            <ContestantIcon name={getContestantName(entry.contestantId)} photoUrl={getContestantPhotoUrl(entry.contestantId)} id={entry.contestantId} isActive={false} isEliminated={entry.eliminated} season={currSeason} show={currShow}/>
+            <ContestantIcon
+              name={getContestantName(entry.contestantId)}
+              photoUrl={getContestantPhotoUrl(entry.contestantId)}
+              id={entry.contestantId}
+              isActive={false}
+              isEliminated={entry.eliminated}
+              dimmed={selectedContestantId != null && entry.contestantId !== selectedContestantId}
+              season={currSeason}
+              show={currShow}
+            />
           )}
         </div>
       )),
@@ -308,24 +277,6 @@ const RankingComponent2 = () => {
   const rowCount = currSeason?.contestants?.length ?? 0;
   const episodeCount = rankableEpisodes.length;
 
-  const pageModeTabs = (
-    <div className="insights-mode-tabs">
-      <div
-        className={`insights-mode-tab${pageMode === "table" ? " insights-mode-tab-active" : ""}`}
-        onClick={() => setPageMode("table")}
-      >Rankings Table</div>
-      <div
-        className={`insights-mode-tab${pageMode === "contestant" ? " insights-mode-tab-active" : ""}`}
-        onClick={() => setPageMode("contestant")}
-      >By Contestant</div>
-    </div>
-  );
-
-  // Only the current user's own submitted rankings — not the season-wide
-  // average other users would see on the Insights page.
-  const ownFavoriteInsights = buildOwnInsights(favoriteRankings, "FAVORITE", currSeason?.id ?? "");
-  const ownWinnerInsights = buildOwnInsights(winnerRankings, "WINNER", currSeason?.id ?? "");
-
   const rankingContainer = <div className="ranking-container">
       <div className="ranking-panel">
         {rankTypeTabs}
@@ -350,7 +301,18 @@ const RankingComponent2 = () => {
             if (show) navigate(`/ranking/${slugifyShowName(show.name)}`);
           }}
         />
-      {currShow && <h1 className="font-bold rank-type-heading">Current Season: {currShow.currSeason}</h1>}
+      {currShow && (
+        <h1 className="font-bold rank-type-heading">
+          Current Season: <span className="rank-type-heading-number">{currShow.currSeason}</span>
+        </h1>
+      )}
+      {currShow && (
+        <ContestantSelect
+          contestants={currSeason?.contestants ?? []}
+          selectedContestantId={selectedContestantId}
+          onChange={setSelectedContestantId}
+        />
+      )}
     </div>
     {currShow && (
       <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
@@ -373,19 +335,7 @@ const RankingComponent2 = () => {
                 it needs to see not-yet-rankable episodes to find "next up". */}
             <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} />
             <main className="rankings-main">
-              {user && pageModeTabs}
-              {user && (pageMode === "table" ? rankingContainer : (
-                <ContestantDetailPanel
-                  currSeason={currSeason}
-                  currShow={currShow}
-                  favoriteInsights={ownFavoriteInsights}
-                  winnerInsights={ownWinnerInsights}
-                  eliminations={eliminationsBySeason}
-                  selectedContestantId={selectedContestantId}
-                  setSelectedContestantId={setSelectedContestantId}
-                  loadingFlag={eliminationsBySeasonQuery.isLoading}
-                />
-              ))}
+              {user && rankingContainer}
             </main>
           </>
         )}

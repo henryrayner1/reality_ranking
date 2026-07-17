@@ -10,6 +10,7 @@ interface IconProps {
     id: string;
     isActive?: boolean;
     isEliminated?: boolean;
+    dimmed?: boolean;
     season: Season;
   show?: Show;
   photoUrl?: string;
@@ -62,6 +63,7 @@ const ContestantIcon = (props:IconProps) => {
         style={{
           ...(props.isActive ? { touchAction: 'none' } : {}),
           ...(props.isEliminated ? { filter: 'grayscale(100%)', pointerEvents: 'none' } : {}),
+          ...(props.dimmed ? { opacity: 0.25 } : {}),
         }}
       />
       <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>

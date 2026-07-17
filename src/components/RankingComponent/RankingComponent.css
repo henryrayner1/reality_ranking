@@ -183,7 +183,11 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  justify-content: space-between;
+  /* space-between degenerates to flex-start for a line with only one item
+     (e.g. the Submit button wrapping onto its own line once the rest of the
+     bar's content is too wide to share a row with it) — center keeps every
+     wrapped line's content centered instead of stuck to the left. */
+  justify-content: center;
   flex-wrap: wrap;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
@@ -208,6 +212,14 @@
 .rank-type-heading {
   margin: 0;
   white-space: nowrap;
+}
+
+/* Fixed-width regardless of digit count, so switching to a show with a
+   differently-sized season number (e.g. "1" vs "18") doesn't shift every
+   later top-bar item (Highlight dropdown, Submit button) left or right. */
+.rank-type-heading-number {
+  display: inline-block;
+  min-width: 1.5rem;
 }
 
 .ranking-top-bar .button:hover {

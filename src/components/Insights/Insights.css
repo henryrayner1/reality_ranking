@@ -56,6 +56,35 @@
   width: auto;
 }
 
+/* Data-scope switch: "All User Data" vs "My Submissions". Deliberately real
+   radio inputs rather than the pill-tab look used elsewhere on this page, so
+   it doesn't get visually confused with the page-mode/rank-type tabs. */
+.data-scope-toggle {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.25rem;
+  margin-left: auto;
+}
+
+.data-scope-option {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  font-weight: 600;
+  color: navy;
+  white-space: nowrap;
+}
+
+.data-scope-option input[type="radio"] {
+  cursor: pointer;
+  accent-color: navy;
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
 /* Page-mode switch: "Rankings Table" vs "By Contestant". A plain pill-style
    tab row (no attach-to-grid trick) since different content follows
    depending on mode. */
