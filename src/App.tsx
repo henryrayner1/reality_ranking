@@ -2,17 +2,17 @@ import { useEffect, useState } from "react";
 import "./App.css";
 import Homepage from "./components/Homepage/Homepage";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import Admin from "./components/Admin/Admin";
+import Admin from "./components/Admin/Admin/Admin";
 import { useSelector } from "react-redux";
 import { checkUserLoggedIn, userLogout } from "./utils/util";
 import { AccountTypes } from "./utils/Constants";
 import { setUser } from "./redux/slices/userSlice";
 import { useAppDispatch } from "./redux/hooks";
 import Navbar from "./components/Navbar/Navbar";
-import LoginModal from "./components/modals/LoginModal";
-import LogoutConfirmModal from "./components/modals/LogoutConfirmModal";
+import LoginModal from "./components/modals/LoginModal/LoginModal";
+import LogoutConfirmModal from "./components/modals/LogoutConfirmModal/LogoutConfirmModal";
 import RankingComponent2 from "./components/RankingComponent/RankingComponent2";
-import Insights from "./components/Insights/Insights";
+import Insights from "./components/Insights/Insights/Insights";
 
 function App() {
   const dispatch = useAppDispatch();

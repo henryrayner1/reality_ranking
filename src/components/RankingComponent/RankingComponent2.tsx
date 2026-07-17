@@ -6,7 +6,7 @@ import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import ContestantSelect from "../ContestantSelect/ContestantSelect";
 import './RankingComponent.css';
-import SubmitRankingsModal from "../modals/SubmitRankingsModal";
+import SubmitRankingsModal from "../modals/SubmitRankingsModal/SubmitRankingsModal";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ShowSelect from "../ShowSelect/ShowSelect";
