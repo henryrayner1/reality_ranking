@@ -12,10 +12,6 @@ const season: Season = {
   seasonNumber: 2,
 };
 
-// getImagePath() falls back to computing a path from `show`/`season`/`name`
-// whenever `photoUrl` isn't set, with no null-guard on `show` itself — so
-// every case below that isn't specifically testing that fallback branch
-// must supply a photoUrl to avoid an unrelated crash.
 const renderIcon = (props: Partial<React.ComponentProps<typeof ContestantIcon>> = {}) =>
   render(
     <DndContext>
@@ -53,5 +49,11 @@ describe("ContestantIcon", () => {
     renderIcon({ dimmed: true });
     const img = screen.getByAltText("Jane Doe") as HTMLImageElement;
     expect(img.style.opacity).toBe("0.25");
+  });
+
+  it("renders without crashing when neither photoUrl nor show is set", () => {
+    renderIcon({ photoUrl: undefined, show: undefined });
+    const img = screen.getByAltText("Jane Doe") as HTMLImageElement;
+    expect(img.getAttribute("src")).toBeNull();
   });
 });

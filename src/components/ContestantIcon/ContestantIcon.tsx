@@ -30,9 +30,12 @@ const ContestantIcon = (props:IconProps) => {
     if (props.photoUrl) {
       return backendUrl(props.photoUrl);
     }
+    if (!props.show?.name) {
+      return undefined;
+    }
 
     const prefix = `/uploads/`;
-    const showFolder = (props.show?.name)
+    const showFolder = props.show.name
       .trim()
       .toLowerCase()
       .replace(/['’]/g, "")

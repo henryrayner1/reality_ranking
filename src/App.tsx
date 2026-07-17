@@ -1,9 +1,8 @@
-import { StrictMode, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 import Homepage from "./components/Homepage/Homepage";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Admin from "./components/Admin/Admin";
-import Layout from "./components/Layout/Layout";
 import { useSelector } from "react-redux";
 import { checkUserLoggedIn, userLogout } from "./utils/util";
 import { AccountTypes } from "./utils/Constants";
