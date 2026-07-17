@@ -155,11 +155,20 @@ const RankingComponent2 = () => {
   };
 
   const handleSubmit = async () => {
-    const activeEpisodesArr = Array.from(activeEpisodes);
-    const rankingsList = activeEpisodesArr.map(episodeId => ({ userId: user.id, episodeId, rankings: activeOrdersByType[rankingType][episodeId] ?? [], type: rankingType }));
+    // Submits active episodes for both Favorite and Winner, not just the
+    // currently viewed rankingType — the submit action isn't scoped to the
+    // tab in view.
+    const rankingsList = (Object.keys(activeEpisodesByType) as RankType[]).flatMap((type) =>
+      Array.from(activeEpisodesByType[type]).map((episodeId) => ({
+        userId: user.id,
+        episodeId,
+        rankings: activeOrdersByType[type][episodeId] ?? [],
+        type,
+      }))
+    );
     await submitRankingsMutation.mutateAsync(rankingsList);
-    setActiveEpisodesByType((prev) => ({ ...prev, [rankingType]: new Set<string>() }));
-    setActiveOrdersByType((prev) => ({ ...prev, [rankingType]: {} }));
+    setActiveEpisodesByType(emptyActiveEpisodesByType());
+    setActiveOrdersByType(emptyActiveOrdersByType());
   };
 
   const checkPastRankings = (episodeId) => {
@@ -168,7 +177,10 @@ const RankingComponent2 = () => {
   }
 
   const checkSubmitDisabled = () => {
-    return pastRankingForType?.length === rankableEpisodes.length || activeEpisodes?.size === 0;
+    // handleSubmit submits active episodes across both RankTypes, so the
+    // button must stay enabled if either type has pending active episodes —
+    // not just whichever tab is currently in view.
+    return Object.values(activeEpisodesByType).every((set) => set.size === 0);
   }
 
   const getLastRankingNames = (episodeId: number) => {
