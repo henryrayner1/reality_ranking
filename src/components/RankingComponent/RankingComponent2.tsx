@@ -1,5 +1,5 @@
 import { type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
 import { buildPastRankingColumn, getEliminationOrder, submitRankings } from "../../utils/util";
 import EpisodeComponent from "../Episode/Episode";
@@ -44,6 +44,11 @@ const RankingComponent2 = () => {
   // rankings) column by dimming everyone else's; null = no highlight ("All
   // Contestants").
   const [selectedContestantId, setSelectedContestantId] = useState<string | null>(null);
+
+  // Scrolled to the far right on load/whenever the episode columns change,
+  // so an overflowing grid (see .ranking-grid's overflow-x:auto, RankingComponent.css)
+  // defaults to showing the most recent episode instead of episode 1.
+  const gridRef = useRef<HTMLDivElement>(null);
 
   const { showSlug } = useParams<{ showSlug: string }>();
   const navigate = useNavigate();
@@ -129,6 +134,18 @@ const RankingComponent2 = () => {
       setPastRankingForType(winnerRankings);
     }
   },[favoriteRankings, winnerRankings]);
+
+  // Runs on the render where the grid first becomes visible (loadingFlag
+  // flips false) and again whenever the column count changes (new episode
+  // airs), rather than on every render — gridRef.current is null on any
+  // render where the grid isn't mounted (still loading, or the "no
+  // contestants/episodes yet" placeholder is showing instead).
+  useEffect(() => {
+    if (loadingFlag) return;
+    const grid = gridRef.current;
+    if (!grid) return;
+    grid.scrollLeft = grid.scrollWidth;
+  }, [loadingFlag, currSeason?.id, rankableEpisodes.length, currSeason?.contestants?.length]);
 
   if (loadingFlag) {
     return (
@@ -309,7 +326,7 @@ const RankingComponent2 = () => {
         content), so it's trivially centered within whatever's currently
         visible — no need to track scroll position at all. */}
     <div className="episode-title-overlay">{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
-    <div className="ranking-grid" style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
+    <div className="ranking-grid" ref={gridRef} style={{gridTemplateColumns: `repeat(${rankableEpisodes.length + 1}, 2.5rem) 1fr`, gridTemplateRows: `1fr 1.25rem repeat(${currSeason?.contestants?.length}, 1fr)`}}>
     <div className="grid-heading rank-column-cell">Rank</div>
     <div className="episode-heading rank-column-cell rank-spacer"></div>
     {currSeason?.contestants?.map((contestant, index) => {
