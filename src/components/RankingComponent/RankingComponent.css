@@ -109,11 +109,18 @@
 
 .ranking-container {
   min-width: 50vw;
+  /* Without this cap, this flex item (cross-axis, not stretched by its
+     parent's align-items:center) shrink-wraps to the natural width of the
+     fixed-column ranking grid inside it. On a narrow viewport with many
+     episode columns that natural width exceeds the screen, and since
+     nothing above this in the tree sets overflow-x, the oversized box
+     just widens the whole document instead of the grid's own
+     overflow-x:auto ever getting a bounded box to scroll within. */
+  max-width: 100%;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: flex-start;
-  margin-left: 1vw;
 }
 
 .active-episodes-container {
@@ -232,6 +239,15 @@
   align-items: stretch;
   width: fit-content;
   max-width: 100%;
+  /* This is a main-axis flex item of .ranking-container (flex-direction:
+     row), so its default min-width:auto resolves to its min-content size
+     — and since .ranking-grid's columns are fixed-width, its min-content
+     is its full natural width, which would refuse to shrink below that
+     regardless of max-width:100% above. min-width:0 lets it actually
+     shrink to the available space, which is what lets .ranking-grid's own
+     overflow-x:auto (RankingComponent.css above) produce a real scrollbar
+     instead of just pushing everything wider than the viewport. */
+  min-width: 0;
 }
 
 .rank-tabs {
