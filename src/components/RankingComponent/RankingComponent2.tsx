@@ -396,12 +396,13 @@ const RankingComponent2 = () => {
           onChange={setSelectedContestantId}
         />
       )}
-    </div>
-    {currShow && (
-      <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
+      {currShow && (
+      <div className={`button${checkSubmitDisabled() ? '-inactive' : ''} px-4 my-auto min-w-40 mx-auto`} onClick={() => !checkSubmitDisabled() && setSubmitModalDisplayFlag(true)}>
             Submit Rankings
           </div>
     )}
+    </div>
+    
   </div>
 
   return (
