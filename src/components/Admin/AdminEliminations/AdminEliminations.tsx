@@ -87,7 +87,6 @@ const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
             {eliminations.map(elim => {
                     const contestant = contestants.find(c => c.id === elim.contestantId)
                     const episode = episodes.find(e => e.id === elim.episodeId)
-                    console.log(contestant, episode)
                     return (
                     <div key={contestant?.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.6rem 0', borderBottom: '0.5px solid var(--color-border-tertiary,#e5e5e5)' }}>
                         <span style={{ fontSize: 12, color: 'var(--color-text-secondary,#888)', minWidth: 40 }}>E{episode?.episodeNumber || '?'}</span>

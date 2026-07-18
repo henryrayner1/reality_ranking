@@ -122,7 +122,6 @@ const RankingComponent2 = () => {
   }, [currSeason?.id]);
 
   useEffect(() => {
-    console.log("Past Rankings updated:", pastRankings);
     setFavoriteRankings(pastRankings.filter((r) => r.type === "FAVORITE").sort());
     setWinnerRankings(pastRankings.filter((r) => r.type === "WINNER"));
   }, [pastRankings]);
