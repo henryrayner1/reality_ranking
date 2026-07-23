@@ -1,4 +1,4 @@
-import { Fragment } from "react";
+import { Fragment, useEffect, useRef } from "react";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../../utils/Constants";
@@ -68,6 +68,20 @@ const getEliminationBackfillIds = (
 const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   const { currSeason, currShow, rankingType, setRankingType, loadingFlag } = props;
   const insights = rankingType === "FAVORITE" ? props.favoriteInsights : props.winnerInsights;
+
+  // Scrolled to the far right on load/whenever the episode columns change,
+  // matching RankingComponent2's .ranking-grid behavior — an overflowing
+  // grid defaults to showing the most recent episode/day instead of the
+  // first. Declared unconditionally (before the loading/placeholder early
+  // returns below) since hooks can't be called conditionally; a no-op via
+  // the gridRef null-check on renders where the grid itself isn't mounted.
+  const gridRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (loadingFlag) return;
+    const grid = gridRef.current;
+    if (!grid) return;
+    grid.scrollLeft = grid.scrollWidth;
+  }, [loadingFlag, currSeason?.id, insights?.episodes?.length, currSeason?.contestants?.length]);
 
   const contestantsById: Record<string, Contestant> = {};
   (currSeason?.contestants ?? []).forEach((c) => { contestantsById[c.id] = c; });
@@ -170,75 +184,85 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   return (
     <div className="insights-panel">
       {rankTypeTabs}
-      <div
-        className="insights-grid"
-        style={{
-          // An extra fixed-width spacer column sits between the episode
-          // columns and AVG. With few episodes, the "Episode"/"Day" title
-          // (spanning only the episode columns) has barely 2.5rem to work
-          // with and crowds right up against AVG — the title spans into this
-          // spacer too, so it always has room to breathe regardless of
-          // episode count.
-          gridTemplateColumns: `repeat(${sortedEpisodes.length + 1}, 2.5rem) 1.5rem 2.5rem 1fr`,
-          gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
-        }}
-      >
-        <div className="insights-grid-heading">Rank</div>
-        <div className="insights-episode-heading"></div>
-        {Array.from({ length: rowCount }, (_, index) => (
-          <div key={`rank-${index}`} className="insights-grid-item">{index + 1}</div>
-        ))}
+      <div className="insights-grid-wrapper">
+        {/* Overlaid on top of the scrolling grid (not part of its scroll
+            content), so it stays centered within whatever's currently
+            visible without tracking scroll position — same trick as
+            RankingComponent2's .episode-title-overlay. The in-grid heading
+            below is left empty on purpose; this is the only place the
+            label's text actually renders. */}
+        <div className="insights-episode-title-overlay">{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
+        <div
+          className="insights-grid"
+          ref={gridRef}
+          style={{
+            // An extra fixed-width spacer column sits between the episode
+            // columns and AVG. With few episodes, the "Episode"/"Day" title
+            // (spanning only the episode columns) has barely 2.5rem to work
+            // with and crowds right up against AVG — the title spans into this
+            // spacer too, so it always has room to breathe regardless of
+            // episode count.
+            gridTemplateColumns: `repeat(${sortedEpisodes.length + 1}, 2.5rem) 1.5rem 2.5rem 1fr`,
+            gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
+          }}
+        >
+          <div className="insights-grid-heading rank-column-cell">Rank</div>
+          <div className="insights-episode-heading rank-column-cell rank-spacer"></div>
+          {Array.from({ length: rowCount }, (_, index) => (
+            <div key={`rank-${index}`} className="insights-grid-item rank-column-cell">{index + 1}</div>
+          ))}
 
-        {sortedEpisodes.length > 0 && (
-          <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length + 1}`, justifyContent: "center" }}>{currShow?.rankingMode === "DAILY" ? "Day" : "Episode"}</div>
-        )}
-        {episodeColumns.map((episode) => (
-          <Fragment key={`episode-${episode.episodeNumber}`}>
-            <div className="insights-episode-heading">{episode.episodeNumber}</div>
-            {episode.contestantIds.map((contestantId, rowIndex) => (
-              <div key={`episode-${episode.episodeNumber}-cell-${rowIndex}`} className="insights-cell">
-                {contestantId && (
-                  <ContestantIcon
-                    name={contestantsById[contestantId]?.name ?? ""}
-                    photoUrl={contestantsById[contestantId]?.photoUrl}
-                    id={contestantId}
-                    isActive={false}
-                    isEliminated={episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber)}
-                    season={currSeason}
-                    show={currShow}
-                  />
-                )}
-              </div>
-            ))}
-          </Fragment>
-        ))}
+          {sortedEpisodes.length > 0 && (
+            <div className="insights-grid-heading" style={{ gridColumn: `span ${sortedEpisodes.length + 1}` }}></div>
+          )}
+          {episodeColumns.map((episode) => (
+            <Fragment key={`episode-${episode.episodeNumber}`}>
+              <div className="insights-episode-heading">{episode.episodeNumber}</div>
+              {episode.contestantIds.map((contestantId, rowIndex) => (
+                <div key={`episode-${episode.episodeNumber}-cell-${rowIndex}`} className="insights-cell">
+                  {contestantId && (
+                    <ContestantIcon
+                      name={contestantsById[contestantId]?.name ?? ""}
+                      photoUrl={contestantsById[contestantId]?.photoUrl}
+                      id={contestantId}
+                      isActive={false}
+                      isEliminated={episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber)}
+                      season={currSeason}
+                      show={currShow}
+                    />
+                  )}
+                </div>
+              ))}
+            </Fragment>
+          ))}
 
-        {/* Explicitly claims the spacer column's remaining rows so
-            auto-placement can't slot the AVG heading or overall column into
-            them instead — same deterministic-count approach as every other
-            column here. */}
-        <div className="insights-episode-heading"></div>
-        {Array.from({ length: rowCount }, (_, index) => (
-          <div key={`spacer-cell-${index}`} className="insights-cell" />
-        ))}
+          {/* Explicitly claims the spacer column's remaining rows so
+              auto-placement can't slot the AVG heading or overall column into
+              them instead — same deterministic-count approach as every other
+              column here. */}
+          <div className="insights-episode-heading"></div>
+          {Array.from({ length: rowCount }, (_, index) => (
+            <div key={`spacer-cell-${index}`} className="insights-cell" />
+          ))}
 
-        <div className="insights-grid-heading insights-overall-heading" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
-        <div className="insights-episode-heading insights-episode-heading" style={{ gridColumn: "span 2", justifyContent: "center" }}></div>
-        {overallColumn.map((contestantId, rowIndex) => (
-          <div key={`overall-cell-${rowIndex}`} className="insights-cell insights-overall-cell">
-            {contestantId && (
-              <ContestantIcon
-                name={contestantsById[contestantId]?.name ?? ""}
-                photoUrl={contestantsById[contestantId]?.photoUrl}
-                id={contestantId}
-                isActive={false}
-                isEliminated={eliminationByContestant.has(contestantId)}
-                season={currSeason}
-                show={currShow}
-              />
-            )}
-          </div>
-        ))}
+          <div className="insights-grid-heading insights-overall-heading avg-column-cell" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
+          <div className="insights-episode-heading avg-column-cell rank-spacer" style={{ gridColumn: "span 2", justifyContent: "center"}}></div>
+          {overallColumn.map((contestantId, rowIndex) => (
+            <div key={`overall-cell-${rowIndex}`} className="insights-cell insights-overall-cell avg-column-cell">
+              {contestantId && (
+                <ContestantIcon
+                  name={contestantsById[contestantId]?.name ?? ""}
+                  photoUrl={contestantsById[contestantId]?.photoUrl}
+                  id={contestantId}
+                  isActive={false}
+                  isEliminated={eliminationByContestant.has(contestantId)}
+                  season={currSeason}
+                  show={currShow}
+                />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

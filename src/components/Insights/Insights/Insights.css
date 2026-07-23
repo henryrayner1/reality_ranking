@@ -181,6 +181,64 @@
   margin-top: 0;
 }
 
+/* Freezes the Rank column (heading + numbers) in place while the episode
+   columns scroll horizontally beneath it — same "frozen first column"
+   trick as RankingComponent.css's .rank-column-cell. z-index keeps it
+   painted above the scrolling columns, which come later in DOM order. */
+.rank-column-cell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+}
+
+/* .insights-episode-heading has no background of its own (it's normally
+   just a transparent spacer), so without this the episode-number row
+   would show through the sticky rank-spacer cell as it scrolls past
+   underneath. */
+.rank-spacer {
+  background-color: rgb(166, 233, 245);
+}
+
+/* Freezes the AVG column (heading + overall cells) at the right edge,
+   mirroring the Rank column's left-side freeze — it's the same kind of
+   aggregate, non-per-episode column, so it should stay visible while
+   scrolling through per-episode data just like Rank does. Both the
+   heading and cell classes already carry their own opaque
+   background-color (.insights-overall-heading / .insights-overall-cell),
+   so no extra "hide content underneath" rule is needed here. */
+.avg-column-cell {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+}
+
+/* Overlaid on top of the scrolling grid (not part of its scroll content),
+   so the "Episode"/"Day" label stays trivially centered within whatever's
+   currently visible — no need to track scroll position. Mirrors
+   RankingComponent.css's .ranking-grid-wrapper/.episode-title-overlay. */
+.insights-grid-wrapper {
+  position: relative;
+}
+
+.insights-episode-title-overlay {
+  /* .insights-grid has a 5px border on every side, which top/left/right:0
+     would ignore — offset the overlay from the grid's actual header row. */
+  position: absolute;
+  top: 5px;
+  left: calc(2.5rem + 5px);
+  /* Leaves room for the sticky spacer + AVG columns on the right so the
+     label never renders on top of them. */
+  right: calc(1.5rem + 2.5rem + 5px);
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  font-size: .875rem;
+  pointer-events: none;
+}
+
 .insights-cell {
   max-width: 2.5rem;
   min-width: 2.5rem;
@@ -231,17 +289,25 @@
 
 /* Overall is an aggregate column, not a specific episode — visually set it apart
    from the per-episode data with its own accent color (tying into the app's
-   existing purple page-header accent) and a left divider. */
+   existing purple page-header accent) and a left divider. The divider is a
+   box-shadow rather than a real border: .insights-cell's flex child (the
+   ContestantIcon) has no explicit width, so it shrink-to-fits whatever
+   content-box space is left after the border under border-box sizing — a
+   real 3px border-left shrank the icon to 37px instead of 40px, which threw
+   off ContestantIcon's internal fixed-px image/name-label offsets and left a
+   visible gap between them. A box-shadow paints the same divider line without
+   occupying any layout space, so the icon renders at the same 40px every
+   other cell uses. */
 .insights-overall-heading {
   background-color: rgb(122, 90, 180);
   color: #ffffff;
   font-weight: bold;
-  border-left: 3px solid rgb(223, 221, 235);
+  box-shadow: -3px 0 0 0 rgb(223, 221, 235);
 }
 
 .insights-overall-cell {
   background-color: rgba(202, 194, 245, 0.55);
-  border-left: 3px solid rgb(223, 221, 235);
+  box-shadow: -3px 0 0 0 rgb(223, 221, 235);
 }
 
 .insights-grid-loading {
