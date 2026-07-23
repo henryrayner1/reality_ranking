@@ -196,13 +196,18 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
           className="insights-grid"
           ref={gridRef}
           style={{
-            // An extra fixed-width spacer column sits between the episode
-            // columns and AVG. With few episodes, the "Episode"/"Day" title
-            // (spanning only the episode columns) has barely 2.5rem to work
-            // with and crowds right up against AVG — the title spans into this
-            // spacer too, so it always has room to breathe regardless of
-            // episode count.
-            gridTemplateColumns: `repeat(${sortedEpisodes.length + 1}, 2.5rem) 1.5rem 2.5rem 1fr`,
+            // An extra spacer column sits between the episode columns and AVG.
+            // With few episodes, the "Episode"/"Day" title (spanning only the
+            // episode columns) has barely 2.5rem to work with and crowds
+            // right up against AVG — the title spans into this spacer too, so
+            // it always has room to breathe regardless of episode count. It's
+            // a minmax(1.5rem, 1fr) rather than a fixed 1.5rem so it also
+            // absorbs whatever width .insights-panel's align-items: stretch
+            // forces onto this grid beyond its own natural content width
+            // (e.g. from the Favorite/Winner tab row above being wider than a
+            // 1-2 episode grid) — without a flexible track to soak that up,
+            // it used to render as dead space to the right of AVG instead.
+            gridTemplateColumns: `repeat(${sortedEpisodes.length + 1}, 2.5rem) minmax(1.5rem, 1fr) 2.5rem`,
             gridTemplateRows: `1fr 1.25rem repeat(${rowCount}, 1fr)`,
           }}
         >
@@ -246,7 +251,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
           ))}
 
           <div className="insights-grid-heading insights-overall-heading avg-column-cell" style={{ gridColumn: "span 1", justifyContent: "center" }}>AVG</div>
-          <div className="insights-episode-heading avg-column-cell rank-spacer" style={{ gridColumn: "span 2", justifyContent: "center"}}></div>
+          <div className="insights-episode-heading avg-column-cell rank-spacer" style={{ justifyContent: "center"}}></div>
           {overallColumn.map((contestantId, rowIndex) => (
             <div key={`overall-cell-${rowIndex}`} className="insights-cell insights-overall-cell avg-column-cell">
               {contestantId && (
