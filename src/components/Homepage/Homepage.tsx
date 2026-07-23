@@ -77,7 +77,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
       </section>
 
       <section className="homepage-shows-section">
-        <h2>Select a show to view insights on its user rankings.</h2>
+        <h2>{!user ? `Select a show to view insights on its user rankings.` : `Select a show to start ranking.`}</h2>
         {shows.length === 0 ? (
           <p className="homepage-empty-state">No shows have been added yet.</p>
         ) : (
