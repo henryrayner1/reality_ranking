@@ -304,6 +304,53 @@ const RankingComponent2 = () => {
     ];
   };
 
+  // Renders a locked column for an episode nobody could (or, for a missed
+  // DAILY day, no longer can) submit a real ranking for — either
+  // Episode.isBackfilled (auto-created after the fact to fill a hole in the
+  // timeline) or, for DAILY shows, an earlier day the current user never
+  // ranked once a newer day has already opened (see the isMissedDailyDay
+  // check at the call site — only the single most-recently-opened day stays
+  // first-submittable). There's no real Ranking to build from in either
+  // case, so this carries forward whichever order the last real submission
+  // left off at (same source getLastRankingNames uses to seed a
+  // freshly-activated episode) via a synthetic Ranking fed into
+  // buildPastRankingColumn, so the locked column stays visually continuous
+  // across the gap instead of jumping to an unrelated order. Eliminated
+  // contestants render with the same grayscale as every other column
+  // (isEliminated) so that real distinction isn't lost; everyone else in the
+  // column renders dimmed (not fully grayed) to signal "not actually
+  // submitted" without being indistinguishable from an eliminated cell.
+  const lockedEpisodeElements = (episode: Episode) => {
+    const episodeNumber = episode.episodeNumber;
+    const seasonContestantIds = currSeason?.contestants?.map((contestant) => contestant.id) ?? [];
+    const eligibleContestantIds = (currSeason?.contestants ?? [])
+      .filter((contestant) => wasContestantOnRosterFor(contestant, episode))
+      .map((contestant) => contestant.id);
+    const carriedOrder = getLastRankingNames(episodeNumber);
+    const syntheticRanking: Ranking = { id: `locked-${episode.id}`, userId: "", episodeId: episode.id, type: rankingType, contestantIds: carriedOrder };
+    const columnEntries = buildPastRankingColumn(syntheticRanking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
+    const heading = String(episodeNumber);
+    return [
+      <div className="episode-heading" key={`${episode.id}-heading`}>{heading}</div>,
+      ...columnEntries.map((entry, index) => (
+        <div key={`${episode.id}-${entry.contestantId ?? `blank-${index}`}`} className={`cell locked-episode${entry.eliminated ? ' eliminated-episode' : ''}`}>
+          {entry.contestantId && (
+            <ContestantIcon
+              name={getContestantName(entry.contestantId)}
+              photoUrl={getContestantPhotoUrl(entry.contestantId)}
+              id={entry.contestantId}
+              isActive={false}
+              isEliminated={entry.eliminated}
+              dimmed={true}
+              season={currSeason}
+              show={currShow}
+            />
+          )}
+        </div>
+      )),
+    ];
+  };
+
   const rankTypeTabs = <div className="rank-tabs">
     <div
       className={`rank-tab${rankingType == "FAVORITE" ? ' rank-tab-active' : ""}`}
@@ -319,6 +366,13 @@ const RankingComponent2 = () => {
     >Winner</div>
     <Tooltip id="rank-type-tooltip" positionStrategy="fixed" style={{ maxWidth: "14rem" }} />
   </div>
+
+  // DAILY-mode only: once a newer day has opened, an earlier day the current
+  // user never submitted a ranking for is no longer first-submittable — only
+  // the single most-recently-opened rankable day stays open for that. Not
+  // applied to EPISODE-mode shows, which keep every open episode
+  // first-submittable indefinitely (unchanged, deliberate existing design).
+  const latestRankableEpisodeId = rankableEpisodes[rankableEpisodes.length - 1]?.id;
 
   const rankingGrid = <div className="ranking-grid-wrapper">
     {/* Overlaid on top of the scrolling grid (not part of its scroll
@@ -339,6 +393,8 @@ const RankingComponent2 = () => {
       {rankableEpisodes.map((episode) => {
         const inPastRankings = checkPastRankings(episode.id);
         if (inPastRankings) return pastRankingsElements(inPastRankings, episode);
+        const isMissedDailyDay = currShow?.rankingMode === "DAILY" && episode.id !== latestRankableEpisodeId;
+        if (episode.isBackfilled || isMissedDailyDay) return lockedEpisodeElements(episode);
         const isActive = activeEpisodes.has(episode.id);
         const eliminatedIds = getEpisodeEliminatedIds(episode);
         return <EpisodeComponent

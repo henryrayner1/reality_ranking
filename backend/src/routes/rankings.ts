@@ -65,16 +65,32 @@ export default function rankingsRouter(prisma: PrismaClient) {
       });
     }
 
-    const episodes = [...episodeBuckets.entries()]
-      .sort((a, b) => a[1].episodeNumber - b[1].episodeNumber)
-      .map(([episodeId, bucket]) => ({
+    // Gap days (Episode.isBackfilled) never have a submitted Ranking — ranking
+    // creation rejects them server-side — so they'd otherwise be invisible
+    // here. Merge them in with empty averages, flagged, so the frontend can
+    // render them as locked columns instead of just skipping the day number.
+    const backfilledEpisodes = await prisma.episode.findMany({
+      where: { seasonId, isBackfilled: true },
+      select: { id: true, episodeNumber: true },
+    });
+
+    const episodes = [
+      ...[...episodeBuckets.entries()].map(([episodeId, bucket]) => ({
         episodeId,
         episodeNumber: bucket.episodeNumber,
+        isBackfilled: false,
         contestantAverages: [...bucket.sums.entries()].map(([contestantId, sum]) => ({
           contestantId,
           averagePosition: sum / bucket.counts.get(contestantId)!,
         })),
-      }));
+      })),
+      ...backfilledEpisodes.map((e) => ({
+        episodeId: e.id,
+        episodeNumber: e.episodeNumber,
+        isBackfilled: true,
+        contestantAverages: [] as { contestantId: string; averagePosition: number }[],
+      })),
+    ].sort((a, b) => a.episodeNumber - b.episodeNumber);
 
     // Overall = mean of each contestant's per-episode averages (mean-of-means),
     // so every episode counts equally regardless of how many users submitted.
@@ -142,13 +158,16 @@ export default function rankingsRouter(prisma: PrismaClient) {
 
     const episode = await prisma.episode.findUnique({
       where: { id: body.episodeId },
-      select: { airDate: true, dayKey: true, season: { select: { show: { select: { rankingMode: true } } } } },
+      select: { airDate: true, dayKey: true, isBackfilled: true, season: { select: { show: { select: { rankingMode: true } } } } },
     });
     if (!episode) {
       return res.status(404).json({ error: "Episode not found" });
     }
     if (!isRankableNow(episode, episode.season.show.rankingMode)) {
       return res.status(403).json({ error: "Ranking is not yet open for this episode" });
+    }
+    if (episode.isBackfilled) {
+      return res.status(403).json({ error: "This day was auto-filled to keep the timeline continuous and can't be ranked" });
     }
 
     try {
@@ -210,12 +229,12 @@ export default function rankingsRouter(prisma: PrismaClient) {
     const episodeIds = [...new Set(rankingRows.map((r) => r.episodeId))];
     const episodes = await prisma.episode.findMany({
       where: { id: { in: episodeIds } },
-      select: { id: true, airDate: true, dayKey: true, season: { select: { show: { select: { rankingMode: true } } } } },
+      select: { id: true, airDate: true, dayKey: true, isBackfilled: true, season: { select: { show: { select: { rankingMode: true } } } } },
     });
     const episodeById = new Map(episodes.map((e) => [e.id, e]));
     const notRankable = rankingRows.some((r) => {
       const episode = episodeById.get(r.episodeId);
-      return !episode || !isRankableNow(episode, episode.season.show.rankingMode);
+      return !episode || episode.isBackfilled || !isRankableNow(episode, episode.season.show.rankingMode);
     });
     if (notRankable) {
       return res.status(403).json({ error: "One or more episodes are not yet open for ranking" });

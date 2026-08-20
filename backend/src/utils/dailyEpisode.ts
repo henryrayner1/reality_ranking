@@ -62,40 +62,82 @@ export const dayKeyToAirDate = (dayKey: string): Date => {
   return new Date(getZonedMidnightMs(y, m, d));
 };
 
+// Pure Y/M/D calendar arithmetic on the "YYYY-MM-DD" string itself — no
+// timezone conversion involved, since a dayKey is already just a calendar
+// date. Avoids any DST-drift edge cases that walking in millisecond/Date
+// space would introduce.
+export const nextDayKey = (dayKey: string): string => {
+  const [y, m, d] = dayKey.split("-").map(Number);
+  const next = new Date(Date.UTC(y, m - 1, d + 1));
+  const yyyy = String(next.getUTCFullYear()).padStart(4, "0");
+  const mm = String(next.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(next.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 const isUniqueConstraintError = (error: unknown): boolean =>
   error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 
-// Finds or creates today's day-row for a DAILY-mode show's season, if the
-// season has premiered. No-ops entirely for seasons with no premiereDate set,
-// or whose premiereDate hasn't arrived yet — no rows are created before then.
+// Ensures every calendar day from a DAILY-mode show's premiere through today
+// has a day-row, backfilling any gap left by a stretch of time nobody visited
+// the site and the scheduler wasn't running (e.g. server downtime). No-ops
+// entirely for seasons with no premiereDate set, or whose premiereDate hasn't
+// arrived yet — no rows are created before then. Only the row for *today*
+// itself is a live/on-time creation (isBackfilled: false); every other newly
+// created row represents a real missed day and never had a real ranking
+// window, so it's flagged isBackfilled: true. Also re-numbers every episode
+// in the season by dayKey order on every call — idempotent and self-healing,
+// so it also fixes numbering for any legacy out-of-order data, not just
+// newly-backfilled gaps.
 export async function ensureTodaysDailyEpisode(
   prisma: PrismaClient,
   season: { id: string; premiereDate: Date | null }
 ): Promise<void> {
   if (!season.premiereDate) return;
 
+  const premiereKey = getTodayDayKey(season.premiereDate);
   const todayKey = getTodayDayKey();
-  if (todayKey < getTodayDayKey(season.premiereDate)) return;
+  if (todayKey < premiereKey) return;
 
-  const existing = await prisma.episode.findUnique({
-    where: { seasonId_dayKey: { seasonId: season.id, dayKey: todayKey } },
-  });
-  if (existing) return;
-
-  const count = await prisma.episode.count({ where: { seasonId: season.id } });
   try {
-    await prisma.episode.create({
-      data: {
-        id: Math.random().toString(36).slice(2, 8).toLowerCase(),
-        seasonId: season.id,
-        dayKey: todayKey,
-        airDate: dayKeyToAirDate(todayKey),
-        episodeNumber: count + 1,
-      },
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.episode.findMany({
+        where: { seasonId: season.id, dayKey: { not: null } },
+        select: { dayKey: true },
+      });
+      const existingKeys = new Set(existing.map((e) => e.dayKey as string));
+
+      for (let key = premiereKey; key <= todayKey; key = nextDayKey(key)) {
+        if (existingKeys.has(key)) continue;
+        await tx.episode.create({
+          data: {
+            id: Math.random().toString(36).slice(2, 8).toLowerCase(),
+            seasonId: season.id,
+            dayKey: key,
+            airDate: dayKeyToAirDate(key),
+            isBackfilled: key !== todayKey,
+            episodeNumber: 0, // placeholder, corrected by the renumber pass below
+          },
+        });
+      }
+
+      const allEpisodes = await tx.episode.findMany({
+        where: { seasonId: season.id, dayKey: { not: null } },
+        select: { id: true, episodeNumber: true },
+        orderBy: { dayKey: "asc" },
+      });
+      await Promise.all(
+        allEpisodes.map((episode, index) => {
+          const correctNumber = index + 1;
+          if (episode.episodeNumber === correctNumber) return null;
+          return tx.episode.update({ where: { id: episode.id }, data: { episodeNumber: correctNumber } });
+        })
+      );
     });
   } catch (error) {
-    // A concurrent request already created today's row — the
-    // @@unique([seasonId, dayKey]) constraint is the actual guard here.
+    // A concurrent request/scheduler tick already created one of these rows —
+    // the @@unique([seasonId, dayKey]) constraint is the actual guard here;
+    // the next tick will pick up whatever's still missing and renumber again.
     if (!isUniqueConstraintError(error)) throw error;
   }
 }

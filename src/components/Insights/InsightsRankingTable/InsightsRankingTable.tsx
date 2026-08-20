@@ -147,22 +147,45 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
     );
   }
 
+  // Tracks the most recent real (non-backfilled) day's rank order as
+  // sortedEpisodes is walked in chronological order below, so a gap day
+  // (Episode.isBackfilled) — which never has real submitted rankings, since
+  // ranking creation rejects it server-side — can carry that order forward
+  // into its own locked column instead of falling back to an unrelated
+  // alphabetical roster order.
+  let lastRealOrder: string[] = [];
+
   const episodeColumns = sortedEpisodes.map((episode) => {
+    if (episode.isBackfilled) {
+      const carriedOrder = lastRealOrder.length > 0
+        ? lastRealOrder
+        : Object.keys(contestantsById).sort((a, b) => (contestantsById[a]?.name ?? "").localeCompare(contestantsById[b]?.name ?? ""));
+      const carriedItems = carriedOrder.map((id, index) => ({ contestantId: id, value: index }));
+      return {
+        episodeNumber: episode.episodeNumber,
+        isBackfilled: true,
+        backfillIds: new Set<string>(),
+        contestantIds: buildRankColumn(carriedItems, contestantsById, rowCount),
+      };
+    }
     const presentIds = new Set(episode.contestantAverages.map((ca) => ca.contestantId));
     const backfillIds = getEliminationBackfillIds(eliminationByContestant, contestantsById, presentIds, episode.episodeNumber);
+    const contestantIds = buildRankColumn(
+      episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
+      contestantsById,
+      rowCount,
+      backfillIds
+    );
+    lastRealOrder = contestantIds.filter((id): id is string => id !== null);
     return {
       episodeNumber: episode.episodeNumber,
+      isBackfilled: false,
       // Backfilled entries have no real ranking data for this episode — they're
       // shown only because the contestant was already eliminated by this point —
       // so they should always render grayed, regardless of isEliminatedByEpisode's
       // usual "next episode onward" threshold for contestants with real data.
       backfillIds: new Set(backfillIds),
-      contestantIds: buildRankColumn(
-        episode.contestantAverages.map((ca) => ({ contestantId: ca.contestantId, value: ca.averagePosition })),
-        contestantsById,
-        rowCount,
-        backfillIds
-      ),
+      contestantIds,
     };
   });
 
@@ -231,7 +254,10 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
                       photoUrl={contestantsById[contestantId]?.photoUrl}
                       id={contestantId}
                       isActive={false}
-                      isEliminated={episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber)}
+                      isEliminated={episode.isBackfilled
+                        ? isEliminatedByEpisode(contestantId, episode.episodeNumber)
+                        : (episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber))}
+                      dimmed={episode.isBackfilled}
                       season={currSeason}
                       show={currShow}
                     />

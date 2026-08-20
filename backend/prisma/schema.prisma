@@ -62,9 +62,13 @@ model Episode {
   rankings        Ranking[]
   season          Season        @relation(fields: [seasonId], references: [id], onDelete: Cascade)
   airDate         DateTime?
-  // "YYYY-MM-DD" (UTC calendar day), set only on rows auto-created for
-  // DAILY-mode shows. Null for ordinary admin-created EPISODE-mode rows.
+  // "YYYY-MM-DD" (America/New_York calendar day), set only on rows auto-created
+  // for DAILY-mode shows. Null for ordinary admin-created EPISODE-mode rows.
   dayKey          String?
+  // True only for DAILY-mode rows created after the fact to fill a gap in the
+  // day timeline (e.g. server downtime spanning multiple days) - never had a
+  // real live ranking window, so rankings can never be submitted against them.
+  isBackfilled    Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

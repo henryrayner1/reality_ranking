@@ -20,6 +20,7 @@ export interface Episode {
   season?: Season;
   airDate?: string;
   dayKey?: string | null;
+  isBackfilled?: boolean;
   eliminations?: Elimination[];
 }
 
@@ -155,6 +156,7 @@ export interface EliminationEntry {
 export interface InsightsEpisode {
   episodeId: string;
   episodeNumber: number;
+  isBackfilled?: boolean;
   contestantAverages: { contestantId: string; averagePosition: number }[];
 }
 

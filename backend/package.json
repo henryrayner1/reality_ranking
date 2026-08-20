@@ -9,7 +9,8 @@
     "server": "nodemon --env-file=.env dist/src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
-    "seed": "tsx prisma/seed.ts"
+    "seed": "tsx prisma/seed.ts",
+    "backfill:daily": "tsx scripts/backfillDailyEpisodes.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.7.0",
