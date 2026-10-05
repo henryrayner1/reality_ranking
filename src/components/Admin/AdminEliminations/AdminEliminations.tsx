@@ -69,6 +69,7 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
             <AdminUI.Card title="Elimination history">
             {isLoading && <AdminUI.EmptyState message="Loading..." />}
             {!isLoading && eliminations.length === 0 && <AdminUI.EmptyState message="No eliminations logged yet." />}
+            <div className="admin-scroll-list">
             {eliminations.map(elim => {
                     const contestant = contestants.find(c => c.id === elim.contestantId)
                     const episode = episodes.find(e => e.id === elim.episodeId)
@@ -82,6 +83,7 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
                     </div>
                     )
             })}
+            </div>
             </AdminUI.Card>
         </AdminUI.TwoCol>
     )

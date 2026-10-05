@@ -68,6 +68,43 @@
     text-align: left;
 }
 
+/* Always-visible scrollbar: macOS otherwise uses overlay scrollbars that
+   only appear mid-scroll, hiding the fact that the list scrolls at all.
+   Defining ::-webkit-scrollbar opts Chrome/Safari into a classic, permanent
+   bar. scrollbar-width/-color are only applied where ::-webkit-scrollbar
+   isn't supported (Firefox), since setting them in Chrome makes it ignore
+   the ::-webkit-scrollbar rules and fall back to overlay bars. */
+.admin-scroll-list {
+    max-height: 480px;
+    overflow-y: scroll;
+    padding-right: 0.5rem;
+}
+
+.admin-scroll-list::-webkit-scrollbar {
+    width: 8px;
+}
+
+.admin-scroll-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+.admin-scroll-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+.admin-scroll-list::-webkit-scrollbar-thumb:hover {
+    background: #a0a0a0;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+    .admin-scroll-list {
+        scrollbar-width: thin;
+        scrollbar-color: #c1c1c1 #f1f1f1;
+    }
+}
+
 @media screen and (max-width: 700px) {
     .admin-page {
         padding: 1rem;

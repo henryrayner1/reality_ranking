@@ -47,7 +47,7 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
             </AdminUI.Card>
             )}
             <AdminUI.Card title="All episodes">
-            <div style={{ maxHeight: 480, overflowY: "auto" }}>
+            <div className="admin-scroll-list">
             {isLoading && <AdminUI.EmptyState message="Loading..." />}
             {!isLoading && episodes.length === 0 && <AdminUI.EmptyState message="No episodes yet. Add one!" />}
             {episodes.map(ep => (
