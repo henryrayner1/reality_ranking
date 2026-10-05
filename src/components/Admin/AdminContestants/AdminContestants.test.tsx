@@ -15,6 +15,13 @@ vi.mock("react-avatar-editor", () => ({
 }));
 
 const show: Show = { id: "s1", name: "Survivor", currSeason: 2 };
+const otherSeason: Season = {
+  id: "se0",
+  showId: "s1",
+  isCurrent: false,
+  seasonNumber: 1,
+  contestants: [{ id: "c0", name: "Old Timer", seasonId: "se0", status: "ACTIVE" }],
+};
 const season: Season = {
   id: "se1",
   showId: "s1",
@@ -29,26 +36,26 @@ const season: Season = {
 describe("AdminContestants", () => {
   beforeEach(() => {
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [show], isLoading: false } as any);
-    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: [season], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: [season, otherSeason], isLoading: false } as any);
     vi.spyOn(util, "addContestant").mockResolvedValue({} as any);
     vi.spyOn(util, "deleteContestant").mockResolvedValue(undefined as any);
   });
 
-  it("lists existing contestants with an Active/Eliminated badge", () => {
-    renderWithProviders(<AdminContestants showId="s1" />);
+  it("lists only the selected season's contestants with an Active/Eliminated badge", () => {
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
     expect(screen.getByText("Active One")).toBeInTheDocument();
+    expect(screen.queryByText("Old Timer")).not.toBeInTheDocument();
     expect(screen.getByText("Active")).toBeInTheDocument();
     expect(screen.getByText("Eliminated")).toBeInTheDocument();
   });
 
-  it("keeps Add contestant gated on name+season, submitting without a photo when none was chosen", async () => {
+  it("keeps Add contestant gated on a name, submitting to the selected season without a photo when none was chosen", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<AdminContestants showId="s1" />);
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
 
     await user.click(screen.getByText("Add contestant", { selector: "button" }));
     expect(util.addContestant).not.toHaveBeenCalled();
 
-    await user.selectOptions(screen.getByDisplayValue("Select a season..."), "se1");
     await user.type(screen.getByPlaceholderText("e.g. Tiyana Kaloko"), "New Person");
     await user.click(screen.getByText("Add contestant", { selector: "button" }));
 
@@ -60,14 +67,14 @@ describe("AdminContestants", () => {
 
   it("removes a contestant", async () => {
     const user = userEvent.setup();
-    renderWithProviders(<AdminContestants showId="s1" />);
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
     const removeButtons = screen.getAllByText("Remove");
     await user.click(removeButtons[0]);
     expect(util.deleteContestant).toHaveBeenCalledWith("c1", expect.anything());
   });
 
   it("picks up a pasted image via the window paste listener", async () => {
-    renderWithProviders(<AdminContestants showId="s1" />);
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
 
     const file = new File(["img"], "headshot.png", { type: "image/png" });
     const pasteEvent = new Event("paste") as ClipboardEvent & { clipboardData: any };

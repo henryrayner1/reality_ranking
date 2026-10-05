@@ -8,32 +8,34 @@ import type { Show, Season } from "../../../utils/Constants";
 
 const episodeShow: Show = { id: "s1", name: "Survivor", currSeason: 2, rankingMode: "EPISODE" };
 const dailyShow: Show = { id: "s2", name: "Big Brother", currSeason: 1, rankingMode: "DAILY" };
-const season: Season = { id: "se1", showId: "s1", isCurrent: true, contestants: [], seasonNumber: 2 };
+const makeSeasons = (episodes: Season["episodes"] = []): Season[] => [
+  { id: "se1", showId: "s1", isCurrent: true, contestants: [], seasonNumber: 2, episodes },
+  {
+    id: "se0", showId: "s1", isCurrent: false, contestants: [], seasonNumber: 1,
+    episodes: [{ id: "old", episodeNumber: 9, seasonId: "se0", airDate: "2025-01-01T20:00:00.000Z" }],
+  },
+];
 
 describe("AdminEpisodes", () => {
   beforeEach(() => {
     vi.spyOn(util, "addEpisode").mockResolvedValue({} as any);
     vi.spyOn(util, "deleteEpisode").mockResolvedValue(undefined as any);
-    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: [season], isLoading: false } as any);
-    vi.spyOn(queries, "useEpisodesByShow").mockReturnValue({ data: [], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: makeSeasons(), isLoading: false } as any);
   });
 
   it("shows the auto-generated message (no manual form) for a DAILY show", () => {
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [dailyShow], isLoading: false } as any);
-    renderWithProviders(<AdminEpisodes showId="s2" />);
+    renderWithProviders(<AdminEpisodes showId="s2" seasonId="se1" />);
     expect(screen.getByText(/created automatically each day/)).toBeInTheDocument();
     expect(screen.queryByText("Add episode", { selector: "button" })).not.toBeInTheDocument();
   });
 
-  it("keeps the create button disabled until both season and air date are set", async () => {
+  it("keeps the create button disabled until an air date is set", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
-    renderWithProviders(<AdminEpisodes showId="s1" />);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
 
     const addButton = screen.getByText("Add episode", { selector: "button" });
-    expect(addButton).toBeDisabled();
-
-    await user.selectOptions(screen.getByDisplayValue("Select a season..."), "se1");
     expect(addButton).toBeDisabled();
 
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
@@ -41,12 +43,11 @@ describe("AdminEpisodes", () => {
     expect(addButton).not.toBeDisabled();
   });
 
-  it("submits a new episode combining the date and time inputs", async () => {
+  it("submits a new episode for the selected season, combining date and time", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
-    renderWithProviders(<AdminEpisodes showId="s1" />);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
 
-    await user.selectOptions(screen.getByDisplayValue("Select a season..."), "se1");
     const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
     await user.type(dateInput, "2026-02-01");
     await user.click(screen.getByText("Add episode", { selector: "button" }));
@@ -56,24 +57,25 @@ describe("AdminEpisodes", () => {
     );
   });
 
-  it("shows formatted air dates for existing episodes", () => {
+  it("lists only the selected season's episodes, with formatted air dates", () => {
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
-    vi.spyOn(queries, "useEpisodesByShow").mockReturnValue({
-      data: [{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-02-01T20:00:00.000Z" }],
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: makeSeasons([{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-02-01T20:00:00.000Z" }]),
       isLoading: false,
     } as any);
-    renderWithProviders(<AdminEpisodes showId="s1" />);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
     expect(screen.getByText(/Season 2 · Feb 1, 2026/)).toBeInTheDocument();
+    expect(screen.queryByText("Episode 9")).not.toBeInTheDocument();
   });
 
   it("removes an episode", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
-    vi.spyOn(queries, "useEpisodesByShow").mockReturnValue({
-      data: [{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-02-01T20:00:00.000Z" }],
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: makeSeasons([{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-02-01T20:00:00.000Z" }]),
       isLoading: false,
     } as any);
-    renderWithProviders(<AdminEpisodes showId="s1" />);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
     await user.click(screen.getByText("Remove"));
     expect(util.deleteEpisode).toHaveBeenCalledWith("e1");
   });

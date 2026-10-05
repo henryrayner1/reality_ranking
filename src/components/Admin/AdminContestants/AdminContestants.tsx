@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Contestant, Season } from "../../../utils/Constants";
+import type { Contestant } from "../../../utils/Constants";
 import {
   addContestant,
   deleteContestant,
@@ -8,24 +8,20 @@ import {
 } from "../../../utils/util";
 import { backendUrl } from "../../../utils/apiBase";
 import * as AdminUI from "../../../utils/AdminComponents";
-import ShowSelect from "../../ShowSelect/ShowSelect";
 import AvatarEditor from "react-avatar-editor";
-import { useNavigate } from "react-router-dom";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
-import { slugifyShowName } from "../../../utils/slug";
 
 interface AdminContestantsProps {
-  showId?: string;
+  showId: string;
+  seasonId: string;
 }
 
-const AdminContestants = ({ showId }: AdminContestantsProps) => {
-  const navigate = useNavigate();
+const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
   const qc = useQueryClient();
   const [contestant, setContestant] = useState<Partial<Contestant>>({});
   const [photoLabel, setPhotoLabel] = useState("Click, drag & drop, or paste to upload headshot");
   const { data: shows = [] } = useShows();
   const currShow = shows.find(s => s.id === showId);
-  const [currSeason, setCurrSeason] = useState<Season>();
   const [image, setImage] = useState<File | null>(null);
   const [scale, setScale] = useState(1.2);
   const [isDragging, setIsDragging] = useState(false);
@@ -61,16 +57,17 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
   }, [currShow]);
 
   const { data: seasons = [], isLoading } = useSeasons(showId);
+  const currSeason = seasons.find((s) => s.id === seasonId);
   // Contestants live nested on each season (getSeasons already returns them)
   // rather than in a separate cache — this is the single source of truth
   // that Ranking/Insights also read via useShowTree, so a create/edit/delete
   // here is immediately visible there without a page reload.
-  const contestants = useMemo(() => seasons.flatMap((s) => s.contestants ?? []), [seasons]);
+  const contestants = useMemo(() => currSeason?.contestants ?? [], [currSeason]);
   const create = useMutation({
     mutationFn: addContestant,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: showsQueryKey() });
-      setContestant((c) => ({ seasonId: c.seasonId }));
+      setContestant({});
       setPhotoLabel("Click, drag & drop, or paste to upload headshot");
     },
   });
@@ -112,7 +109,7 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
   };
 
   const handleSubmit = async () => {
-    if (contestant.name?.trim() && contestant.seasonId) {
+    if (contestant.name?.trim()) {
       let photoUrl: string | null = null;
       if (editorRef.current) {
         const canvas = editorRef.current.getImageScaledToCanvas().toDataURL();
@@ -123,7 +120,7 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
         const file = new File([blob], fileName, { type: "image/png" });
         photoUrl = await uploadAction(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
       }
-      create.mutate({ ...contestant, photoUrl });
+      create.mutate({ ...contestant, seasonId, photoUrl });
       setImage(null);
     }
   }
@@ -135,45 +132,15 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
     const blob = await res.blob();
     const fileName = `${editingContestant.name.replace(/\s+/g, "_").toLowerCase()}.png`;
     const file = new File([blob], fileName, { type: "image/png" });
-    const season = seasons.find((s) => s.id === editingContestant.seasonId);
-    const photoUrl = await uploadAction(file, currShow?.name ?? "", season?.seasonNumber ?? 0);
+    const photoUrl = await uploadAction(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
     updatePhoto.mutate({ id: editingContestant.id, photoUrl });
   };
 
   return (
     <div>
-      <AdminUI.PageHeader
-        title="Contestants"
-        subtitle="Add contestants and photos to a season"
-      />
-      <ShowSelect
-        shows={shows}
-        currShowId={showId}
-        onSelectShow={(id) => {
-          const show = shows.find(s => s.id === id);
-          if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
-        }}
-      />
-     {currShow && <AdminUI.TwoCol>
+      <AdminUI.TwoCol>
         <AdminUI.Card title="Add contestant">
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <AdminUI.FormGroup label="Season">
-              <AdminUI.Select
-                value={contestant.seasonId || ""}
-                onChange={(e) =>{
-                  setContestant((c) => ({ ...c, seasonId: e.target.value }));
-                  setCurrSeason(seasons.find(s => s.id === e.target.value));
-                }
-                }
-              >
-                <option value="">Select a season...</option>
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    Season {s.seasonNumber}
-                  </option>
-                ))}s
-              </AdminUI.Select>
-            </AdminUI.FormGroup>
             <AdminUI.FormGroup label="Full name">
               <AdminUI.Input
                 placeholder="e.g. Tiyana Kaloko"
@@ -281,7 +248,6 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
               <AdminUI.EmptyState message="No contestants yet. Add one!" />
             )}
             {contestants.map((c) => {
-              const season = seasons.find((s) => s.id === c.seasonId);
               return (
                 <AdminUI.ListItem
                   key={c.id}
@@ -290,7 +256,7 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
                       <AdminUI.Avatar name={c.name} photoUrl={c.photoUrl} />
                       <AdminUI.ItemInfo
                         name={c.name}
-                        meta={`Season ${season?.seasonNumber || "?"}${c.age ? ` · Age ${c.age}` : ""}`}
+                        meta={`Season ${currSeason?.seasonNumber ?? "?"}${c.age ? ` · Age ${c.age}` : ""}`}
                       />
                     </>
                   }
@@ -328,7 +294,7 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
             }}
           />
         </AdminUI.Card>
-      </AdminUI.TwoCol>}
+      </AdminUI.TwoCol>
       {editingContestant && editImage && (
         <AdminUI.Modal title={`Edit photo — ${editingContestant.name}`} onClose={closeEditPhoto}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
