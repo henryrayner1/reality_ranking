@@ -1,55 +1,65 @@
 import { screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../../test/renderWithProviders";
 import Admin from "./Admin";
 import * as queries from "../../../hooks/queries";
 
-vi.mock("../AdminShows/AdminShows", () => ({ default: () => <div>shows-page</div> }));
-vi.mock("../AdminSeasons/AdminSeasons", () => ({ default: ({ showId }: { showId?: string }) => <div>seasons-page:{showId}</div> }));
-vi.mock("../AdminContestants/AdminContestants", () => ({ default: ({ showId }: { showId?: string }) => <div>contestants-page:{showId}</div> }));
-vi.mock("../AdminEpisodes/AdminEpisodes", () => ({ default: ({ showId }: { showId?: string }) => <div>episodes-page:{showId}</div> }));
-vi.mock("../AdminEliminations/AdminEliminations", () => ({ default: ({ showId }: { showId?: string }) => <div>eliminations-page:{showId}</div> }));
+vi.mock("../AdminShows/AdminShows", () => ({ default: ({ showId }: { showId?: string }) => <div>show-bar:{showId ?? "none"}</div> }));
+vi.mock("../AdminSeasons/AdminSeasons", () => ({ default: ({ showId, seasonId }: { showId: string; seasonId?: string }) => <div>season-bar:{showId}:{seasonId ?? "none"}</div> }));
+vi.mock("../AdminContestants/AdminContestants", () => ({ default: ({ seasonId }: { seasonId: string }) => <div>contestants:{seasonId}</div> }));
+vi.mock("../AdminEpisodes/AdminEpisodes", () => ({ default: ({ seasonId }: { seasonId: string }) => <div>episodes:{seasonId}</div> }));
+vi.mock("../AdminEliminations/AdminEliminations", () => ({ default: ({ seasonId }: { seasonId: string }) => <div>eliminations:{seasonId}</div> }));
 
-const mockNavigate = vi.fn();
-vi.mock("react-router-dom", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("react-router-dom")>();
-  return { ...actual, useNavigate: () => mockNavigate };
-});
-
+const survivorSeasons = [
+  { id: "se1", showId: "s1", seasonNumber: 1, isCurrent: false, contestants: [] },
+  { id: "se2", showId: "s1", seasonNumber: 2, isCurrent: true, contestants: [] },
+  { id: "se3", showId: "s1", seasonNumber: 3, isCurrent: false, contestants: [] },
+];
 const shows = [
-  { id: "s1", name: "Survivor", currSeason: 1 },
-  { id: "s2", name: "Big Brother", currSeason: 2 },
+  { id: "s1", name: "Survivor", currSeason: 2, seasons: survivorSeasons },
+  { id: "s2", name: "Big Brother", currSeason: 1, seasons: [] },
 ];
 
 describe("Admin", () => {
   beforeEach(() => {
-    mockNavigate.mockClear();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: shows, isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockImplementation((showId) => ({
+      data: shows.find(s => s.id === showId)?.seasons ?? [],
+      isLoading: false,
+      isError: false,
+    }) as any);
   });
 
-  it("defaults to the Shows tab", () => {
+  it("shows only the show bar and an empty state on a bare /admin", () => {
     renderWithProviders(<Admin />, { route: "/admin", routePath: "/admin" });
-    expect(screen.getByText("shows-page")).toBeInTheDocument();
+    expect(screen.getByText("show-bar:none")).toBeInTheDocument();
+    expect(screen.queryByText(/season-bar/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Select or add a show/)).toBeInTheDocument();
   });
 
-  it("resolves showId from the URL slug for a show-scoped tab", async () => {
-    const user = userEvent.setup();
+  it("resolves the show from the slug and defaults to its current season", () => {
     renderWithProviders(<Admin />, { route: "/admin/survivor", routePath: "/admin/:showSlug" });
-    await user.click(screen.getByText("Seasons"));
-    expect(screen.getByText("seasons-page:s1")).toBeInTheDocument();
+    expect(screen.getByText("show-bar:s1")).toBeInTheDocument();
+    expect(screen.getByText("season-bar:s1:se2")).toBeInTheDocument();
+    expect(screen.getByText("contestants:se2")).toBeInTheDocument();
+    expect(screen.getByText("episodes:se2")).toBeInTheDocument();
+    expect(screen.getByText("eliminations:se2")).toBeInTheDocument();
   });
 
-  it("navigates to the first show when switching to a show-scoped tab with none selected", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<Admin />, { route: "/admin", routePath: "/admin" });
-    await user.click(screen.getByText("Episodes"));
-    expect(mockNavigate).toHaveBeenCalledWith("/admin/survivor");
+  it("uses the season number from the URL when present", () => {
+    renderWithProviders(<Admin />, { route: "/admin/survivor/3", routePath: "/admin/:showSlug/:seasonNumber" });
+    expect(screen.getByText("season-bar:s1:se3")).toBeInTheDocument();
+    expect(screen.getByText("contestants:se3")).toBeInTheDocument();
   });
 
-  it("navigates back to /admin when clicking Shows from a show-scoped URL", async () => {
-    const user = userEvent.setup();
-    renderWithProviders(<Admin />, { route: "/admin/survivor", routePath: "/admin/:showSlug" });
-    await user.click(screen.getByText("Shows"));
-    expect(mockNavigate).toHaveBeenCalledWith("/admin");
+  it("falls back to the current season when the URL's season doesn't exist", () => {
+    renderWithProviders(<Admin />, { route: "/admin/survivor/99", routePath: "/admin/:showSlug/:seasonNumber" });
+    expect(screen.getByText("contestants:se2")).toBeInTheDocument();
+  });
+
+  it("prompts to add a season when the show has none", () => {
+    renderWithProviders(<Admin />, { route: "/admin/big-brother", routePath: "/admin/:showSlug" });
+    expect(screen.getByText("season-bar:s2:none")).toBeInTheDocument();
+    expect(screen.getByText(/Add a season to start editing/)).toBeInTheDocument();
+    expect(screen.queryByText(/contestants:/)).not.toBeInTheDocument();
   });
 });

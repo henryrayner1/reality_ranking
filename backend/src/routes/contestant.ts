@@ -58,12 +58,13 @@ export default function contestantsRouter(prisma: PrismaClient) {
 
     router.patch("/:contestantId", async (req, res) => {
         const { contestantId } = req.params;
-        const { photoUrl } = req.body;
+        const { name, photoUrl } = req.body;
         const updatedContestant = await prisma.contestant.update({
             where: {
                 id: contestantId
             },
             data: {
+                ...(name !== undefined && { name }),
                 ...(photoUrl !== undefined && { photoUrl })
             }
         });

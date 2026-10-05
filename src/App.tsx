@@ -65,6 +65,7 @@ function App() {
         <Route path="/" element={<Homepage {...HomepageProps} />} />
         <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
         <Route path="/admin/:showSlug" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
+        <Route path="/admin/:showSlug/:seasonNumber" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
         <Route path="/ranking" element={<RankingComponent2 />} />
         <Route path="/ranking/:showSlug" element={<RankingComponent2 />} />
         <Route path="/insights" element={<Insights />} />

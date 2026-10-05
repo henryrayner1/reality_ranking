@@ -544,16 +544,16 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
   return contestantData;
 };
 
-export const updateContestantPhoto = async (contestantId: string, photoUrl: string) => {
+export const updateContestant = async (contestantId: string, changes: { name?: string; photoUrl?: string }) => {
   const updateRes = await apiFetch(`/api/contestants/${contestantId}`, {
     method: 'PATCH',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ photoUrl }),
+    body: JSON.stringify(changes),
   });
   if (!updateRes.ok) {
-    const msg = await updateRes.text().catch(() => 'Failed to update contestant photo');
+    const msg = await updateRes.text().catch(() => 'Failed to update contestant');
     throw new Error(msg);
   }
   const updateData = await updateRes.json();

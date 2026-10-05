@@ -1,32 +1,27 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { EliminationTypes, type EliminationEntry, type EliminationType, type Season } from "../../../utils/Constants"
+import { EliminationTypes, type EliminationEntry, type EliminationType } from "../../../utils/Constants"
 import { addElimination, deleteElimination } from "../../../utils/util"
 import * as AdminUI from "../../../utils/AdminComponents"
-import { useNavigate } from "react-router-dom"
-import ShowSelect from "../../ShowSelect/ShowSelect"
-import { eliminationsBySeasonQueryKey, showsQueryKey, useEliminationsBySeason, useEpisodesByShow, useSeasons, useShows } from "../../../hooks/queries"
-import { slugifyShowName } from "../../../utils/slug"
+import { eliminationsBySeasonQueryKey, showsQueryKey, useEliminationsBySeason, useSeasons } from "../../../hooks/queries"
 
 interface AdminEliminationsProps {
-    showId?: string;
+    showId: string;
+    seasonId: string;
 }
 
-const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
-    const navigate = useNavigate();
+const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
     const qc = useQueryClient()
     const [elimination, setElimination] = useState<Partial<EliminationEntry>>({ eliminationType: EliminationTypes.ELIMINATED })
-    const { data: shows = [] } = useShows();
-    const currShow = shows.find(s => s.id === showId);
     const { data: seasons = [] } = useSeasons(showId);
-    const currSeason: Partial<Season> = seasons.find(s => s.seasonNumber === currShow?.currSeason) ?? {};
-    const { data: episodes = [] } = useEpisodesByShow(showId)
-    const contestants = currSeason.contestants ?? [];
-    const { data: eliminations = [], isLoading } = useEliminationsBySeason(currSeason.id)
+    const currSeason = seasons.find(s => s.id === seasonId);
+    const episodes = [...(currSeason?.episodes ?? [])].sort((a, b) => a.episodeNumber - b.episodeNumber);
+    const contestants = currSeason?.contestants ?? [];
+    const { data: eliminations = [], isLoading } = useEliminationsBySeason(seasonId)
     const create = useMutation({
         mutationFn: () => addElimination(elimination),
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(currSeason.id) });
+            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(seasonId) });
             qc.invalidateQueries({ queryKey: showsQueryKey() });
             setElimination({ eliminationType: EliminationTypes.ELIMINATED });
         }
@@ -34,7 +29,7 @@ const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
     const remove = useMutation({
         mutationFn: deleteElimination,
         onSuccess: () => {
-            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(currSeason.id) });
+            qc.invalidateQueries({ queryKey: eliminationsBySeasonQueryKey(seasonId) });
             qc.invalidateQueries({ queryKey: showsQueryKey() });
         }
     })
@@ -47,17 +42,7 @@ const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
     }
 
     return (
-        <div>
-        <AdminUI.PageHeader title="Eliminations" subtitle="Record which contestants were eliminated each episode" />
-        <ShowSelect
-            shows={shows}
-            currShowId={showId}
-            onSelectShow={(id) => {
-              const show = shows.find(s => s.id === id);
-              if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
-            }}
-        />
-        {currShow && <AdminUI.TwoCol>
+        <AdminUI.TwoCol>
             <AdminUI.Card title="Log elimination">
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <AdminUI.FormGroup label="Episode">
@@ -84,11 +69,12 @@ const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
             <AdminUI.Card title="Elimination history">
             {isLoading && <AdminUI.EmptyState message="Loading..." />}
             {!isLoading && eliminations.length === 0 && <AdminUI.EmptyState message="No eliminations logged yet." />}
+            <div className="admin-scroll-list">
             {eliminations.map(elim => {
                     const contestant = contestants.find(c => c.id === elim.contestantId)
                     const episode = episodes.find(e => e.id === elim.episodeId)
                     return (
-                    <div key={contestant?.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.6rem 0', borderBottom: '0.5px solid var(--color-border-tertiary,#e5e5e5)' }}>
+                    <div key={elim.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0.6rem 0', borderBottom: '0.5px solid var(--color-border-tertiary,#e5e5e5)' }}>
                         <span style={{ fontSize: 12, color: 'var(--color-text-secondary,#888)', minWidth: 40 }}>E{episode?.episodeNumber || '?'}</span>
                         <AdminUI.Avatar name={contestant?.name || '?'} size={28} />
                         <span style={{ fontSize: 14, flex: 1 }}>{contestant?.name || 'Unknown'}</span>
@@ -97,9 +83,9 @@ const AdminEliminations = ({ showId }: AdminEliminationsProps) => {
                     </div>
                     )
             })}
+            </div>
             </AdminUI.Card>
-        </AdminUI.TwoCol>}
-        </div>
+        </AdminUI.TwoCol>
     )
 }
 

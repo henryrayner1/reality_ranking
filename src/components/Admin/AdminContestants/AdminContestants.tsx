@@ -1,42 +1,37 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { Contestant, Season } from "../../../utils/Constants";
+import type { Contestant } from "../../../utils/Constants";
 import {
   addContestant,
   deleteContestant,
-  updateContestantPhoto,
+  updateContestant,
 } from "../../../utils/util";
 import { backendUrl } from "../../../utils/apiBase";
 import * as AdminUI from "../../../utils/AdminComponents";
-import ShowSelect from "../../ShowSelect/ShowSelect";
 import AvatarEditor from "react-avatar-editor";
-import { useNavigate } from "react-router-dom";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
-import { slugifyShowName } from "../../../utils/slug";
 
 interface AdminContestantsProps {
-  showId?: string;
+  showId: string;
+  seasonId: string;
 }
 
-const AdminContestants = ({ showId }: AdminContestantsProps) => {
-  const navigate = useNavigate();
+const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
   const qc = useQueryClient();
   const [contestant, setContestant] = useState<Partial<Contestant>>({});
-  const [photoLabel, setPhotoLabel] = useState("Click, drag & drop, or paste to upload headshot");
   const { data: shows = [] } = useShows();
   const currShow = shows.find(s => s.id === showId);
-  const [currSeason, setCurrSeason] = useState<Season>();
   const [image, setImage] = useState<File | null>(null);
   const [scale, setScale] = useState(1.2);
   const [isDragging, setIsDragging] = useState(false);
   const editorRef = useRef(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formCardRef = useRef<HTMLDivElement>(null);
 
-  const [editingContestant, setEditingContestant] = useState<Contestant | null>(null);
-  const [editImage, setEditImage] = useState<File | null>(null);
-  const [editScale, setEditScale] = useState(1.2);
-  const editEditorRef = useRef(null);
-  const editFileInputRef = useRef<HTMLInputElement>(null);
+  // The same card doubles as "Add contestant" and "Edit contestant" — when
+  // editingId is set, its dropzone/paste/drag-and-drop replace that
+  // contestant's photo instead of supplying a new contestant's.
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   const handleFile = (f: File | null | undefined) => {
     if (f && f.type.startsWith("image/")) {
@@ -61,38 +56,49 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
   }, [currShow]);
 
   const { data: seasons = [], isLoading } = useSeasons(showId);
+  const currSeason = seasons.find((s) => s.id === seasonId);
   // Contestants live nested on each season (getSeasons already returns them)
   // rather than in a separate cache — this is the single source of truth
   // that Ranking/Insights also read via useShowTree, so a create/edit/delete
   // here is immediately visible there without a page reload.
-  const contestants = useMemo(() => seasons.flatMap((s) => s.contestants ?? []), [seasons]);
+  const contestants = useMemo(
+    () => [...(currSeason?.contestants ?? [])].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+    [currSeason]
+  );
+  const editingContestant = contestants.find((c) => c.id === editingId);
+
+  const resetForm = () => {
+    setEditingId(null);
+    setContestant({});
+    setImage(null);
+    setScale(1.2);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const create = useMutation({
     mutationFn: addContestant,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: showsQueryKey() });
-      setContestant((c) => ({ seasonId: c.seasonId }));
-      setPhotoLabel("Click, drag & drop, or paste to upload headshot");
+      resetForm();
     },
   });
   const remove = useMutation({
     mutationFn: deleteContestant,
-    onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }),
-  });
-  const updatePhoto = useMutation({
-    mutationFn: ({ id, photoUrl }: { id: string; photoUrl: string }) =>
-      updateContestantPhoto(id, photoUrl),
-    onSuccess: () => {
+    onSuccess: (_data, removedId) => {
       qc.invalidateQueries({ queryKey: showsQueryKey() });
-      closeEditPhoto();
+      // Removing the contestant currently being edited drops the card back
+      // to Add mode.
+      if (removedId === editingId) resetForm();
     },
   });
-
-  const closeEditPhoto = () => {
-    setEditingContestant(null);
-    setEditImage(null);
-    setEditScale(1.2);
-    if (editFileInputRef.current) editFileInputRef.current.value = "";
-  };
+  const update = useMutation({
+    mutationFn: ({ id, changes }: { id: string; changes: { name?: string; photoUrl?: string } }) =>
+      updateContestant(id, changes),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
+      resetForm();
+    },
+  });
 
   const uploadAction = async (image: File, showName: string, seasonNumber: number) => {
     const fd = new FormData();
@@ -108,72 +114,68 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
       throw new Error("Failed to upload image");
     }
     const data = await res.json();
-    return data.file as string;
+    // The upload's filename is derived from the contestant's name, so a
+    // replacement photo lands at the exact same path as the old one — the
+    // ?v= suffix gives it a new URL so <img> tags don't keep showing the
+    // browser-cached old image. express.static ignores the query string.
+    return `${data.file as string}?v=${Date.now()}`;
+  };
+
+  // Crops the current AvatarEditor image (if one was dropped/pasted/picked)
+  // and uploads it, returning its photoUrl.
+  const uploadCroppedImage = async (name: string): Promise<string | null> => {
+    if (!image || !editorRef.current) return null;
+    const canvas = editorRef.current.getImageScaledToCanvas().toDataURL();
+    // Convert base64 to blob
+    const res = await fetch(canvas);
+    const blob = await res.blob();
+    const fileName = `${name.replace(/\s+/g, "_").toLowerCase()}.png`;
+    const file = new File([blob], fileName, { type: "image/png" });
+    return uploadAction(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
   };
 
   const handleSubmit = async () => {
-    if (contestant.name?.trim() && contestant.seasonId) {
-      let photoUrl: string | null = null;
-      if (editorRef.current) {
-        const canvas = editorRef.current.getImageScaledToCanvas().toDataURL();
-        // Convert base64 to blob
-        const res = await fetch(canvas);
-        const blob = await res.blob();
-        const fileName = `${contestant.name.replace(/\s+/g, "_").toLowerCase()}.png`;
-        const file = new File([blob], fileName, { type: "image/png" });
-        photoUrl = await uploadAction(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
-      }
-      create.mutate({ ...contestant, photoUrl });
-      setImage(null);
-    }
-  }
+    const name = contestant.name?.trim();
+    if (!name) return;
 
-  const handleEditPhotoSave = async () => {
-    if (!editingContestant || !editEditorRef.current) return;
-    const canvas = editEditorRef.current.getImageScaledToCanvas().toDataURL();
-    const res = await fetch(canvas);
-    const blob = await res.blob();
-    const fileName = `${editingContestant.name.replace(/\s+/g, "_").toLowerCase()}.png`;
-    const file = new File([blob], fileName, { type: "image/png" });
-    const season = seasons.find((s) => s.id === editingContestant.seasonId);
-    const photoUrl = await uploadAction(file, currShow?.name ?? "", season?.seasonNumber ?? 0);
-    updatePhoto.mutate({ id: editingContestant.id, photoUrl });
+    if (editingContestant) {
+      const photoUrl = await uploadCroppedImage(name);
+      const changes: { name?: string; photoUrl?: string } = {};
+      if (name !== editingContestant.name) changes.name = name;
+      if (photoUrl) changes.photoUrl = photoUrl;
+      if (Object.keys(changes).length === 0) {
+        resetForm();
+        return;
+      }
+      update.mutate({ id: editingContestant.id, changes });
+      return;
+    }
+
+    const photoUrl = await uploadCroppedImage(name);
+    create.mutate({ ...contestant, seasonId, photoUrl });
   };
+
+  const startEditing = (c: Contestant) => {
+    setEditingId(c.id);
+    setContestant({ name: c.name });
+    setImage(null);
+    setScale(1.2);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    formCardRef.current?.scrollIntoView?.({ behavior: "smooth", block: "nearest" });
+  };
+
+  const isEditing = !!editingContestant;
+  const isPending = create.isPending || update.isPending;
+  const photoLabel = isEditing
+    ? "Click, drag & drop, or paste to replace photo"
+    : "Click, drag & drop, or paste to upload headshot";
 
   return (
     <div>
-      <AdminUI.PageHeader
-        title="Contestants"
-        subtitle="Add contestants and photos to a season"
-      />
-      <ShowSelect
-        shows={shows}
-        currShowId={showId}
-        onSelectShow={(id) => {
-          const show = shows.find(s => s.id === id);
-          if (show) navigate(`/admin/${slugifyShowName(show.name)}`);
-        }}
-      />
-     {currShow && <AdminUI.TwoCol>
-        <AdminUI.Card title="Add contestant">
+      <AdminUI.TwoCol>
+        <div ref={formCardRef}>
+        <AdminUI.Card title={isEditing ? "Edit contestant" : "Add contestant"}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <AdminUI.FormGroup label="Season">
-              <AdminUI.Select
-                value={contestant.seasonId || ""}
-                onChange={(e) =>{
-                  setContestant((c) => ({ ...c, seasonId: e.target.value }));
-                  setCurrSeason(seasons.find(s => s.id === e.target.value));
-                }
-                }
-              >
-                <option value="">Select a season...</option>
-                {seasons.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    Season {s.seasonNumber}
-                  </option>
-                ))}s
-              </AdminUI.Select>
-            </AdminUI.FormGroup>
             <AdminUI.FormGroup label="Full name">
               <AdminUI.Input
                 placeholder="e.g. Tiyana Kaloko"
@@ -215,7 +217,14 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
                   backgroundColor: isDragging ? "rgba(79,140,255,0.08)" : undefined,
                 }}
               >
-                {(image == null) ? <><div style={{ fontSize: 20, marginBottom: 6 }}>↑</div>
+                {(image == null) ? <>
+                  {isEditing ? (
+                    <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+                      <AdminUI.Avatar name={editingContestant.name} photoUrl={editingContestant.photoUrl} size={48} />
+                    </div>
+                  ) : (
+                    <div style={{ fontSize: 20, marginBottom: 6 }}>↑</div>
+                  )}
                 <p
                   style={{
                     fontSize: 13,
@@ -267,21 +276,28 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
               onClick={() =>
                 handleSubmit()
               }
-              disabled={create.isPending}
+              disabled={isPending}
             >
-              {create.isPending ? "Adding..." : "Add contestant"}
+              {isEditing
+                ? (update.isPending ? "Saving..." : "Save changes")
+                : (create.isPending ? "Adding..." : "Add contestant")}
             </AdminUI.PrimaryButton>
-            {create.isError && <AdminUI.ErrorMsg />}
+            {isEditing && (
+              <AdminUI.SecondaryButton onClick={resetForm} disabled={isPending}>
+                Cancel
+              </AdminUI.SecondaryButton>
+            )}
+            {(create.isError || update.isError) && <AdminUI.ErrorMsg />}
           </div>
         </AdminUI.Card>
+        </div>
         <AdminUI.Card title="All Contestants">
-          <div style={{ maxHeight: 480, overflowY: "auto" }}>
+          <div className="admin-scroll-list" data-testid="contestant-list">
             {isLoading && <AdminUI.EmptyState message="Loading..." />}
             {!isLoading && contestants.length === 0 && (
               <AdminUI.EmptyState message="No contestants yet. Add one!" />
             )}
             {contestants.map((c) => {
-              const season = seasons.find((s) => s.id === c.seasonId);
               return (
                 <AdminUI.ListItem
                   key={c.id}
@@ -290,7 +306,7 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
                       <AdminUI.Avatar name={c.name} photoUrl={c.photoUrl} />
                       <AdminUI.ItemInfo
                         name={c.name}
-                        meta={`Season ${season?.seasonNumber || "?"}${c.age ? ` · Age ${c.age}` : ""}`}
+                        meta={`Season ${currSeason?.seasonNumber ?? "?"}${c.age ? ` · Age ${c.age}` : ""}`}
                       />
                     </>
                   }
@@ -302,13 +318,8 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
                         }
                         variant={c.status === "ELIMINATED" ? "red" : "green"}
                       />
-                      <AdminUI.SecondaryButton
-                        onClick={() => {
-                          setEditingContestant(c);
-                          editFileInputRef.current?.click();
-                        }}
-                      >
-                        Edit photo
+                      <AdminUI.SecondaryButton onClick={() => startEditing(c)}>
+                        Edit
                       </AdminUI.SecondaryButton>
                       <AdminUI.DangerButton onClick={() => remove.mutate(c.id)} />
                     </>
@@ -317,46 +328,8 @@ const AdminContestants = ({ showId }: AdminContestantsProps) => {
               );
             })}
           </div>
-          <input
-            ref={editFileInputRef}
-            type="file"
-            accept="image/*"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f && f.type.startsWith("image/")) setEditImage(f);
-            }}
-          />
         </AdminUI.Card>
-      </AdminUI.TwoCol>}
-      {editingContestant && editImage && (
-        <AdminUI.Modal title={`Edit photo — ${editingContestant.name}`} onClose={closeEditPhoto}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <AvatarEditor
-              ref={editEditorRef}
-              image={editImage}
-              width={200} height={200}
-              border={50} borderRadius={125}
-              scale={editScale}
-            />
-            <input
-              type="range" min="1" max="3" step="0.01"
-              value={editScale}
-              onChange={(e) => setEditScale(parseFloat(e.target.value))}
-              className="w-100"
-            />
-          </div>
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 12 }}>
-            <AdminUI.SecondaryButton onClick={closeEditPhoto} disabled={updatePhoto.isPending}>
-              Cancel
-            </AdminUI.SecondaryButton>
-            <AdminUI.PrimaryButton onClick={handleEditPhotoSave} disabled={updatePhoto.isPending}>
-              {updatePhoto.isPending ? "Saving..." : "Save photo"}
-            </AdminUI.PrimaryButton>
-          </div>
-          {updatePhoto.isError && <AdminUI.ErrorMsg />}
-        </AdminUI.Modal>
-      )}
+      </AdminUI.TwoCol>
     </div>
   );
 };
