@@ -1,10 +1,32 @@
+/* Ranking page palette — one purple accent (shared with the Admin page) on
+   light blue-grey cards over the lavender page background. */
+.rankings-page {
+  --rk-accent: #7F77DD;
+  --rk-accent-hover: #6a62cf;
+  --rk-accent-text: #534AB7;
+  --rk-accent-tint: #EEEDFE;
+  --rk-active-col: rgba(127, 119, 221, 0.14);
+  /* The original top bar's rgba(67,164,209,0.14) composited over the page
+     background, as an opaque color so the sticky rank column still hides
+     the episode columns scrolling underneath it. */
+  --rk-card-bg: rgb(201, 213, 231);
+  --rk-card-raised: rgb(225, 232, 244);
+  --rk-card-border: rgba(60, 90, 150, 0.16);
+  --rk-card-shadow: 0 1px 2px rgba(20, 16, 60, 0.05), 0 4px 14px rgba(20, 16, 60, 0.06);
+  --rk-header-bg: rgb(189, 203, 226);
+  --rk-hairline: rgba(60, 90, 150, 0.12);
+  --rk-muted: #56607a;
+  --rk-subtle: #4a5470;
+}
+
 .ranking-grid {
   display: grid;
   grid-template-rows: 1fr 1.25rem;
   grid-auto-flow: column;
-  border: 5px solid lightblue;
-  border-radius: 5px;
-  background-color: rgba(166, 233, 245, 0.8);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  background-color: var(--rk-card-bg);
+  box-shadow: var(--rk-card-shadow);
   margin-top: 1rem;
   margin-bottom: 0.5rem;
   overflow-x: auto;
@@ -20,16 +42,29 @@
   justify-content: center;
 }
 
+/* Column states — the classes are already on each cell; these just give
+   the column a background so it reads as one unit. */
+.cell.active-episode-column {
+  background-color: var(--rk-active-col);
+}
+
+.cell.locked-episode {
+  background-color: rgba(255, 255, 255, 0.18);
+}
+
 .grid-heading {
   min-width: 2.5rem;
   min-height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgb(67, 164, 209);
-  color: white;
-  font-weight: bold;
-  font-size: .875rem;
+  background-color: var(--rk-header-bg);
+  border-bottom: 1px solid var(--rk-card-border);
+  color: var(--rk-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .grid-item {
@@ -39,15 +74,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 550;
-}
-
-.grid-item:nth-child(odd) {
-  background-color: rgb(135, 202, 233);
-}
-
-.grid-item:nth-child(even) {
-  background-color: rgb(166, 233, 245);
+  color: var(--rk-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--rk-hairline);
 }
 
 .episode-heading {
@@ -56,28 +87,39 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight:550;
+  color: var(--rk-subtle);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Freezes the Rank column (heading + numbers) in place while the episode
    columns scroll horizontally beneath it, like a spreadsheet's frozen
    first column. z-index keeps it painted above the scrolling columns,
-   which come later in DOM order. */
+   which come later in DOM order. Needs an opaque background so the
+   scrolling columns don't show through. */
 .rank-column-cell {
   position: sticky;
   left: 0;
   z-index: 2;
+  border-right: 1px solid var(--rk-hairline);
+}
+
+.grid-item.rank-column-cell {
+  background-color: var(--rk-card-bg);
 }
 
 /* .episode-heading has no background of its own (it's normally just a
    transparent spacer), so without this the episode-number row would show
-   through the sticky cell as it scrolls past underneath. */
-.rank-spacer {
-  background-color: rgb(166, 233, 245);
+   through the sticky cell as it scrolls past underneath. Scoped under
+   .ranking-grid because Insights.css also defines a global .rank-spacer
+   (cyan) that would otherwise win on load order. */
+.ranking-grid .rank-spacer {
+  background-color: var(--rk-card-bg);
 }
 
 /* The grid's own "Episode" cell (spanning every episode column, giving
-   the continuous blue bar) is left empty — the visible label is this
+   the continuous header bar) is left empty — the visible label is this
    overlay instead, positioned on top of the grid rather than inside its
    horizontally-scrolling content. position:sticky doesn't stretch to
    fill between left/right insets the way position:absolute does (it
@@ -92,31 +134,38 @@
 
 .episode-title-overlay {
   position: absolute;
-  /* .ranking-grid has a 5px border on every side, which top/left/right:0
-     ignored — offsetting the overlay from the grid's actual header row. */
-  top: 5px;
-  left: calc(2.5rem + 5px);
-  right: 5px;
+  /* Offsets track .ranking-grid's border width (1px) — top/left/right:0
+     would ignore it and misalign the overlay from the grid's header row. */
+  top: 1px;
+  left: calc(2.5rem + 1px);
+  right: 1px;
   height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: .875rem;
+  color: var(--rk-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   pointer-events: none;
 }
 
 .ranking-container {
-  min-width: 50vw;
+  /* Fixed to the same full width as the top bar (rather than shrink-wrapping
+     to the grid), so the table doesn't re-center whenever its content or the
+     "X Episode N" column beside it changes — spare room just shows up as
+     empty space at the grid's right end (its trailing 1fr column). */
+  width: 100%;
   /* Without this cap, this flex item (cross-axis, not stretched by its
      parent's align-items:center) shrink-wraps to the natural width of the
      fixed-column ranking grid inside it. On a narrow viewport with many
      episode columns that natural width exceeds the screen, and since
      nothing above this in the tree sets overflow-x, the oversized box
      just widens the whole document instead of the grid's own
-     overflow-x:auto ever getting a bounded box to scroll within. */
-  max-width: 100%;
+     overflow-x:auto ever getting a bounded box to scroll within. 60rem
+     matches .ranking-top-bar so the table lines up with it. */
+  max-width: min(100%, 60rem);
   display: flex;
   flex-direction: row;
   justify-content: center;
@@ -132,24 +181,33 @@
   margin-bottom: auto;
   min-height: 20vh;
   max-height: 20rem;
-  min-width: 6rem;
-  margin-right: 2rem;
-  margin-left: .5rem;
+  /* Matches .remove-button's width, so the first "X Episode N" chip
+     appearing doesn't widen this column and shrink the table beside it. */
+  min-width: 6.5rem;
+  margin-right: 0;
+  margin-left: 1rem;
 }
 
 .remove-button {
   cursor: pointer;
-  background-color: rgb(255, 209, 209);
-  color: rgb(61, 0, 0);
-  border-radius: 0.5rem;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
-  width: 6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--rk-card-bg);
+  color: var(--rk-accent-text);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 999px;
+  box-shadow: 0 1px 2px rgba(20, 16, 60, 0.06);
+  font-weight: 500;
+  width: 6.5rem;
   height: 2rem;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .remove-button:hover {
-  background-color: rgb(255, 150, 150);
+  background-color: #fdf0f0;
+  border-color: #f3c4c4;
+  color: #a32d2d;
 }
 
 .rankings-page {
@@ -158,7 +216,6 @@
      real height, so min-height:100vh here would always overflow the
      viewport by exactly the navbar's height even with no real content. */
   min-height: calc(100vh - var(--navbar-height, 59px));
-  background-color: rgb(203, 200, 220);
   background-color: rgb(223, 221, 235);
   /* No overflow here (kept visible): a non-visible value on this ancestor
      would make it the scrolling container for position:sticky descendants
@@ -198,9 +255,11 @@
   flex-wrap: wrap;
   gap: 1rem;
   padding: 0.75rem 1.5rem;
-  margin: 1rem 0 0.5rem;
-  background: rgba(67, 164, 209, 0.14);
-  border-radius: 0.75rem;
+  margin: 1rem 0 0.75rem;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  box-shadow: var(--rk-card-shadow);
 }
 
 .ranking-top-bar-left {
@@ -216,6 +275,18 @@
   width: auto;
 }
 
+/* The show/highlight dropdown toggles (.custom-button, defined globally in
+   Admin.css) — given a bordered input look here to sit on the white card. */
+.ranking-top-bar .custom-button {
+  border: 1px solid var(--rk-card-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(20, 16, 60, 0.04);
+}
+
+.ranking-top-bar .custom-button:hover {
+  border-color: #cfcbe3;
+}
+
 .rank-type-heading {
   margin: 0;
   white-space: nowrap;
@@ -229,15 +300,37 @@
   min-width: 1.5rem;
 }
 
+/* Submit button — scoped here so the global navy .button elsewhere is
+   untouched. */
+.ranking-top-bar .button,
+.ranking-top-bar .button-inactive {
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: background-color 0.15s, box-shadow 0.15s;
+}
+
+.ranking-top-bar .button {
+  background-color: var(--rk-accent);
+  box-shadow: 0 2px 8px rgba(127, 119, 221, 0.35);
+}
+
 .ranking-top-bar .button:hover {
-  border: 3px inset navy;
+  background-color: var(--rk-accent-hover);
+  border: none;
+}
+
+.ranking-top-bar .button-inactive {
+  background-color: #d9d6ea;
+  color: #fff;
 }
 
 .ranking-panel {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: fit-content;
+  flex: 1 1 auto;
   max-width: 100%;
   /* This is a main-axis flex item of .ranking-container (flex-direction:
      row), so its default min-width:auto resolves to its min-content size
@@ -250,14 +343,21 @@
   min-width: 0;
 }
 
+/* Favorite / Winner — a segmented pill control sitting above the card. */
 .rank-tabs {
   display: flex;
   flex-direction: row;
   gap: 0.25rem;
   position: relative;
   z-index: 2;
-  width: 100%;
-  margin: 1.5rem 0 -5px 0;
+  /* The panel is now full-width; keep the switch its natural size, centered,
+     instead of stretching it across the whole table. */
+  align-self: center;
+  min-width: 16rem;
+  margin: 1.5rem 0 0 0;
+  padding: 0.25rem;
+  background-color: var(--rk-card-bg);
+  border-radius: 999px;
 }
 
 .rank-tab {
@@ -268,27 +368,35 @@
   text-align: center;
   white-space: nowrap;
   cursor: pointer;
-  background-color: rgba(166, 233, 245, 0.35);
-  color: navy;
-  font-weight: bold;
-  border: 3px solid lightblue;
-  border-bottom: none;
-  border-radius: 0.5rem 0.5rem 0 0;
-  padding: 0.5rem 1.25rem;
-  transition: background-color 0.3s, color 0.3s;
+  background-color: transparent;
+  color: var(--rk-subtle);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 999px;
+  padding: 0.4rem 1.25rem;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .rank-tab:hover {
-  background-color: lightblue;
+  color: var(--rk-accent-text);
 }
 
 .rank-tab-active {
   cursor: default;
-  background-color: rgba(166, 233, 245, 0.8);
+  background-color: var(--rk-card-raised);
+  color: var(--rk-accent-text);
+  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
 }
 
+/* Spacing below the tabs goes on the wrapper, not the grid: the "Episode"
+   overlay is absolutely positioned against the wrapper, so a margin on the
+   grid itself would push the header row down out from under the overlay. */
 .ranking-panel .ranking-grid {
   margin-top: 0;
+}
+
+.ranking-panel .ranking-grid-wrapper {
+  margin-top: 0.75rem;
 }
 
 .ranking-placeholder {
@@ -304,9 +412,10 @@
   justify-content: center;
   min-width: 20rem;
   min-height: 20rem;
-  border: 5px solid lightblue;
-  border-radius: 5px;
-  background-color: rgba(166, 233, 245, 0.8);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  background-color: var(--rk-card-bg);
+  box-shadow: var(--rk-card-shadow);
 }
 
 @media screen and (max-width: 800px) {
@@ -333,7 +442,13 @@
 
   .ranking-container {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+  }
+
+  .active-episodes-container {
+    flex-direction: row;
+    min-height: 0;
+    margin: 0.75rem 0 0;
   }
 }
 

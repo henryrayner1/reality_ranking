@@ -1,3 +1,6 @@
+/* Not-yet-activated episode column: a dashed "slot" with a small accent
+   "+" that fills in on hover. Colors match the ranking page palette in
+   RankingComponent.css. */
 .cell-default {
   max-width: 2.5rem;
   min-width: 2.5rem;
@@ -5,18 +8,25 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background-color: rgb(190, 213, 218);
+  background-color: transparent;
+  /* No margin: the dashed slot must occupy exactly the same 2.5rem column
+     the contestant photos fill once the episode is activated. */
+  border: 1.5px dashed rgba(83, 74, 183, 0.35);
+  border-radius: 4px;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
 .cell-default:hover {
-  background-color: rgb(180, 200, 205);
+  background-color: rgba(127, 119, 221, 0.12);
+  border-color: #7F77DD;
+}
+
+.add-episode {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.15s;
 }
 
 .cell-default:hover .add-episode {
-    outline: 2px solid white;
-    border-radius: 50%;
-}
-.add-episode {
-    width: 1.5rem;
-    height: 1.5rem;
+  transform: scale(1.15);
 }
