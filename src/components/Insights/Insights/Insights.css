@@ -1,3 +1,5 @@
+/* Uses the shared --rk-* palette (index.css :root) so this page matches the
+   Ranking page's light tinted cards and purple accent. */
 .insights-page {
   width: 100%;
   /* The sticky navbar sits above this container in normal flow, consuming
@@ -38,9 +40,11 @@
   flex-wrap: wrap;
   gap: 1.5rem;
   padding: 0.75rem 1.5rem;
-  margin: 1rem 0 0.5rem;
-  background: rgba(67, 164, 209, 0.14);
-  border-radius: 0.75rem;
+  margin: 1rem 0 0.75rem;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  box-shadow: var(--rk-card-shadow);
 }
 
 .insights-top-bar-left {
@@ -54,6 +58,18 @@
 
 .insights-top-bar-left .w-full {
   width: auto;
+}
+
+/* Show/season dropdown toggles (.custom-button, defined globally in
+   Admin.css) — same bordered input look as on the Ranking page. */
+.insights-top-bar .custom-button {
+  border: 1px solid var(--rk-card-border);
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(20, 16, 60, 0.04);
+}
+
+.insights-top-bar .custom-button:hover {
+  border-color: #cfcbe3;
 }
 
 /* Data-scope switch: "All User Data" vs "My Submissions". Deliberately real
@@ -74,67 +90,82 @@
   gap: 0.4rem;
   cursor: pointer;
   font-weight: 600;
-  color: navy;
+  color: var(--rk-accent-text);
   white-space: nowrap;
 }
 
 .data-scope-option input[type="radio"] {
   cursor: pointer;
-  accent-color: navy;
+  accent-color: var(--rk-accent);
   width: 1.05rem;
   height: 1.05rem;
 }
 
-/* Page-mode switch: "Rankings Table" vs "By Contestant". A plain pill-style
-   tab row (no attach-to-grid trick) since different content follows
-   depending on mode. */
+/* Page-mode switch: "Rankings Table" vs "By Contestant". A segmented pill
+   whose active segment is filled with the accent — deliberately stronger
+   than the Favorite/Winner switch below it (lighter active pill), since
+   this one swaps the whole page's content rather than one table's data. */
 .insights-mode-tabs {
   display: flex;
   flex-direction: row;
-  gap: 0.5rem;
-  margin: 0.5rem 0 1rem;
+  gap: 0.25rem;
+  margin: 0.5rem 0 0.25rem;
+  padding: 0.25rem;
+  background-color: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 999px;
 }
 
 .insights-mode-tab {
   cursor: pointer;
-  background-color: rgba(166, 233, 245, 0.35);
-  color: navy;
-  font-weight: bold;
-  border: 3px solid lightblue;
-  border-radius: 0.75rem;
-  padding: 0.5rem 1.5rem;
-  transition: background-color 0.3s, color 0.3s;
+  background-color: transparent;
+  color: var(--rk-subtle);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 999px;
+  padding: 0.4rem 1.5rem;
+  white-space: nowrap;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .insights-mode-tab:hover {
-  background-color: lightblue;
+  color: var(--rk-accent-text);
 }
 
-.insights-mode-tab-active {
+.insights-mode-tab-active,
+.insights-mode-tab-active:hover {
   cursor: default;
-  background-color: navy;
-  color: white;
-  border-color: navy;
+  background-color: var(--rk-accent);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(127, 119, 221, 0.35);
 }
 
-/* Rank/type toggle (Favorite/Winner) directly above the grid — same
-   "attached tabs" visual trick as RankingComponent.css's .rank-tabs. */
+/* Fixed to the same full width as the top bar (rather than shrink-wrapping
+   to the grid), matching the Ranking page — spare room is absorbed by the
+   grid's flexible spacer column before AVG, so AVG stays pinned to the
+   right edge. */
 .insights-panel {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  width: fit-content;
-  max-width: 100%;
+  width: 100%;
+  max-width: min(100%, 60rem);
 }
 
+/* Favorite / Winner — the same segmented pill control as the Ranking
+   page's .rank-tabs. */
 .insights-tabs {
   display: flex;
   flex-direction: row;
   gap: 0.25rem;
   position: relative;
   z-index: 2;
-  width: 100%;
-  margin: 1.5rem 0 -5px 0;
+  align-self: center;
+  min-width: 16rem;
+  margin: 1.5rem 0 0 0;
+  padding: 0.25rem;
+  background-color: var(--rk-card-bg);
+  border-radius: 999px;
 }
 
 .insights-tab {
@@ -145,32 +176,34 @@
   text-align: center;
   white-space: nowrap;
   cursor: pointer;
-  background-color: rgba(166, 233, 245, 0.35);
-  color: navy;
-  font-weight: bold;
-  border: 3px solid lightblue;
-  border-bottom: none;
-  border-radius: 0.5rem 0.5rem 0 0;
-  padding: 0.5rem 1.25rem;
-  transition: background-color 0.3s, color 0.3s;
+  background-color: transparent;
+  color: var(--rk-subtle);
+  font-weight: 600;
+  font-size: 0.9375rem;
+  border-radius: 999px;
+  padding: 0.4rem 1.25rem;
+  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
 }
 
 .insights-tab:hover {
-  background-color: lightblue;
+  color: var(--rk-accent-text);
 }
 
 .insights-tab-active {
   cursor: default;
-  background-color: rgba(166, 233, 245, 0.8);
+  background-color: var(--rk-card-raised);
+  color: var(--rk-accent-text);
+  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
 }
 
 .insights-grid {
   display: grid;
   grid-template-rows: 1fr 1.25rem;
   grid-auto-flow: column;
-  border: 5px solid lightblue;
-  border-radius: 5px;
-  background-color: rgba(166, 233, 245, 0.8);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  background-color: var(--rk-card-bg);
+  box-shadow: var(--rk-card-shadow);
   margin-top: 0;
   margin-bottom: 0.5rem;
   overflow-x: auto;
@@ -194,9 +227,10 @@
 /* .insights-episode-heading has no background of its own (it's normally
    just a transparent spacer), so without this the episode-number row
    would show through the sticky rank-spacer cell as it scrolls past
-   underneath. */
-.rank-spacer {
-  background-color: rgb(166, 233, 245);
+   underneath. Scoped to .insights-grid — this file is loaded app-wide and
+   the Ranking grid uses the same class name. */
+.insights-grid .rank-spacer {
+  background-color: var(--rk-card-bg);
 }
 
 /* Freezes the AVG column (heading + overall cells) at the right edge,
@@ -215,27 +249,33 @@
 /* Overlaid on top of the scrolling grid (not part of its scroll content),
    so the "Episode"/"Day" label stays trivially centered within whatever's
    currently visible — no need to track scroll position. Mirrors
-   RankingComponent.css's .ranking-grid-wrapper/.episode-title-overlay. */
+   RankingComponent.css's .ranking-grid-wrapper/.episode-title-overlay.
+   Vertical spacing above the grid must go on this wrapper, never as a
+   margin on .insights-grid, or the header row slides out from under the
+   overlay. */
 .insights-grid-wrapper {
   position: relative;
+  margin-top: 0.75rem;
 }
 
 .insights-episode-title-overlay {
-  /* .insights-grid has a 5px border on every side, which top/left/right:0
-     would ignore — offset the overlay from the grid's actual header row. */
+  /* Offsets track .insights-grid's border width (1px) — top/left/right:0
+     would ignore it and misalign the overlay from the grid's header row. */
   position: absolute;
-  top: 5px;
-  left: calc(2.5rem + 5px);
+  top: 1px;
+  left: calc(2.5rem + 1px);
   /* Leaves room for the sticky spacer + AVG columns on the right so the
      label never renders on top of them. */
-  right: calc(1.5rem + 2.5rem + 5px);
+  right: calc(1.5rem + 2.5rem + 1px);
   height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  font-weight: bold;
-  font-size: .875rem;
+  color: var(--rk-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   pointer-events: none;
 }
 
@@ -254,10 +294,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgb(67, 164, 209);
-  color: white;
-  font-weight: bold;
-  font-size: .875rem;
+  background-color: var(--rk-header-bg);
+  border-bottom: 1px solid var(--rk-card-border);
+  color: var(--rk-muted);
+  font-weight: 600;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .insights-grid-item {
@@ -267,15 +310,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 550;
+  color: var(--rk-muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--rk-hairline);
 }
 
-.insights-grid-item:nth-child(odd) {
-  background-color: rgb(135, 202, 233);
-}
-
-.insights-grid-item:nth-child(even) {
-  background-color: rgb(166, 233, 245);
+.insights-grid-item.rank-column-cell {
+  background-color: var(--rk-card-bg);
+  border-right: 1px solid var(--rk-hairline);
 }
 
 .insights-episode-heading {
@@ -284,30 +328,34 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 550;
+  color: var(--rk-subtle);
+  font-size: 0.75rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
 }
 
-/* Overall is an aggregate column, not a specific episode — visually set it apart
-   from the per-episode data with its own accent color (tying into the app's
-   existing purple page-header accent) and a left divider. The divider is a
-   box-shadow rather than a real border: .insights-cell's flex child (the
-   ContestantIcon) has no explicit width, so it shrink-to-fits whatever
-   content-box space is left after the border under border-box sizing — a
-   real 3px border-left shrank the icon to 37px instead of 40px, which threw
-   off ContestantIcon's internal fixed-px image/name-label offsets and left a
-   visible gap between them. A box-shadow paints the same divider line without
-   occupying any layout space, so the icon renders at the same 40px every
-   other cell uses. */
+/* Overall is an aggregate column, not a specific episode — visually set it
+   apart from the per-episode data with the accent color and a left divider.
+   The divider is a box-shadow rather than a real border: .insights-cell's
+   flex child (the ContestantIcon) has no explicit width, so it
+   shrink-to-fits whatever content-box space is left after the border under
+   border-box sizing — a real border-left shrank the icon below 40px, which
+   threw off ContestantIcon's internal fixed-px image/name-label offsets and
+   left a visible gap between them. A box-shadow paints the same divider
+   line without occupying any layout space, so the icon renders at the same
+   40px every other cell uses. Backgrounds are opaque (the accent tint
+   pre-composited over --rk-card-bg) because this column is sticky. */
 .insights-overall-heading {
-  background-color: rgb(122, 90, 180);
+  background-color: var(--rk-accent);
   color: #ffffff;
-  font-weight: bold;
-  box-shadow: -3px 0 0 0 rgb(223, 221, 235);
+  border-bottom-color: var(--rk-accent);
+  box-shadow: -1px 0 0 0 rgba(60, 90, 150, 0.25);
 }
 
-.insights-overall-cell {
-  background-color: rgba(202, 194, 245, 0.55);
-  box-shadow: -3px 0 0 0 rgb(223, 221, 235);
+.insights-grid .insights-overall-cell,
+.insights-grid .avg-column-cell.rank-spacer {
+  background-color: rgb(188, 196, 229);
+  box-shadow: -1px 0 0 0 rgba(60, 90, 150, 0.25);
 }
 
 .insights-grid-loading {
@@ -316,9 +364,10 @@
   justify-content: center;
   min-width: 20rem;
   min-height: 20rem;
-  border: 5px solid lightblue;
-  border-radius: 5px;
-  background-color: rgba(166, 233, 245, 0.8);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  background-color: var(--rk-card-bg);
+  box-shadow: var(--rk-card-shadow);
 }
 
 .insights-placeholder {
@@ -336,6 +385,7 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 1.5rem;
+  margin-top: 1.5rem;
 }
 
 .contestant-list {
@@ -345,8 +395,10 @@
   min-width: 14rem;
   max-height: 32rem;
   overflow-y: auto;
-  background: rgba(67, 164, 209, 0.14);
-  border-radius: 0.75rem;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  box-shadow: var(--rk-card-shadow);
   padding: 0.75rem;
 }
 
@@ -358,7 +410,9 @@
   cursor: pointer;
   padding: 0.4rem 0.6rem;
   border-radius: 0.5rem;
-  transition: background-color 0.2s;
+  color: var(--rk-subtle);
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
 }
 
 .contestant-list-item .insights-contestant-thumb {
@@ -367,13 +421,15 @@
 }
 
 .contestant-list-item:hover {
-  background-color: rgba(166, 233, 245, 0.5);
+  background-color: var(--rk-card-raised);
+  color: var(--rk-accent-text);
 }
 
-.contestant-list-item-active {
-  background-color: rgb(67, 164, 209);
+.contestant-list-item-active,
+.contestant-list-item-active:hover {
+  background-color: var(--rk-accent);
   color: white;
-  font-weight: bold;
+  font-weight: 600;
 }
 
 .contestant-list::-webkit-scrollbar {
@@ -381,9 +437,8 @@
   }
 
 .contestant-list::-webkit-scrollbar-thumb {
-    background-color: #1b1374; /* Indigo thumb */
+    background-color: rgba(83, 74, 183, 0.45);
     border-radius: 0.3rem;
-    border: 0.1rem solid #f1f1f1; /* creates spacing effect */
   }
 
 .contestant-detail-panel {
@@ -392,9 +447,10 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: rgba(166, 233, 245, 0.35);
-  border: 3px solid lightblue;
-  border-radius: 0.75rem;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 12px;
+  box-shadow: var(--rk-card-shadow);
   padding: 1.5rem;
 }
 
@@ -413,16 +469,17 @@
 .contestant-detail-name {
   font-size: 1.5rem;
   font-weight: bold;
-  color: navy;
+  color: var(--rk-accent-text);
 }
 
 .elimination-badge {
   display: inline-block;
   margin-top: 0.5rem;
-  background-color: rgb(255, 209, 209);
-  color: rgb(61, 0, 0);
-  border-radius: 0.5rem;
-  padding: 0.25rem 0.75rem;
+  background-color: #fdf0f0;
+  color: #a32d2d;
+  border: 1px solid #f3c4c4;
+  border-radius: 999px;
+  padding: 0.2rem 0.75rem;
   font-size: 0.85rem;
   font-weight: 600;
 }

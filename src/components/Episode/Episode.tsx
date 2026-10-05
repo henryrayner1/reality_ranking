@@ -3,7 +3,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import './Episode.css';
 import { type Contestant, type Season, type Show } from "../../utils/Constants";
-import plusIcon from "../../assets/plus.png";
+import plusIcon from "../../assets/plus-circle.svg";
 
 interface EpisodeComponentProps {
   currEpisode: { id: string; episodeNumber: number };
@@ -73,14 +73,14 @@ const EpisodeComponent = ({ currEpisode, isActive, activeContestants, eliminated
               <SortableContext items={activeContestants} strategy={verticalListSortingStrategy}>
                 <div className="episode-heading">{heading}</div>
                 {activeContestants.map((contestantId) => {
-                    return <div key={contestantId} className="cell active-episode">
+                    return <div key={contestantId} className="cell active-episode active-episode-column">
                     <ContestantIcon name={getContestantName(contestantId)} photoUrl={getContestantPhotoUrl(contestantId)} id={contestantId} isActive={true} isEliminated={false} season={season} show={show}/>
                   </div>
 })}
               </SortableContext>
             </DndContext>
             {eliminatedContestants.map((contestantId) => (
-                <div key={`${contestantId}-elim`} className="cell eliminated-episode">
+                <div key={`${contestantId}-elim`} className="cell eliminated-episode active-episode-column">
                   <ContestantIcon name={getContestantName(contestantId)} photoUrl={getContestantPhotoUrl(contestantId)} id={contestantId} isActive={false} isEliminated={true} season={season} show={show}/>
                 </div>)
               )}
