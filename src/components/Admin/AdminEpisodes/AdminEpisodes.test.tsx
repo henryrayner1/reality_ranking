@@ -79,4 +79,28 @@ describe("AdminEpisodes", () => {
     await user.click(screen.getByText("Remove"));
     expect(util.deleteEpisode).toHaveBeenCalledWith("e1");
   });
+
+  it("blocks adding an episode that airs after the season's end date", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    const seasons = makeSeasons();
+    seasons[0] = { ...seasons[0], endDate: "2999-02-01T12:00:00.000Z" };
+    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: seasons, isLoading: false } as any);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
+
+    const dateInput = document.querySelector('input[type="date"]') as HTMLInputElement;
+    await user.type(dateInput, "2999-03-01");
+    expect(screen.getByText("Add episode", { selector: "button" })).toBeDisabled();
+    expect(screen.getByText(/after the season's end date/)).toBeInTheDocument();
+  });
+
+  it("blocks adding any episode once the season has ended", () => {
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    const seasons = makeSeasons();
+    seasons[0] = { ...seasons[0], endDate: "2020-01-01T00:00:00.000Z" };
+    vi.spyOn(queries, "useSeasons").mockReturnValue({ data: seasons, isLoading: false } as any);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
+    expect(screen.getByText(/season has ended/)).toBeInTheDocument();
+    expect(screen.getByText("Add episode", { selector: "button" })).toBeDisabled();
+  });
 });

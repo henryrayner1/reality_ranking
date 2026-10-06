@@ -458,6 +458,22 @@ export const updateSeasonPremiereDate = async (seasonId: string, premiereDate: s
   return response.json();
 };
 
+export const updateSeasonEndDate = async (seasonId: string, endDate: string | null) => {
+  const response = await apiFetch('/api/shows/updateSeason', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ seasonId, endDate }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update season end date: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const deleteSeason = async (seasonId: string) => {
   const deleteRes = await apiFetch(`/api/shows/deleteSeason/${seasonId}`, {
     method: 'DELETE',

@@ -49,4 +49,30 @@ describe("RankingCountdown", () => {
     render(<RankingCountdown episodes={[]} rankingMode="DAILY" premiereDate="2025-12-01T00:00:00.000Z" />);
     expect(screen.getByText(/Next ranking opens in/)).toBeInTheDocument();
   });
+
+  it("shows the season-ended message once endDate has passed (both modes)", () => {
+    const { unmount } = render(<RankingCountdown episodes={[]} endDate="2025-12-31T00:00:00.000Z" />);
+    expect(screen.getByText("This season has ended — rankings are closed.")).toBeInTheDocument();
+    unmount();
+    render(<RankingCountdown episodes={[]} rankingMode="DAILY" premiereDate="2025-12-01T05:00:00.000Z" endDate="2025-12-31T00:00:00.000Z" />);
+    expect(screen.getByText("This season has ended — rankings are closed.")).toBeInTheDocument();
+  });
+
+  it("shows 'Rankings close in' while an endDate is in the future", () => {
+    const episodes: Episode[] = [
+      { id: "e1", episodeNumber: 3, seasonId: "s1", airDate: "2026-01-01T02:00:00.000Z" },
+    ];
+    render(<RankingCountdown episodes={episodes} endDate="2026-01-03T00:00:00.000Z" />);
+    expect(screen.getByText(/Rankings close in 2d 0h/)).toBeInTheDocument();
+    expect(screen.getByText(/Episode 3 airs in/)).toBeInTheDocument();
+  });
+
+  it("doesn't count down to an episode whose ranking would only open after the season ends", () => {
+    const episodes: Episode[] = [
+      { id: "e1", episodeNumber: 3, seasonId: "s1", airDate: "2026-01-01T02:00:00.000Z" },
+    ];
+    render(<RankingCountdown episodes={episodes} endDate="2026-01-01T02:30:00.000Z" />);
+    expect(screen.queryByText(/Episode 3 airs in/)).not.toBeInTheDocument();
+    expect(screen.getByText("No upcoming episodes scheduled.")).toBeInTheDocument();
+  });
 });

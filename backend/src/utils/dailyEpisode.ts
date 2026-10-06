@@ -91,13 +91,19 @@ const isUniqueConstraintError = (error: unknown): boolean =>
 // newly-backfilled gaps.
 export async function ensureTodaysDailyEpisode(
   prisma: PrismaClient,
-  season: { id: string; premiereDate: Date | null }
+  season: { id: string; premiereDate: Date | null; endDate: Date | null }
 ): Promise<void> {
   if (!season.premiereDate) return;
 
   const premiereKey = getTodayDayKey(season.premiereDate);
   const todayKey = getTodayDayKey();
   if (todayKey < premiereKey) return;
+  // A season with an endDate gets no rows past the Eastern calendar day that
+  // endDate falls on. Rows up to that day are still created (and, if the
+  // server missed them live, flagged isBackfilled as usual below).
+  const lastKey = season.endDate && getTodayDayKey(season.endDate) < todayKey
+    ? getTodayDayKey(season.endDate)
+    : todayKey;
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -107,7 +113,7 @@ export async function ensureTodaysDailyEpisode(
       });
       const existingKeys = new Set(existing.map((e) => e.dayKey as string));
 
-      for (let key = premiereKey; key <= todayKey; key = nextDayKey(key)) {
+      for (let key = premiereKey; key <= lastKey; key = nextDayKey(key)) {
         if (existingKeys.has(key)) continue;
         await tx.episode.create({
           data: {
@@ -149,7 +155,7 @@ export async function ensureTodaysDailyEpisode(
 export async function ensureTodaysDailyEpisodesForAllShows(prisma: PrismaClient): Promise<void> {
   const dailyShows = await prisma.show.findMany({
     where: { rankingMode: "DAILY" },
-    include: { seasons: { where: { isCurrent: true }, select: { id: true, premiereDate: true } } },
+    include: { seasons: { where: { isCurrent: true }, select: { id: true, premiereDate: true, endDate: true } } },
   });
   await Promise.all(
     dailyShows.flatMap((show) => show.seasons.map((season) => ensureTodaysDailyEpisode(prisma, season)))

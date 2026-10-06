@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addSeason, changeCurrentSeason, deleteSeason, updateSeasonPremiereDate } from "../../../utils/util";
+import { addSeason, changeCurrentSeason, deleteSeason, updateSeasonEndDate, updateSeasonPremiereDate } from "../../../utils/util";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { RankingModes, type Season } from "../../../utils/Constants";
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
-import { dayKeyToEasternMidnightMs } from "../../../utils/episodeRankability";
+import { dayKeyToEasternMidnightMs, isSeasonEnded } from "../../../utils/episodeRankability";
 import { slugifyShowName } from "../../../utils/slug";
 
 // Premiere date is stored/edited as a plain "YYYY-MM-DD" date-input value but
@@ -16,6 +16,20 @@ import { slugifyShowName } from "../../../utils/slug";
 // isoToDateInput can stay a simple slice.
 const dateInputToIso = (value: string): string => new Date(dayKeyToEasternMidnightMs(value)).toISOString();
 const isoToDateInput = (value?: string | null): string => value ? value.slice(0, 10) : '';
+
+// End date + time is entered in the admin's local time zone (same convention
+// as AdminEpisodes' air date/time inputs) via a datetime-local input, whose
+// value is a zone-less "YYYY-MM-DDTHH:mm" string — stored as a real ISO
+// instant.
+const isoToDateTimeLocal = (value?: string | null): string => {
+  if (!value) return '';
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const formatEndDate = (value: string): string =>
+  new Date(value).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
 
 interface AdminSeasonsProps {
   showId: string;
@@ -69,6 +83,19 @@ const AdminSeasons = ({ showId, seasonId }: AdminSeasonsProps) => {
       navigate(showPath);
     }
   });
+  // Held locally and saved explicitly (not on every change) — a
+  // datetime-local input fires onChange while the admin is still typing.
+  const [endInput, setEndInput] = useState(isoToDateTimeLocal(currSeason?.endDate));
+  useEffect(() => {
+    setEndInput(isoToDateTimeLocal(currSeason?.endDate));
+  }, [currSeason?.id, currSeason?.endDate]);
+  const updateEndDate = useMutation({
+    mutationFn: ({ seasonId, endDate }: { seasonId: string; endDate: string | null }) => updateSeasonEndDate(seasonId, endDate),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
+    }
+  });
+
   const updatePremiereDate = useMutation({
     mutationFn: ({ seasonId, premiereDate }: { seasonId: string; premiereDate: string | null }) => updateSeasonPremiereDate(seasonId, premiereDate),
     onSuccess: () => {
@@ -91,13 +118,15 @@ const AdminSeasons = ({ showId, seasonId }: AdminSeasonsProps) => {
           }}
         >
           {!currSeason && <option value="">Select a season...</option>}
-          {sortedSeasons.map(s => <option key={s.id} value={s.id}>Season {s.seasonNumber}{s.isCurrent ? ' (airing)' : ''}</option>)}
+          {sortedSeasons.map(s => <option key={s.id} value={s.id}>Season {s.seasonNumber}{isSeasonEnded(s) ? ' (ended)' : s.isCurrent ? ' (airing)' : ''}</option>)}
         </AdminUI.Select>
         <AdminUI.SecondaryButton onClick={() => setAdding(true)}>+ New season</AdminUI.SecondaryButton>
       </div>
       {currSeason && (
         <div className="admin-picker-actions">
-          <AdminUI.Badge label={currSeason.isCurrent ? 'Airing' : 'Complete'} variant={currSeason.isCurrent ? 'purple' : 'green'} />
+          {isSeasonEnded(currSeason)
+            ? <AdminUI.Badge label="Ended" variant="red" />
+            : <AdminUI.Badge label={currSeason.isCurrent ? 'Airing' : 'Complete'} variant={currSeason.isCurrent ? 'purple' : 'green'} />}
           {isDaily && (
             <label className="flex items-center gap-2 text-xs text-[#888]">
               Premiere
@@ -110,6 +139,42 @@ const AdminSeasons = ({ showId, seasonId }: AdminSeasonsProps) => {
             </label>
           )}
           <AdminUI.DangerButton onClick={() => { if (window.confirm(`Delete season ${currSeason.seasonNumber}?`)) remove.mutate(currSeason.id) }} />
+        </div>
+      )}
+      {currSeason && (
+        <div className="admin-picker-row admin-season-end-row">
+          <label className="flex items-center gap-2 text-xs text-[#888]">
+            Ends
+            <AdminUI.Input
+              type="datetime-local"
+              aria-label="Season end date and time"
+              value={endInput}
+              onChange={e => setEndInput(e.target.value)}
+              style={{ width: 'auto' }}
+            />
+          </label>
+          <AdminUI.SecondaryButton
+            onClick={() => endInput && updateEndDate.mutate({ seasonId: currSeason.id, endDate: new Date(endInput).toISOString() })}
+            disabled={!endInput || updateEndDate.isPending || endInput === isoToDateTimeLocal(currSeason.endDate)}
+          >
+            {updateEndDate.isPending ? 'Saving...' : 'Save end'}
+          </AdminUI.SecondaryButton>
+          {currSeason.endDate && (
+            <AdminUI.SecondaryButton
+              onClick={() => updateEndDate.mutate({ seasonId: currSeason.id, endDate: null })}
+              disabled={updateEndDate.isPending}
+            >
+              Clear end
+            </AdminUI.SecondaryButton>
+          )}
+          <span className="text-xs text-[#888]">
+            {currSeason.endDate
+              ? (isSeasonEnded(currSeason)
+                ? `Ended ${formatEndDate(currSeason.endDate)} — rankings closed`
+                : `Rankings close ${formatEndDate(currSeason.endDate)}`)
+              : (isDaily ? 'No end set — a new day opens every day' : 'No end set')}
+          </span>
+          {updateEndDate.isError && <AdminUI.ErrorMsg />}
         </div>
       )}
       {adding && (

@@ -34,6 +34,9 @@ model Season {
   seasonNumber  Int
   isCurrent     Boolean      @default(false)
   premiereDate  DateTime?
+  // Optional moment the season ends: no day/episode rows are created after
+  // it, and no rankings are accepted once it has passed. See isSeasonEnded.
+  endDate       DateTime?
   contestants   Contestant[]
   episodes      Episode[]
   createdAt     DateTime     @default(now())

@@ -114,6 +114,7 @@ export interface Season {
   seasonNumber: number;
   episodes?: Episode[];
   premiereDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface Contestant {

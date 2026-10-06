@@ -35,3 +35,16 @@ export const isRankableNow = (
   rankingMode === "DAILY"
     ? isDailyRankable(episode.dayKey, now)
     : isEpisodeRankable(episode.airDate, now);
+
+// A season with an endDate stops accepting rankings at that exact moment
+// (date + time, chosen by an admin) — independent of whether an individual
+// episode is open (isRankableNow) or backfilled. No endDate => never ends.
+// Kept in sync by hand with src/utils/episodeRankability.ts on the frontend.
+export const isSeasonEnded = (
+  season: { endDate?: Date | string | null },
+  now: number = Date.now()
+): boolean => {
+  if (!season.endDate) return false;
+  const endMs = new Date(season.endDate).getTime();
+  return !Number.isNaN(endMs) && now >= endMs;
+};

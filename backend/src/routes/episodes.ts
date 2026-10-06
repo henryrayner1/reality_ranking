@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import { ensureTodaysDailyEpisode } from "../utils/dailyEpisode.js";
+import { isSeasonEnded } from "../utils/episodeRankability.js";
 
 export default function episodesRouter(prisma: PrismaClient) {
   const router = Router();
@@ -22,7 +23,7 @@ export default function episodesRouter(prisma: PrismaClient) {
     if (show?.rankingMode === "DAILY") {
       const currentSeason = await prisma.season.findFirst({
         where: { showId, isCurrent: true },
-        select: { id: true, premiereDate: true },
+        select: { id: true, premiereDate: true, endDate: true },
       });
       if (currentSeason) await ensureTodaysDailyEpisode(prisma, currentSeason);
     }
@@ -46,6 +47,19 @@ export default function episodesRouter(prisma: PrismaClient) {
   router.post("/create", async (req, res) => {
     const randomId = Math.random().toString(36).slice(2, 8).toLowerCase();
     const body = req.body;
+    const season = await prisma.season.findUnique({ where: { id: body.seasonId }, select: { endDate: true } });
+    if (!season) {
+      return res.status(404).json({ error: "Season not found" });
+    }
+    // No episodes once a season has ended, or airing after its end.
+    if (season.endDate) {
+      if (isSeasonEnded(season)) {
+        return res.status(400).json({ error: "This season has ended — no new episodes can be added" });
+      }
+      if (body.airDate && new Date(body.airDate).getTime() > season.endDate.getTime()) {
+        return res.status(400).json({ error: "Episode air date is after the season's end date" });
+      }
+    }
     const count = await prisma.episode.count({
       where: {
         seasonId: body.seasonId

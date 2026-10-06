@@ -180,4 +180,25 @@ describe("RankingComponent2", () => {
     expect(screen.getByText("BOB")).toBeInTheDocument();
     expect(screen.getByText("ALICE")).toBeInTheDocument();
   });
+
+  it("locks unranked episodes, disables Submit and shows the ended message once the season's endDate has passed", () => {
+    vi.spyOn(queries, "useShowTree").mockReturnValue({
+      data: { ...showTree, seasons: [{ ...season, endDate: "2021-01-01T00:00:00.000Z" }] },
+      isLoading: false,
+    } as any);
+    renderPage();
+    // Rendered via lockedEpisodeElements instead of the (mocked) EpisodeComponent.
+    expect(screen.queryByTestId("episode-1")).not.toBeInTheDocument();
+    expect(screen.getByText("Submit Rankings")).toHaveClass("button-inactive");
+    expect(screen.getByText("This season has ended — rankings are closed.")).toBeInTheDocument();
+  });
+
+  it("keeps episodes rankable while the season's endDate is still in the future", () => {
+    vi.spyOn(queries, "useShowTree").mockReturnValue({
+      data: { ...showTree, seasons: [{ ...season, endDate: "2999-01-01T00:00:00.000Z" }] },
+      isLoading: false,
+    } as any);
+    renderPage();
+    expect(screen.getByTestId("active-1")).toHaveTextContent("inactive");
+  });
 });
