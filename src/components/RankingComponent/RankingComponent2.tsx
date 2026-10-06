@@ -11,7 +11,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useNavigate, useParams } from "react-router-dom";
-import { isRankableNow, getTodayDayKey } from "../../utils/episodeRankability";
+import { isRankableNow, getTodayDayKey, isSeasonEnded } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
@@ -75,6 +75,8 @@ const RankingComponent2 = () => {
   // Only episodes whose airDate + assumed runtime has already passed are
   // rankable. Sorted explicitly since the API doesn't guarantee episode
   // order, so grid columns always render left-to-right in air order.
+  const seasonEnded = isSeasonEnded(currSeason);
+
   const rankableEpisodes = [...(currSeason?.episodes ?? [])]
     .filter((episode) => isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
@@ -193,6 +195,9 @@ const RankingComponent2 = () => {
   }
 
   const checkSubmitDisabled = () => {
+    // An episode activated before the season's end can't be submitted once
+    // it has passed.
+    if (seasonEnded) return true;
     // handleSubmit submits active episodes across both RankTypes, so the
     // button must stay enabled if either type has pending active episodes —
     // not just whichever tab is currently in view.
@@ -394,7 +399,10 @@ const RankingComponent2 = () => {
         const inPastRankings = checkPastRankings(episode.id);
         if (inPastRankings) return pastRankingsElements(inPastRankings, episode);
         const isMissedDailyDay = currShow?.rankingMode === "DAILY" && episode.id !== latestRankableEpisodeId;
-        if (episode.isBackfilled || isMissedDailyDay) return lockedEpisodeElements(episode);
+        // Once the season's admin-set endDate passes, every not-yet-submitted
+        // episode locks the same way a missed daily day does (the server also
+        // rejects any submission for an ended season with 403).
+        if (episode.isBackfilled || isMissedDailyDay || seasonEnded) return lockedEpisodeElements(episode);
         const isActive = activeEpisodes.has(episode.id);
         const eliminatedIds = getEpisodeEliminatedIds(episode);
         return <EpisodeComponent
@@ -472,7 +480,7 @@ const RankingComponent2 = () => {
           <>
             {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
                 it needs to see not-yet-rankable episodes to find "next up". */}
-            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} />
+            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} endDate={currSeason?.endDate} />
             <main className="rankings-main">
               {user && rankingContainer}
             </main>

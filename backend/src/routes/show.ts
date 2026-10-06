@@ -64,7 +64,7 @@ export default function showsRouter(prisma: PrismaClient) {
         if (show?.rankingMode === "DAILY") {
             const currentSeasonId = await prisma.season.findFirst({
                 where: { showId, isCurrent: true },
-                select: { id: true, premiereDate: true },
+                select: { id: true, premiereDate: true, endDate: true },
             });
             if (currentSeasonId) await ensureTodaysDailyEpisode(prisma, currentSeasonId);
         }
@@ -117,13 +117,20 @@ export default function showsRouter(prisma: PrismaClient) {
     });
 
     router.post("/updateSeason", async (req, res) => {
-        const { seasonId, premiereDate } = req.body;
+        const { seasonId, premiereDate, endDate } = req.body;
         if (!seasonId) {
             return res.status(400).json({ error: "seasonId is required" });
         }
+        // Only touch the fields actually sent (null clears one) — the premiere
+        // date and end date are saved independently from the admin UI, so an
+        // unconditional `premiereDate ?? null` would wipe the premiere date
+        // whenever only the end date is being saved.
         const updatedSeason = await prisma.season.update({
             where: { id: seasonId },
-            data: { premiereDate: premiereDate ?? null }
+            data: {
+                ...(premiereDate !== undefined && { premiereDate }),
+                ...(endDate !== undefined && { endDate }),
+            }
         });
         res.json(updatedSeason);
     });

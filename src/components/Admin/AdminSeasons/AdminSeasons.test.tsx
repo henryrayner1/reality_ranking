@@ -106,4 +106,36 @@ describe("AdminSeasons", () => {
     await waitFor(() => expect(util.changeCurrentSeason).toHaveBeenCalledWith("s1", "se0"));
     await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/admin/survivor"));
   });
+
+  it("saves and clears the season end date/time", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(util, "updateSeasonEndDate").mockResolvedValue({} as any);
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: [makeSeason({ endDate: "2999-06-01T01:00:00.000Z" })],
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminSeasons showId="s1" seasonId="se1" />);
+    expect(screen.getByText(/Rankings close/)).toBeInTheDocument();
+
+    const input = screen.getByLabelText("Season end date and time");
+    await user.clear(input);
+    await user.type(input, "2999-07-04T21:30");
+    await user.click(screen.getByText("Save end"));
+    expect(util.updateSeasonEndDate).toHaveBeenCalledWith("se1", new Date("2999-07-04T21:30").toISOString());
+
+    await user.click(screen.getByText("Clear end"));
+    expect(util.updateSeasonEndDate).toHaveBeenCalledWith("se1", null);
+  });
+
+  it("shows an Ended badge once the end date has passed", () => {
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: [makeSeason({ endDate: "2020-01-01T00:00:00.000Z" })],
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminSeasons showId="s1" seasonId="se1" />);
+    expect(screen.getByText("Ended")).toBeInTheDocument();
+    expect(screen.getByText(/rankings closed/)).toBeInTheDocument();
+  });
 });
