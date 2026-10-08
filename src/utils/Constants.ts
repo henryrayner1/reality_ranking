@@ -124,6 +124,7 @@ export interface Contestant {
   photoUrl?: string;
   status?: 'ACTIVE' | 'ELIMINATED';
   createdAt?: string;
+  firstNameHasSpace?: boolean;
 }
 
 export const EliminationTypes = {

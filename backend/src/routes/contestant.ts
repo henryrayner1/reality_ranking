@@ -42,7 +42,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
     });
 
     router.post("/add", async (req, res) => {
-        const { name, seasonId, photoUrl } = req.body;
+        const { name, seasonId, photoUrl, firstNameHasSpace } = req.body;
         if (!name || !seasonId) {
             return res.status(400).json({ error: "name and seasonId are required" });
         }
@@ -50,7 +50,8 @@ export default function contestantsRouter(prisma: PrismaClient) {
             data: {
                 name,
                 seasonId: seasonId,
-                photoUrl: photoUrl || ".src/assets/contestant_placeholder.png"
+                photoUrl: photoUrl || ".src/assets/contestant_placeholder.png",
+                firstNameHasSpace: !!firstNameHasSpace
             }
         });
         res.json(newContestant);
@@ -58,14 +59,15 @@ export default function contestantsRouter(prisma: PrismaClient) {
 
     router.patch("/:contestantId", async (req, res) => {
         const { contestantId } = req.params;
-        const { name, photoUrl } = req.body;
+        const { name, photoUrl, firstNameHasSpace } = req.body;
         const updatedContestant = await prisma.contestant.update({
             where: {
                 id: contestantId
             },
             data: {
                 ...(name !== undefined && { name }),
-                ...(photoUrl !== undefined && { photoUrl })
+                ...(photoUrl !== undefined && { photoUrl }),
+                ...(firstNameHasSpace !== undefined && { firstNameHasSpace: !!firstNameHasSpace })
             }
         });
         res.json(updatedContestant);

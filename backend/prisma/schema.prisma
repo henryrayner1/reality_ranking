@@ -51,6 +51,9 @@ model Contestant {
   photoUrl    String       @default(".src/assets/contestant_placeholder.png")
   elimination Elimination?
   status      ContestantStatus @default(ACTIVE)
+  // First name is more than one word (e.g. "Thien An Nguyen"), so the icon
+  // label shows the first two words instead of just the first.
+  firstNameHasSpace Boolean  @default(false)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 

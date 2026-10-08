@@ -550,7 +550,7 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name: contestant.name, seasonId: contestant.seasonId, photoUrl: contestant.photoUrl }),
+    body: JSON.stringify({ name: contestant.name, seasonId: contestant.seasonId, photoUrl: contestant.photoUrl, firstNameHasSpace: contestant.firstNameHasSpace }),
   });
   if (!contestantRes.ok) {
     const msg = await contestantRes.text().catch(() => 'Failed to add contestant');
@@ -560,7 +560,7 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
   return contestantData;
 };
 
-export const updateContestant = async (contestantId: string, changes: { name?: string; photoUrl?: string }) => {
+export const updateContestant = async (contestantId: string, changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean }) => {
   const updateRes = await apiFetch(`/api/contestants/${contestantId}`, {
     method: 'PATCH',
     headers: {
@@ -575,6 +575,12 @@ export const updateContestant = async (contestantId: string, changes: { name?: s
   const updateData = await updateRes.json();
   return updateData;
 };
+
+// Label shown on a contestant's icon: their first name, which is the first
+// word of their full name, or the first two words when the admin has marked
+// the first name as containing a space (e.g. "Thien An Nguyen" → "THIEN AN").
+export const getIconLabel = (name: string, firstNameHasSpace?: boolean) =>
+  name.trim().toUpperCase().split(/\s+/).slice(0, firstNameHasSpace ? 2 : 1).join(' ');
 
 export const deleteContestant = async (contestantId: string) => {
   const deleteRes = await apiFetch(`/api/contestants/delete/${contestantId}`, {

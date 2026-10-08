@@ -66,6 +66,23 @@ describe("AdminContestants", () => {
     );
   });
 
+  it("previews the icon label and sends firstNameHasSpace when the toggle is on", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
+
+    await user.type(screen.getByPlaceholderText("e.g. Tiyana Kaloko"), "Thien An Nguyen");
+    expect(screen.getByText("Icon label: THIEN")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("switch", { name: "First name has a space" }));
+    expect(screen.getByText("Icon label: THIEN AN")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Add contestant", { selector: "button" }));
+    expect(util.addContestant).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "Thien An Nguyen", firstNameHasSpace: true }),
+      expect.anything()
+    );
+  });
+
   it("removes a contestant", async () => {
     const user = userEvent.setup();
     renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
@@ -113,6 +130,17 @@ describe("AdminContestants", () => {
 
     expect(util.updateContestant).toHaveBeenCalledWith("c1", { name: "New Name" });
     expect(await screen.findByText("Add contestant", { selector: "button" })).toBeInTheDocument();
+  });
+
+  it("saves only the first-name-has-space flag when that's the only change", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
+
+    await user.click(screen.getAllByText("Edit")[0]);
+    await user.click(screen.getByRole("switch", { name: "First name has a space" }));
+    await user.click(screen.getByText("Save changes"));
+
+    expect(util.updateContestant).toHaveBeenCalledWith("c1", { firstNameHasSpace: true });
   });
 
   it("doesn't call the API when saving an edit with nothing changed", async () => {

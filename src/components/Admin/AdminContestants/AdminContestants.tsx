@@ -5,6 +5,7 @@ import {
   addContestant,
   deleteContestant,
   updateContestant,
+  getIconLabel,
 } from "../../../utils/util";
 import { backendUrl } from "../../../utils/apiBase";
 import * as AdminUI from "../../../utils/AdminComponents";
@@ -92,7 +93,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
     },
   });
   const update = useMutation({
-    mutationFn: ({ id, changes }: { id: string; changes: { name?: string; photoUrl?: string } }) =>
+    mutationFn: ({ id, changes }: { id: string; changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean } }) =>
       updateContestant(id, changes),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: showsQueryKey() });
@@ -140,8 +141,10 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
 
     if (editingContestant) {
       const photoUrl = await uploadCroppedImage(name);
-      const changes: { name?: string; photoUrl?: string } = {};
+      const changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean } = {};
       if (name !== editingContestant.name) changes.name = name;
+      const firstNameHasSpace = !!contestant.firstNameHasSpace;
+      if (firstNameHasSpace !== !!editingContestant.firstNameHasSpace) changes.firstNameHasSpace = firstNameHasSpace;
       if (photoUrl) changes.photoUrl = photoUrl;
       if (Object.keys(changes).length === 0) {
         resetForm();
@@ -157,7 +160,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
 
   const startEditing = (c: Contestant) => {
     setEditingId(c.id);
-    setContestant({ name: c.name });
+    setContestant({ name: c.name, firstNameHasSpace: !!c.firstNameHasSpace });
     setImage(null);
     setScale(1.2);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -185,6 +188,19 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
                 }
               />
             </AdminUI.FormGroup>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <AdminUI.Toggle
+                checked={!!contestant.firstNameHasSpace}
+                onChange={(checked) => setContestant((c) => ({ ...c, firstNameHasSpace: checked }))}
+                title="First name has a space"
+              />
+              <div style={{ fontSize: 13 }}>
+                <div>First name has a space</div>
+                <div style={{ color: "var(--color-text-secondary,#888)" }}>
+                  Icon label: {contestant.name?.trim() ? getIconLabel(contestant.name, contestant.firstNameHasSpace) : "—"}
+                </div>
+              </div>
+            </div>
             <AdminUI.FormGroup label="Photo">
               <div
                 tabIndex={0}

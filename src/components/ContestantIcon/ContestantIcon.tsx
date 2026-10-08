@@ -3,6 +3,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { type Season, type Show } from '../../utils/Constants';
 import { backendUrl } from '../../utils/apiBase';
+import { getIconLabel } from '../../utils/util';
 
 
 interface IconProps {
@@ -53,7 +54,11 @@ const ContestantIcon = (props:IconProps) => {
     // boxShadow: '-2px 5px 10px blue',
   };
   
-  const uppercaseName = props.name.toUpperCase().split(' ')[0];
+  // Every caller already passes the contestant's season (with its full
+  // contestants[] roster), so the flag is looked up here by id rather than
+  // threaded through each call site as another prop.
+  const firstNameHasSpace = props.season.contestants?.find((c) => c.id === props.id)?.firstNameHasSpace;
+  const uppercaseName = getIconLabel(props.name, firstNameHasSpace);
 
   const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
 
