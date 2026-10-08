@@ -27,6 +27,15 @@ describe("ContestantIcon", () => {
     expect(screen.getByText("JANE")).toBeInTheDocument();
   });
 
+  it("shows the first two words when the season roster marks the first name as having a space", () => {
+    const flaggedSeason: Season = {
+      ...season,
+      contestants: [{ id: "c1", name: "Thien An Nguyen", seasonId: "s1", firstNameHasSpace: true }],
+    };
+    renderIcon({ name: "Thien An Nguyen", season: flaggedSeason });
+    expect(screen.getByText("THIEN AN")).toBeInTheDocument();
+  });
+
   it("builds the image src from an explicit photoUrl", () => {
     renderIcon({ photoUrl: "/uploads/foo/photo.png" });
     const img = screen.getByAltText("Jane Doe") as HTMLImageElement;
