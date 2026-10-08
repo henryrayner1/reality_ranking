@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addShow, deleteShow, updateShowRankingMode } from "../../../utils/util";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RankingModes, type Show } from "../../../utils/Constants";
+import { RankingModes, type RankingMode, type Show } from "../../../utils/Constants";
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useShows } from "../../../hooks/queries";
 import { slugifyShowName } from "../../../utils/slug";
@@ -20,6 +20,13 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
     const [adding, setAdding] = useState(false)
     const { data: shows = [] } = useShows()
     const currShow = shows.find(s => s.id === showId);
+    // A ranking-mode choice that hasn't been confirmed yet. Keyed by show and
+    // discarded (during render, not in an effect, so the other show's choice
+    // never flashes) as soon as a different show is selected.
+    const [pendingMode, setPendingMode] = useState<{ showId: string; rankingMode: RankingMode } | null>(null);
+    if (pendingMode && pendingMode.showId !== showId) setPendingMode(null);
+    const selectedMode = pendingMode && pendingMode.showId === currShow?.id ? pendingMode.rankingMode : currShow?.rankingMode;
+    const modeChanged = !!currShow && selectedMode !== currShow.rankingMode;
 
     const selectShow = (id: string) => {
         const show = shows.find(s => s.id === id);
@@ -49,8 +56,14 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
         }
     })
     const updateMode = useMutation({
-        mutationFn: ({ showId, rankingMode }: { showId: string; rankingMode: string }) => updateShowRankingMode(showId, rankingMode),
-        onSuccess: () => {
+        mutationFn: ({ showId, rankingMode }: { showId: string; rankingMode: RankingMode }) => updateShowRankingMode(showId, rankingMode),
+        onSuccess: (_data, { showId, rankingMode }) => {
+            // Write the new mode into the cached tree right away: the full
+            // GET /api/shows refetch below is slow (it also creates DAILY
+            // episode rows first), so waiting on it alone left the old mode
+            // showing for seconds after the save had already succeeded.
+            qc.setQueryData<Show[]>(showsQueryKey(), old => old?.map(s => s.id === showId ? { ...s, rankingMode } : s));
+            setPendingMode(null);
             qc.invalidateQueries({ queryKey: showsQueryKey() });
         }
     })
@@ -67,12 +80,48 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
             </div>
             {currShow && (
                 <div className="admin-picker-actions">
-                    <span className="text-xs text-[#888]">{currShow.network ? `${currShow.network} · ` : ''}{currShow.rankingMode === RankingModes.DAILY ? 'Daily' : 'By episode'}</span>
-                    <AdminUI.Toggle
-                        checked={currShow.rankingMode === RankingModes.DAILY}
-                        onChange={checked => updateMode.mutate({ showId: currShow.id, rankingMode: checked ? RankingModes.DAILY : RankingModes.EPISODE })}
-                        title={currShow.rankingMode === RankingModes.DAILY ? 'Daily' : 'By episode'}
-                    />
+                    {currShow.network && <span className="text-xs text-[#888]">{currShow.network}</span>}
+                    {/* Radios + an explicit Confirm rather than an instant toggle:
+                        switching to Daily makes the server auto-create a "Day N"
+                        episode per day (not undone by switching back), so a
+                        stray click shouldn't be able to trigger it. */}
+                    <div role="radiogroup" aria-label="Ranking mode" className="flex items-center gap-3 text-[13px] text-[#333]">
+                        {[{ value: RankingModes.EPISODE, label: 'By episode' }, { value: RankingModes.DAILY, label: 'Daily' }].map(option => (
+                            <label key={option.value} className="flex cursor-pointer items-center gap-1">
+                                <input
+                                    type="radio"
+                                    name={`ranking-mode-${currShow.id}`}
+                                    value={option.value}
+                                    checked={selectedMode === option.value}
+                                    disabled={updateMode.isPending}
+                                    onChange={() => { updateMode.reset(); setPendingMode({ showId: currShow.id, rankingMode: option.value }); }}
+                                    className="accent-[#7F77DD]"
+                                />
+                                {option.label}
+                            </label>
+                        ))}
+                    </div>
+                    {modeChanged && selectedMode && (
+                        <>
+                            <AdminUI.PrimaryButton
+                                onClick={() => updateMode.mutate({ showId: currShow.id, rankingMode: selectedMode })}
+                                disabled={updateMode.isPending}
+                                size="sm"
+                            >
+                                {updateMode.isPending ? (
+                                    <span className="inline-flex items-center gap-1.5">
+                                        <span aria-hidden="true" className="inline-block h-2.5 w-2.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                                        Saving...
+                                    </span>
+                                ) : 'Confirm'}
+                            </AdminUI.PrimaryButton>
+                            <AdminUI.SecondaryButton onClick={() => { updateMode.reset(); setPendingMode(null); }} disabled={updateMode.isPending}>Cancel</AdminUI.SecondaryButton>
+                            {selectedMode === RankingModes.DAILY && !updateMode.isError && (
+                                <span className="text-xs text-[#888]">Creates an episode for each day since the season premiere</span>
+                            )}
+                            {updateMode.isError && <AdminUI.ErrorMsg />}
+                        </>
+                    )}
                     <AdminUI.DangerButton onClick={() => { if (window.confirm(`Delete ${currShow.name}?`)) remove.mutate(currShow.id) }} />
                 </div>
             )}

@@ -65,8 +65,10 @@ export const Toggle = ({ checked, onChange, disabled, title }: { checked: boolea
     );
 };
 
-export const PrimaryButton = ({ children, onClick, disabled }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean }) => {
-    return <button onClick={onClick} disabled={disabled} className={`rounded-lg border-none px-4 py-2 text-[13px] font-medium text-white ${disabled ? 'cursor-not-allowed bg-[#aaa]' : 'cursor-pointer bg-[#7F77DD]'}`}>{children}</button>;
+// size="sm" matches SecondaryButton's dimensions, for use inline beside it.
+export const PrimaryButton = ({ children, onClick, disabled, size = "md" }: { children: React.ReactNode; onClick?: () => void; disabled?: boolean; size?: "md" | "sm" }) => {
+    const sizeClass = size === "sm" ? 'border border-transparent px-[0.6rem] py-[0.3rem] text-xs' : 'border-none px-4 py-2 text-[13px]';
+    return <button onClick={onClick} disabled={disabled} className={`rounded-lg font-medium text-white ${sizeClass} ${disabled ? 'cursor-not-allowed bg-[#aaa]' : 'cursor-pointer bg-[#7F77DD]'}`}>{children}</button>;
 };
 export const DangerButton = ({ onClick }: { onClick: () => void }) => {
     return <button onClick={onClick} className="cursor-pointer rounded-lg border border-[#F7C1C1] bg-transparent px-[0.6rem] py-[0.3rem] text-xs text-[#A32D2D]">Remove</button>;

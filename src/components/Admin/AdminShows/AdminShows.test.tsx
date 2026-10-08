@@ -36,7 +36,7 @@ describe("AdminShows", () => {
 
   it("hides show settings until a show is selected", () => {
     renderWithProviders(<AdminShows />);
-    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    expect(screen.queryByRole("radiogroup", { name: "Ranking mode" })).not.toBeInTheDocument();
     expect(screen.queryByText("Remove")).not.toBeInTheDocument();
   });
 
@@ -62,11 +62,54 @@ describe("AdminShows", () => {
     expect(util.addShow).not.toHaveBeenCalled();
   });
 
-  it("toggles the selected show's ranking mode", async () => {
+  it("only saves a new ranking mode once it's confirmed", async () => {
     const user = userEvent.setup();
     renderWithProviders(<AdminShows showId="s1" />);
-    await user.click(screen.getByRole("switch"));
+    expect(screen.getByRole("radio", { name: "By episode" })).toBeChecked();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("radio", { name: "Daily" }));
+    expect(util.updateShowRankingMode).not.toHaveBeenCalled();
+    expect(screen.getByText("Creates an episode for each day since the season premiere")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Confirm"));
     expect(util.updateShowRankingMode).toHaveBeenCalledWith("s1", "DAILY");
+    await waitFor(() => expect(screen.queryByText("Confirm")).not.toBeInTheDocument());
+  });
+
+  it("shows a spinner on Confirm while the save is in flight", async () => {
+    let resolveSave: (value: any) => void = () => {};
+    vi.mocked(util.updateShowRankingMode).mockReturnValue(new Promise((resolve) => { resolveSave = resolve; }));
+    const user = userEvent.setup();
+    renderWithProviders(<AdminShows showId="s1" />);
+
+    await user.click(screen.getByRole("radio", { name: "Daily" }));
+    await user.click(screen.getByText("Confirm"));
+    expect(await screen.findByText("Saving...")).toBeInTheDocument();
+    expect(screen.getByRole("radio", { name: "By episode" })).toBeDisabled();
+
+    resolveSave({});
+    await waitFor(() => expect(screen.queryByText("Saving...")).not.toBeInTheDocument());
+  });
+
+  it("Cancel discards an unconfirmed ranking-mode choice", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AdminShows showId="s1" />);
+    await user.click(screen.getByRole("radio", { name: "Daily" }));
+    await user.click(screen.getByText("Cancel"));
+    expect(screen.getByRole("radio", { name: "By episode" })).toBeChecked();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
+    expect(util.updateShowRankingMode).not.toHaveBeenCalled();
+  });
+
+  it("drops an unconfirmed ranking-mode choice when switching shows", async () => {
+    const user = userEvent.setup();
+    const { rerender } = renderWithProviders(<AdminShows showId="s1" />);
+    await user.click(screen.getByRole("radio", { name: "Daily" }));
+    rerender(<AdminShows showId="s2" />);
+    rerender(<AdminShows showId="s1" />);
+    expect(screen.getByRole("radio", { name: "By episode" })).toBeChecked();
+    expect(screen.queryByText("Confirm")).not.toBeInTheDocument();
   });
 
   it("removes the selected show after confirming and returns to /admin", async () => {
