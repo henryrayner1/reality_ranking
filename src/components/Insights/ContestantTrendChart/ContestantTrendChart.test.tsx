@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import ContestantTrendChart from "./ContestantTrendChart";
-import type { InsightsResponse } from "../../../utils/Constants";
+import ContestantTrendChart, { getFieldSizeByEpisode } from "./ContestantTrendChart";
+import type { EliminationEntry, InsightsResponse } from "../../../utils/Constants";
 
 const emptyInsights: InsightsResponse = { seasonId: "s1", type: "FAVORITE", episodes: [], overall: [] };
 
@@ -23,6 +23,7 @@ describe("ContestantTrendChart", () => {
         favoriteInsights={emptyInsights}
         winnerInsights={emptyInsights}
         contestantCount={10}
+        eliminations={[]}
       />
     );
     expect(screen.getByText("No ranking submissions yet for this contestant.")).toBeInTheDocument();
@@ -36,10 +37,38 @@ describe("ContestantTrendChart", () => {
         favoriteInsights={favoriteInsights}
         winnerInsights={emptyInsights}
         contestantCount={10}
+        eliminations={[]}
       />
     );
     expect(container.querySelector(".recharts-responsive-container")).toBeInTheDocument();
     expect(screen.getByText("Favorite")).toBeInTheDocument();
     expect(screen.getByText("Winner")).toBeInTheDocument();
+    expect(screen.getByText("Number of Contestants")).toBeInTheDocument();
+  });
+});
+
+const elim = (contestantId: string, episodeNumber: number): EliminationEntry => ({
+  id: `${contestantId}-${episodeNumber}`,
+  episodeId: `e${episodeNumber}`,
+  contestantId,
+  eliminationType: "ELIMINATED" as EliminationEntry["eliminationType"],
+  episode: { episodeNumber },
+});
+
+describe("getFieldSizeByEpisode", () => {
+  it("is the full roster every episode with no eliminations", () => {
+    expect([...getFieldSizeByEpisode(10, [], [1, 2, 3]).values()]).toEqual([10, 10, 10]);
+  });
+
+  it("shrinks starting the same episode a contestant is eliminated", () => {
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 9, 9]);
+  });
+
+  it("counts a duplicate elimination entry for one contestant only once", () => {
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 9, 9]);
+  });
+
+  it("drops by two for a double elimination", () => {
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("b", 2), elim("c", 3)], [1, 2, 3]).values()]).toEqual([10, 8, 7]);
   });
 });
