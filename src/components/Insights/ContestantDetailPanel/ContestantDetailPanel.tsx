@@ -89,6 +89,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
               favoriteInsights={favoriteInsights}
               winnerInsights={winnerInsights}
               contestantCount={currSeason.contestants.length}
+              eliminations={props.eliminations}
               eliminationInfo={selectedEliminationInfo}
             />
           </>

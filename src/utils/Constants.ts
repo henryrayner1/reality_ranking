@@ -151,6 +151,7 @@ export interface EliminationEntry {
   episodeId: string;
   contestantId: string;
   eliminationType: EliminationType;
+  episode?: { episodeNumber: number };
 }
 
 // Shape returned by GET /api/rankings/insights/:seasonId
