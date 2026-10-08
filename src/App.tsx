@@ -1,8 +1,7 @@
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import "./App.css";
 import Homepage from "./components/Homepage/Homepage";
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
-import Admin from "./components/Admin/Admin/Admin";
 import { useSelector } from "react-redux";
 import { checkUserLoggedIn, userLogout } from "./utils/util";
 import { AccountTypes } from "./utils/Constants";
@@ -11,8 +10,14 @@ import { useAppDispatch } from "./redux/hooks";
 import Navbar from "./components/Navbar/Navbar";
 import LoginModal from "./components/modals/LoginModal/LoginModal";
 import LogoutConfirmModal from "./components/modals/LogoutConfirmModal/LogoutConfirmModal";
-import RankingComponent2 from "./components/RankingComponent/RankingComponent2";
-import Insights from "./components/Insights/Insights/Insights";
+import PageLoading from "./components/PageLoading/PageLoading";
+
+// Lazy-loaded so each page's code (and heavy deps like recharts/dnd-kit) is
+// split into its own chunk and only downloaded when that route is visited,
+// instead of one oversized bundle loaded up front on the homepage.
+const Admin = lazy(() => import("./components/Admin/Admin/Admin"));
+const RankingComponent2 = lazy(() => import("./components/RankingComponent/RankingComponent2"));
+const Insights = lazy(() => import("./components/Insights/Insights/Insights"));
 
 function App() {
   const dispatch = useAppDispatch();
@@ -61,17 +66,19 @@ function App() {
       onLoginClick={() => openAuthModal(true)}
       onLogoutClick={() => setLogoutConfirmDisplayFlag(true)}
     />
-    <Routes>
-        <Route path="/" element={<Homepage {...HomepageProps} />} />
-        <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
-        <Route path="/admin/:showSlug" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
-        <Route path="/admin/:showSlug/:seasonNumber" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
-        <Route path="/ranking" element={<RankingComponent2 />} />
-        <Route path="/ranking/:showSlug" element={<RankingComponent2 />} />
-        <Route path="/insights" element={<Insights />} />
-        <Route path="/insights/:showSlug" element={<Insights />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <Suspense fallback={<PageLoading />}>
+      <Routes>
+          <Route path="/" element={<Homepage {...HomepageProps} />} />
+          <Route path="/admin" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
+          <Route path="/admin/:showSlug" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
+          <Route path="/admin/:showSlug/:seasonNumber" element={isAdmin ? <Admin /> : <Navigate to="/" replace />} />
+          <Route path="/ranking" element={<RankingComponent2 />} />
+          <Route path="/ranking/:showSlug" element={<RankingComponent2 />} />
+          <Route path="/insights" element={<Insights />} />
+          <Route path="/insights/:showSlug" element={<Insights />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
     {loginDisplayFlag && <LoginModal displayFlag={loginDisplayFlag} setDisplayFlag={setLoginDisplayFlag} initialIsLogin={initialIsLogin} />}
     {logoutConfirmDisplayFlag && (
       <LogoutConfirmModal
