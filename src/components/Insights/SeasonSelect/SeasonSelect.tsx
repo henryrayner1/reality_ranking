@@ -19,8 +19,8 @@ const SeasonSelect = (props: SeasonSelectProps) => {
     `Season ${season.seasonNumber}${season.id === props.currentSeasonId ? " (current)" : ""}`;
 
   return (
-    <div className="flex align-items-center">
-      <h1 className="font-bold text-gray-800 pr-2">Season:</h1>
+    <div className="labeled-select flex align-items-center">
+      <h1 className="labeled-select-label font-bold text-gray-800 pr-2">Season:</h1>
       <Dropdown>
         <Dropdown.Toggle variant="" id="season-select-dropdown" className="custom-button min-w-[8vw] min-h-[2.5rem]">
           {selected ? label(selected) : "Select a Season"}

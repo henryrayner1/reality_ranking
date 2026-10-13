@@ -417,6 +417,16 @@
     justify-content: center;
   }
 
+  /* ShowSelect's row carries its own my-3 margin, which stacks on top of
+     the bar's 1rem gap once items wrap — dropping it keeps every stacked
+     item (Show, Current Season, Highlight, Submit) evenly spaced. Needs
+     !important because Bootstrap's own .my-3 utility (1rem !important)
+     also matches that class and beats Tailwind's. */
+  .ranking-top-bar .labeled-select {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+  }
+
   .ranking-container {
     flex-direction: column;
     align-items: stretch;
