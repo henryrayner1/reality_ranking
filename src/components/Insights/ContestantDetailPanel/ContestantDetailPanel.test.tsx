@@ -34,6 +34,17 @@ describe("ContestantDetailPanel", () => {
     expect(container.querySelector(".page-loading")).toBeInTheDocument();
   });
 
+  it("shows a placeholder, not a spinner, when the show has no seasons", () => {
+    const { container } = render(<ContestantDetailPanel {...baseProps} currSeason={null} />);
+    expect(container.querySelector(".page-loading")).not.toBeInTheDocument();
+    expect(screen.getByText("No contestants have been added to this season yet.")).toBeInTheDocument();
+  });
+
+  it("shows a placeholder when the season has no contestants", () => {
+    render(<ContestantDetailPanel {...baseProps} currSeason={{ ...season, contestants: [] }} />);
+    expect(screen.getByText("No contestants have been added to this season yet.")).toBeInTheDocument();
+  });
+
   it("lists contestants alphabetically regardless of roster order", () => {
     render(<ContestantDetailPanel {...baseProps} />);
     const names = screen.getAllByText(/^(Alice|Bob)$/, { selector: "span" }).map((el) => el.textContent);
