@@ -70,15 +70,23 @@ body {
 /* Dropdown toggles (ShowSelect, SeasonSelect, ContestantSelect). Must live in
    this always-loaded stylesheet, not a page's own CSS: pages are lazy-loaded
    chunks (App.tsx), so rules in e.g. Admin.css only apply after Admin has
-   been visited once. */
+   been visited once.
+   Styled to match the active Favorite/Winner tab (.rank-tab-active /
+   .insights-tab-active): raised pill, purple text, soft shadow. */
 .custom-button {
-    background-color: rgb(255, 255, 255);
-    color: rgb(33, 36, 39);
-    font-weight: 650;
+    background-color: var(--rk-card-raised);
+    color: var(--rk-accent-text);
+    font-weight: 600;
+    font-size: 0.9375rem;
     height: 1.5rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    padding: 0.4rem 1.25rem;
+    box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
+    transition: background-color 0.15s, box-shadow 0.15s;
 }
 
 .dropdown-menu.min-width-0 {
@@ -86,19 +94,49 @@ body {
 }
 
 .custom-button:hover {
-    background-color: rgb(255, 255, 255);
+    background-color: var(--rk-card-raised);
+    color: var(--rk-accent-text);
+    border-color: transparent;
+    box-shadow: 0 2px 6px rgba(20, 16, 60, 0.16);
     cursor: pointer;
 }
 
-.dropdown-toggle.show, .dropdown-toggle:active{
-    background-color: rgb(255, 255, 255) !important;
+.custom-button.show, .custom-button:active {
+    background-color: var(--rk-card-raised) !important;
+    color: var(--rk-accent-text) !important;
+    border-color: transparent !important;
+}
+
+.custom-button:focus-visible {
+    box-shadow: 0 0 0 3px rgba(127, 119, 221, 0.35);
 }
 
 .custom-button:disabled {
-    background-color: rgb(255, 255, 255);
-    color: rgb(33, 36, 39);
+    background-color: var(--rk-card-raised);
+    color: var(--rk-accent-text);
+    border-color: transparent;
     cursor: default;
     opacity: 0.5;
+}
+
+/* The open menu of those same toggles: rounded card with the tabs' purple
+   hover, scoped via :has() so other Bootstrap dropdowns keep their defaults. */
+.dropdown:has(> .custom-button) > .dropdown-menu {
+    padding: 0.35rem;
+    border: 1px solid var(--rk-card-border);
+    border-radius: 12px;
+    box-shadow: var(--rk-card-shadow);
+}
+
+.dropdown:has(> .custom-button) .dropdown-item {
+    border-radius: 8px;
+    color: var(--rk-subtle);
+}
+
+.dropdown:has(> .custom-button) .dropdown-item:hover,
+.dropdown:has(> .custom-button) .dropdown-item:focus {
+    background-color: var(--rk-accent-tint);
+    color: var(--rk-accent-text);
 }
 
 .dropdown-item:hover {

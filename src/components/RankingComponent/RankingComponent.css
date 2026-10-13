@@ -252,18 +252,6 @@
   width: auto;
 }
 
-/* The show/highlight dropdown toggles (.custom-button, defined globally in
-   index.css) — given a bordered input look here to sit on the white card. */
-.ranking-top-bar .custom-button {
-  border: 1px solid var(--rk-card-border);
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(20, 16, 60, 0.04);
-}
-
-.ranking-top-bar .custom-button:hover {
-  border-color: #cfcbe3;
-}
-
 .rank-type-heading {
   margin: 0;
   white-space: nowrap;
