@@ -43,20 +43,18 @@ describe("Insights", () => {
     expect(screen.getByText("contestant-panel")).toBeInTheDocument();
   });
 
-  it("shows the current season number for a show with seasons", () => {
+  it("shows the season picker on its current season for a single-season show", () => {
     renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
-    expect(screen.getByRole("heading", { name: "Current Season: 1" })).toBeInTheDocument();
-    // Single-season show: nothing else to pick, so no picker.
-    expect(screen.queryByText("Viewing:")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Season 1 (current)" })).toBeInTheDocument();
   });
 
-  it("omits the current-season heading for a show with no seasons", () => {
+  it("omits the season picker for a show with no seasons", () => {
     vi.spyOn(queries, "useShowTree").mockReturnValue({ data: { ...show, seasons: [] }, isLoading: false } as any);
     renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
-    expect(screen.queryByText(/Current Season:/)).not.toBeInTheDocument();
+    expect(screen.queryByText("Season:")).not.toBeInTheDocument();
   });
 
-  it("offers a season picker, defaulting to the current season, when the show has past seasons", () => {
+  it("defaults the season picker to the current season when the show has past seasons", () => {
     vi.spyOn(queries, "useShowTree").mockReturnValue({
       data: {
         ...show,
@@ -69,9 +67,7 @@ describe("Insights", () => {
       isLoading: false,
     } as any);
     renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
-    expect(screen.getByRole("heading", { name: "Current Season: 2" })).toBeInTheDocument();
-    expect(screen.getByText("Viewing:")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Season 2" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Season 2 (current)" })).toBeInTheDocument();
   });
 
   it("hides the data-scope toggle when logged out", () => {

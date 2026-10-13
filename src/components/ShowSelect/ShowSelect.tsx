@@ -14,7 +14,7 @@ const ShowSelect = ({ shows, currShowId, onSelectShow }: ShowSelectProps) => {
     return (
         <div className="w-full">
             <div className="flex my-3 items-center justify-center">
-                <h1 className="font-bold text-gray-800 pr-2 whitespace-nowrap">Current Show:</h1>
+                <h1 className="font-bold text-gray-800 pr-2 whitespace-nowrap">Show:</h1>
                 <Dropdown>
                 <Dropdown.Toggle variant="" id="dropdown-basic" className="custom-button min-w-[20vw] max-w-[50vw] min-h-[2.5rem] flex items-center gap-2">
                     <span className="truncate min-w-0 flex-1 text-left">{currShow?.name || "Select a Show"}</span>
