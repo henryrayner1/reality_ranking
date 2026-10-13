@@ -25,6 +25,15 @@ describe("SeasonSelect", () => {
     expect(screen.getByText("Season 2")).toBeInTheDocument();
   });
 
+  it("marks the show's current season in the menu", async () => {
+    const user = userEvent.setup();
+    const seasons = [makeSeason("a", 1), makeSeason("b", 2)];
+    render(<SeasonSelect seasons={seasons} selectedSeasonId="a" currentSeasonId="b" onChange={() => {}} />);
+
+    await user.click(screen.getByRole("button", { name: "Season 1" }));
+    expect(await screen.findByText("Season 2 (current)")).toBeInTheDocument();
+  });
+
   it("calls onChange with the clicked season's id", async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

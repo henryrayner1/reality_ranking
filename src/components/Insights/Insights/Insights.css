@@ -60,6 +60,20 @@
   width: auto;
 }
 
+/* "Current Season: N" — same look as the Ranking page's .rank-type-heading,
+   redefined here because RankingComponent.css is a lazy page chunk. The
+   number is fixed-width so a 1- vs 2-digit season doesn't shift the season
+   picker beside it. */
+.insights-season-heading {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.insights-season-heading-number {
+  display: inline-block;
+  min-width: 1.5rem;
+}
+
 /* Show/season dropdown toggles (.custom-button, defined globally in
    index.css) — same bordered input look as on the Ranking page. */
 .insights-top-bar .custom-button {
