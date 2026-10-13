@@ -42,11 +42,12 @@ describe("InsightsRankingTable", () => {
     expect(container.querySelector(".page-loading")).toBeInTheDocument();
   });
 
-  it("shows a loading state when there's no current season", () => {
+  it("shows a placeholder, not a spinner, when the show has no seasons", () => {
     const { container } = render(
       <InsightsRankingTable {...baseProps} currSeason={null} favoriteInsights={null} winnerInsights={null} />
     );
-    expect(container.querySelector(".page-loading")).toBeInTheDocument();
+    expect(container.querySelector(".page-loading")).not.toBeInTheDocument();
+    expect(screen.getByText("No contestants have been added to this season yet.")).toBeInTheDocument();
   });
 
   it("shows a placeholder when the season has no contestants", () => {

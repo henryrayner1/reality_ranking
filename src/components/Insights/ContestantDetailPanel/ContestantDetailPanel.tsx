@@ -17,8 +17,14 @@ interface ContestantDetailPanelProps {
 const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
   const { currSeason, currShow, favoriteInsights, winnerInsights, loadingFlag } = props;
 
-  if (loadingFlag || !currSeason) {
+  if (loadingFlag) {
     return <PageLoading />;
+  }
+
+  // A show with no seasons (or a season with no contestants) has nothing to
+  // list — not "still loading", see InsightsRankingTable's matching check.
+  if (!currSeason || currSeason.contestants.length === 0) {
+    return <p className="insights-placeholder">No contestants have been added to this season yet.</p>;
   }
 
   const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();

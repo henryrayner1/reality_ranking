@@ -43,6 +43,33 @@ describe("Insights", () => {
     expect(screen.getByText("contestant-panel")).toBeInTheDocument();
   });
 
+  it("shows the season picker on its current season for a single-season show", () => {
+    renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
+    expect(screen.getByRole("button", { name: "Season 1 (current)" })).toBeInTheDocument();
+  });
+
+  it("omits the season picker for a show with no seasons", () => {
+    vi.spyOn(queries, "useShowTree").mockReturnValue({ data: { ...show, seasons: [] }, isLoading: false } as any);
+    renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
+    expect(screen.queryByText("Season:")).not.toBeInTheDocument();
+  });
+
+  it("defaults the season picker to the current season when the show has past seasons", () => {
+    vi.spyOn(queries, "useShowTree").mockReturnValue({
+      data: {
+        ...show,
+        currSeason: 2,
+        seasons: [
+          { id: "se1", showId: "s1", isCurrent: false, contestants: [], seasonNumber: 1 },
+          { id: "se2", showId: "s1", isCurrent: true, contestants: [], seasonNumber: 2 },
+        ],
+      },
+      isLoading: false,
+    } as any);
+    renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
+    expect(screen.getByRole("button", { name: "Season 2 (current)" })).toBeInTheDocument();
+  });
+
   it("hides the data-scope toggle when logged out", () => {
     renderWithProviders(<Insights />, { route: "/insights/survivor", routePath: "/insights/:showSlug" });
     expect(screen.queryByText("My Submissions")).not.toBeInTheDocument();

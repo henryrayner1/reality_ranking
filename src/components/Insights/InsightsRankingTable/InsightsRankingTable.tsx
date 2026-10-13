@@ -117,17 +117,21 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
     </div>
   );
 
-  if (loadingFlag || !currSeason || !insights) {
-    return (
-      <div className="insights-panel">
-        <PageLoading />
-      </div>
-    );
-  }
+  const loadingPanel = (
+    <div className="insights-panel">
+      <PageLoading />
+    </div>
+  );
 
-  const rowCount = currSeason.contestants.length;
+  if (loadingFlag) return loadingPanel;
 
-  if (rowCount === 0) {
+  const rowCount = currSeason?.contestants.length ?? 0;
+
+  // No season at all (a show with zero seasons) gets the same placeholder as
+  // an empty one, like the Ranking page — Insights.tsx already falls back to
+  // the show's current/last season, so a null season here never means "still
+  // loading" and must not render the spinner forever.
+  if (!currSeason || rowCount === 0) {
     return (
       <div className="insights-panel">
         {rankTypeTabs}
@@ -135,6 +139,8 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
       </div>
     );
   }
+
+  if (!insights) return loadingPanel;
 
   const sortedEpisodes = [...insights.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
 

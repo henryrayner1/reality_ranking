@@ -102,7 +102,12 @@ const Insights = () => {
             if (show) navigate(`/insights/${slugifyShowName(show.name)}`);
           }}
         />
-        <SeasonSelect seasons={seasons} selectedSeasonId={currSeason?.id ?? null} onChange={setSelectedSeasonId} />
+        <SeasonSelect
+          seasons={seasons}
+          selectedSeasonId={currSeason?.id ?? null}
+          currentSeasonId={defaultSeason?.id ?? null}
+          onChange={setSelectedSeasonId}
+        />
       </div>
       {user && (
         <div className="data-scope-toggle">

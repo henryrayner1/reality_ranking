@@ -90,9 +90,7 @@
 
 /* .episode-heading has no background of its own (it's normally just a
    transparent spacer), so without this the episode-number row would show
-   through the sticky cell as it scrolls past underneath. Scoped under
-   .ranking-grid because Insights.css also defines a global .rank-spacer
-   (cyan) that would otherwise win on load order. */
+   through the sticky cell as it scrolls past underneath. */
 .ranking-grid .rank-spacer {
   background-color: var(--rk-card-bg);
 }
@@ -255,7 +253,7 @@
 }
 
 /* The show/highlight dropdown toggles (.custom-button, defined globally in
-   Admin.css) — given a bordered input look here to sit on the white card. */
+   index.css) — given a bordered input look here to sit on the white card. */
 .ranking-top-bar .custom-button {
   border: 1px solid var(--rk-card-border);
   border-radius: 8px;
@@ -417,6 +415,16 @@
 
   .ranking-top-bar-left {
     justify-content: center;
+  }
+
+  /* ShowSelect's row carries its own my-3 margin, which stacks on top of
+     the bar's 1rem gap once items wrap — dropping it keeps every stacked
+     item (Show, Current Season, Highlight, Submit) evenly spaced. Needs
+     !important because Bootstrap's own .my-3 utility (1rem !important)
+     also matches that class and beats Tailwind's. */
+  .ranking-top-bar .labeled-select {
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 
   .ranking-container {
