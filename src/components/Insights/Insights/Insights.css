@@ -61,7 +61,7 @@
 }
 
 /* Show/season dropdown toggles (.custom-button, defined globally in
-   Admin.css) — same bordered input look as on the Ranking page. */
+   index.css) — same bordered input look as on the Ranking page. */
 .insights-top-bar .custom-button {
   border: 1px solid var(--rk-card-border);
   border-radius: 8px;
