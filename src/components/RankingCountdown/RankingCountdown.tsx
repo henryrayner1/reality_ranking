@@ -21,8 +21,15 @@ const useNowTick = (intervalMs: number) => {
 
 // "Rankings close in …" — only shown while a season has an endDate that
 // hasn't passed yet (an ended season shows its own message instead).
+// Temporarily hidden (product decision, may come back): flip to true to
+// restore it. Only this countdown is hidden; the "season has ended" message
+// and every endDate-based lock still apply.
+export const SHOW_RANKINGS_CLOSE_COUNTDOWN = false;
+
 const ClosesIn = ({ endAt, now }: { endAt: number | null; now: number }) =>
-  endAt !== null && endAt > now ? <span>Rankings close in {formatDuration(endAt - now)}</span> : null;
+  SHOW_RANKINGS_CLOSE_COUNTDOWN && endAt !== null && endAt > now
+    ? <span>Rankings close in {formatDuration(endAt - now)}</span>
+    : null;
 
 const DailyCountdown = ({ premiereDate, endAt, now }: { premiereDate?: string | null; endAt: number | null; now: number }) => {
   const premiereAt = premiereDate ? new Date(premiereDate).getTime() : null;

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import RankingCountdown from "./RankingCountdown";
+import RankingCountdown, { SHOW_RANKINGS_CLOSE_COUNTDOWN } from "./RankingCountdown";
 import type { Episode } from "../../utils/Constants";
 
 describe("RankingCountdown", () => {
@@ -58,12 +58,16 @@ describe("RankingCountdown", () => {
     expect(screen.getByText("This season has ended — rankings are closed.")).toBeInTheDocument();
   });
 
-  it("shows 'Rankings close in' while an endDate is in the future", () => {
+  it("shows 'Rankings close in' while an endDate is in the future (only while the countdown is enabled)", () => {
     const episodes: Episode[] = [
       { id: "e1", episodeNumber: 3, seasonId: "s1", airDate: "2026-01-01T02:00:00.000Z" },
     ];
     render(<RankingCountdown episodes={episodes} endDate="2026-01-03T00:00:00.000Z" />);
-    expect(screen.getByText(/Rankings close in 2d 0h/)).toBeInTheDocument();
+    if (SHOW_RANKINGS_CLOSE_COUNTDOWN) {
+      expect(screen.getByText(/Rankings close in 2d 0h/)).toBeInTheDocument();
+    } else {
+      expect(screen.queryByText(/Rankings close in/)).not.toBeInTheDocument();
+    }
     expect(screen.getByText(/Episode 3 airs in/)).toBeInTheDocument();
   });
 
