@@ -12,6 +12,7 @@ import { useShows } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
 import PageLoading from "../PageLoading/PageLoading";
+import TvStaticBackground from "../TvStaticBackground/TvStaticBackground";
 import './Homepage.css';
 
 // Keyed by lowercased show name so lookups aren't broken by casing
@@ -60,6 +61,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   return (
     <div className="homepage">
       <section className="homepage-hero">
+        <TvStaticBackground />
         <h1 className="homepage-hero-title">Reality Ranking</h1>
         <p className="homepage-hero-subtitle">
           Inspired by <a href="https://jokersupdates.com" target="_blank" rel="noopener noreferrer">Joker's Updates</a>' online Big Brother user survey rankings, this application allows you to rank contestants on your favorite reality shows as they air.

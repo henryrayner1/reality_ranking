@@ -22,8 +22,11 @@
 }
 
 .homepage-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
   width: 100%;
-  background: linear-gradient(160deg, rgb(202, 194, 245) 0%, rgb(223, 221, 235) 100%);
+  background-color: #000;
   padding: 2rem 1.5rem 2rem;
   display: flex;
   flex-direction: column;
@@ -32,23 +35,41 @@
   animation: fade-slide-up 0.7s ease-out both;
 }
 
+/* Dark scrim between the TV static (TvStaticBackground) and the text, so
+   the copy stays legible over the bright color bars. */
+.homepage-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: radial-gradient(ellipse at center, rgba(10, 6, 30, 0.78) 0%, rgba(10, 6, 30, 0.55) 70%, rgba(10, 6, 30, 0.4) 100%);
+  pointer-events: none;
+}
+
+.homepage-hero > :not(.tv-static) {
+  position: relative;
+  z-index: 2;
+}
+
 .homepage-hero a {
   text-decoration:underline;
   font-style: italic;
-  color: #2a1f5c;
+  color: #d9d5ff;
 }
 
 .homepage-hero-title {
   font-size: 2.75rem;
   font-weight: 800;
-  color: #2a1f5c;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
   margin: 0 0 0.75rem;
   letter-spacing: -0.02em;
 }
 
 .homepage-hero-subtitle {
   font-size: 1rem;
-  color: #4a4468;
+  color: #ecebf5;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
   max-width: 50rem;
   margin: 1rem 0 2rem;
   line-height: 1.5;
@@ -89,6 +110,28 @@
 
 .homepage-btn-secondary:hover {
   background-color: rgba(0, 0, 128, 0.08);
+}
+
+/* Hero buttons sit on the dark TV-static scrim. */
+.homepage-hero .homepage-btn {
+  border-color: #fff;
+}
+
+.homepage-hero .homepage-btn-primary {
+  background-color: #7F77DD;
+  border-color: #7F77DD;
+}
+
+.homepage-hero .homepage-btn-primary:hover {
+  background-color: #6c63d0;
+}
+
+.homepage-hero .homepage-btn-secondary {
+  color: #fff;
+}
+
+.homepage-hero .homepage-btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .homepage-shows-section {
