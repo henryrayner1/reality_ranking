@@ -16,7 +16,7 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
     const { data: seasons = [] } = useSeasons(showId);
     const currSeason = seasons.find(s => s.id === seasonId);
     const episodes = [...(currSeason?.episodes ?? [])].sort((a, b) => a.episodeNumber - b.episodeNumber);
-    const contestants = currSeason?.contestants ?? [];
+    const contestants = [...(currSeason?.contestants ?? [])].sort((a, b) => a.name.localeCompare(b.name));
     const { data: eliminations = [], isLoading } = useEliminationsBySeason(seasonId)
     const create = useMutation({
         mutationFn: () => addElimination(elimination),

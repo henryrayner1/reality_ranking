@@ -74,7 +74,7 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
                 <span className="admin-picker-label">Show</span>
                 <AdminUI.Select aria-label="Show" value={showId ?? ''} onChange={e => selectShow(e.target.value)}>
                     <option value="">Select a show...</option>
-                    {shows.map(show => <option key={show.id} value={show.id}>{show.name}</option>)}
+                    {[...shows].sort((a, b) => a.name.localeCompare(b.name)).map(show => <option key={show.id} value={show.id}>{show.name}</option>)}
                 </AdminUI.Select>
                 <AdminUI.SecondaryButton onClick={() => setAdding(true)}>+ New show</AdminUI.SecondaryButton>
             </div>

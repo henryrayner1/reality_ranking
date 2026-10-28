@@ -10,6 +10,7 @@ interface ShowSelectProps {
 
 const ShowSelect = ({ shows, currShowId, onSelectShow }: ShowSelectProps) => {
     const currShow = shows?.find((show) => show.id === currShowId);
+    const sortedShows = [...(shows ?? [])].sort((a, b) => a.name.localeCompare(b.name));
 
     return (
         <div className="w-full">
@@ -22,7 +23,7 @@ const ShowSelect = ({ shows, currShowId, onSelectShow }: ShowSelectProps) => {
                     <span className="min-w-0 flex-1 text-left whitespace-normal break-words">{currShow?.name || "Select a Show"}</span>
                 </Dropdown.Toggle>
                 <Dropdown.Menu className="max-w-[80vw] z-50">
-                    {shows?.map((show) => (
+                    {sortedShows.map((show) => (
                     <Dropdown.Item key={show.id} onClick={() => onSelectShow(show.id)} className="m-0 !whitespace-normal" title={show.name}>{show.name}</Dropdown.Item>
                     ))}
                 </Dropdown.Menu>
