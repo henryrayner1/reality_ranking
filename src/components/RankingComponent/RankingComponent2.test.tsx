@@ -202,6 +202,37 @@ describe("RankingComponent2", () => {
     expect(screen.getByTestId("active-1")).toHaveTextContent("inactive");
   });
 
+  describe("locking episodes skipped over", () => {
+    const episode2: Episode = { id: "e2", episodeNumber: 2, seasonId: "se1", airDate: "2020-01-08T00:00:00.000Z" };
+    const episode3: Episode = { id: "e3", episodeNumber: 3, seasonId: "se1", airDate: "2020-01-15T00:00:00.000Z" };
+    const favoriteEpisode2: Ranking = { id: "r2", userId: "u1", episodeId: "e2", type: "FAVORITE", contestantIds: ["c2", "c1"], episode: { ...episode2 } };
+
+    beforeEach(() => {
+      vi.spyOn(queries, "useShowTree").mockReturnValue({
+        data: { ...showTree, seasons: [{ ...season, episodes: [episode1, episode2, episode3] }] },
+        isLoading: false,
+      } as any);
+      vi.spyOn(queries, "useUserRankings").mockReturnValue({ data: [favoriteEpisode2], isLoading: false } as any);
+    });
+
+    it("locks an unranked episode once a later one has been submitted, but not later ones", () => {
+      renderPage();
+      // Episode 1 is locked; episode 2 is a past column; episode 3 is still open.
+      expect(screen.queryByTestId("episode-1")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("episode-2")).not.toBeInTheDocument();
+      expect(screen.getByTestId("active-3")).toHaveTextContent("inactive");
+      expect(screen.getAllByText("1").some((el) => el.classList.contains("episode-heading"))).toBe(true);
+    });
+
+    it("only counts submissions of the tab's own ranking type", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByText("Winner"));
+      expect(screen.getByTestId("active-1")).toHaveTextContent("inactive");
+      expect(screen.getByTestId("active-2")).toHaveTextContent("inactive");
+    });
+  });
+
   describe("pre-season column", () => {
     const preSeasonEpisode: Episode = { id: "pre", episodeNumber: 0, seasonId: "se1", isPreSeason: true };
     const upcomingEpisode1: Episode = { ...episode1, airDate: "2999-01-01T00:00:00.000Z" };
