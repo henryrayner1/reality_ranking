@@ -35,6 +35,22 @@ describe("RankingCountdown", () => {
     expect(screen.getByText(/Ranking opens in 30m/)).toBeInTheDocument();
   });
 
+  it("counts down to the pre-season opening, and ignores the pre-season row as an episode", () => {
+    const episodes: Episode[] = [
+      { id: "pre", episodeNumber: 0, seasonId: "s1", isPreSeason: true },
+      { id: "e1", episodeNumber: 1, seasonId: "s1", airDate: "2026-01-03T00:00:00.000Z" },
+    ];
+    render(<RankingCountdown episodes={episodes} startDate="2026-01-02T00:00:00.000Z" />);
+    expect(screen.getByText(/Pre-season ranking opens in 1d 0h/)).toBeInTheDocument();
+    expect(screen.getByText(/Episode 1 airs in 2d 0h/)).toBeInTheDocument();
+  });
+
+  it("counts down to the pre-season locking once it's open", () => {
+    const episodes: Episode[] = [{ id: "e1", episodeNumber: 1, seasonId: "s1", airDate: "2026-01-03T00:00:00.000Z" }];
+    render(<RankingCountdown episodes={episodes} startDate="2025-12-01T00:00:00.000Z" />);
+    expect(screen.getByText(/Pre-season ranking locks in 2d 0h/)).toBeInTheDocument();
+  });
+
   it("DAILY mode with no premiere date announced yet", () => {
     render(<RankingCountdown episodes={[]} rankingMode="DAILY" premiereDate={null} />);
     expect(screen.getByText("Season premiere date not yet announced.")).toBeInTheDocument();

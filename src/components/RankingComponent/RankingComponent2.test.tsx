@@ -201,4 +201,65 @@ describe("RankingComponent2", () => {
     renderPage();
     expect(screen.getByTestId("active-1")).toHaveTextContent("inactive");
   });
+
+  describe("pre-season column", () => {
+    const preSeasonEpisode: Episode = { id: "pre", episodeNumber: 0, seasonId: "se1", isPreSeason: true };
+    const upcomingEpisode1: Episode = { ...episode1, airDate: "2999-01-01T00:00:00.000Z" };
+    const withSeason = (overrides: Partial<Season>) =>
+      vi.spyOn(queries, "useShowTree").mockReturnValue({
+        data: { ...showTree, seasons: [{ ...season, ...overrides }] },
+        isLoading: false,
+      } as any);
+
+    it("is rankable from the start date until episode 1 airs", async () => {
+      withSeason({ startDate: "2020-01-01T00:00:00.000Z", episodes: [preSeasonEpisode, upcomingEpisode1] });
+      const user = userEvent.setup();
+      renderPage();
+
+      expect(screen.getByTestId("active-0")).toHaveTextContent("inactive");
+      // Episode 1 hasn't aired, so it has no column yet.
+      expect(screen.queryByTestId("episode-1")).not.toBeInTheDocument();
+
+      await user.click(screen.getByText("activate-0"));
+      expect(screen.getByText("X Pre-season")).toBeInTheDocument();
+    });
+
+    it("locks once episode 1 has aired", () => {
+      withSeason({ startDate: "2019-01-01T00:00:00.000Z", episodes: [preSeasonEpisode, episode1] });
+      renderPage();
+
+      expect(screen.queryByTestId("episode-0")).not.toBeInTheDocument();
+      expect(screen.getByText("Pre")).toBeInTheDocument();
+      expect(screen.getByTestId("active-1")).toHaveTextContent("inactive");
+    });
+
+    it("isn't shown before its start date, or without one", () => {
+      withSeason({ startDate: "2999-01-01T00:00:00.000Z", episodes: [preSeasonEpisode, upcomingEpisode1] });
+      const { unmount } = renderPage();
+      expect(screen.queryByTestId("episode-0")).not.toBeInTheDocument();
+      unmount();
+
+      withSeason({ startDate: null, episodes: [preSeasonEpisode, upcomingEpisode1] });
+      renderPage();
+      expect(screen.queryByTestId("episode-0")).not.toBeInTheDocument();
+    });
+
+    it("seeds episode 1 from the submitted pre-season ranking", async () => {
+      withSeason({ startDate: "2019-01-01T00:00:00.000Z", episodes: [preSeasonEpisode, episode1] });
+      const preSeasonRanking: Ranking = {
+        id: "r0",
+        userId: "u1",
+        episodeId: "pre",
+        type: "FAVORITE",
+        contestantIds: ["c2", "c1"],
+        episode: { ...preSeasonEpisode },
+      };
+      vi.spyOn(queries, "useUserRankings").mockReturnValue({ data: [preSeasonRanking], isLoading: false } as any);
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByText("activate-1"));
+      expect(screen.getByTestId("order-1")).toHaveTextContent("c2,c1");
+    });
+  });
 });

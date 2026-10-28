@@ -146,3 +146,39 @@ export const isSeasonEnded = (
   const endMs = new Date(season.endDate).getTime();
   return !Number.isNaN(endMs) && now >= endMs;
 };
+
+// Pre-season ranking (the season's Episode.isPreSeason row, episodeNumber 0)
+// is open from the season's startDate until its first real episode airs: the
+// earliest airDate among its other episodes (DAILY day rows carry their
+// Eastern-midnight airDate too), or its premiereDate, whichever comes first.
+// With nothing scheduled yet it stays open. No startDate => no pre-season.
+// Kept in sync by hand with backend/src/utils/episodeRankability.ts.
+export const PRE_SEASON_EPISODE_NUMBER = 0;
+
+type PreSeasonSeason = {
+  startDate?: string | null;
+  premiereDate?: string | null;
+  episodes?: Pick<Episode, "airDate" | "isPreSeason">[];
+};
+
+export const getFirstAirMs = (season: PreSeasonSeason): number => {
+  const times = [season.premiereDate, ...(season.episodes ?? []).filter((e) => !e.isPreSeason).map((e) => e.airDate)]
+    .filter((d): d is string => !!d)
+    .map((d) => new Date(d).getTime())
+    .filter((ms) => !Number.isNaN(ms));
+  return times.length ? Math.min(...times) : Infinity;
+};
+
+// The column shows from startDate on, staying visible (locked) after it closes.
+export const isPreSeasonVisible = (season: PreSeasonSeason | null | undefined, now: number = Date.now()): boolean => {
+  if (!season?.startDate) return false;
+  const startMs = new Date(season.startDate).getTime();
+  return !Number.isNaN(startMs) && now >= startMs;
+};
+
+export const isPreSeasonOpen = (season: PreSeasonSeason | null | undefined, now: number = Date.now()): boolean =>
+  !!season && isPreSeasonVisible(season, now) && now < getFirstAirMs(season);
+
+// Column heading / chip label for an episode number ("Pre" for pre-season).
+export const formatEpisodeHeading = (episodeNumber: number): string =>
+  episodeNumber === PRE_SEASON_EPISODE_NUMBER ? "Pre" : String(episodeNumber);

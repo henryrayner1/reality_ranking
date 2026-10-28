@@ -3,6 +3,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../../utils/Constants";
 import ContestantIcon from "../../ContestantIcon/ContestantIcon";
+import { formatEpisodeHeading } from "../../../utils/episodeRankability";
 import PageLoading from "../../PageLoading/PageLoading";
 
 interface InsightsRankingTableProps {
@@ -251,7 +252,7 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
           )}
           {episodeColumns.map((episode) => (
             <Fragment key={`episode-${episode.episodeNumber}`}>
-              <div className="insights-episode-heading">{episode.episodeNumber}</div>
+              <div className="insights-episode-heading">{formatEpisodeHeading(episode.episodeNumber)}</div>
               {episode.contestantIds.map((contestantId, rowIndex) => (
                 <div key={`episode-${episode.episodeNumber}-cell-${rowIndex}`} className="insights-cell">
                   {contestantId && (

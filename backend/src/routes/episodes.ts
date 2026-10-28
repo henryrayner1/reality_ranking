@@ -60,9 +60,11 @@ export default function episodesRouter(prisma: PrismaClient) {
         return res.status(400).json({ error: "Episode air date is after the season's end date" });
       }
     }
+    // The pre-season row (episodeNumber 0) isn't a real episode.
     const count = await prisma.episode.count({
       where: {
-        seasonId: body.seasonId
+        seasonId: body.seasonId,
+        isPreSeason: false
       }
     });
     const episode = await prisma.episode.create({

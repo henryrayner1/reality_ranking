@@ -3,6 +3,7 @@ import { Router } from "express";
 import fs from "fs";
 import path from "path";
 import { ensureTodaysDailyEpisode, ensureTodaysDailyEpisodesForAllShows } from "../utils/dailyEpisode.js";
+import { ensurePreSeasonEpisode } from "../utils/preSeasonEpisode.js";
 
 export default function showsRouter(prisma: PrismaClient) {
     const router = Router();
@@ -135,7 +136,7 @@ export default function showsRouter(prisma: PrismaClient) {
     });
 
     router.post("/updateSeason", async (req, res) => {
-        const { seasonId, premiereDate, endDate } = req.body;
+        const { seasonId, premiereDate, endDate, startDate } = req.body;
         if (!seasonId) {
             return res.status(400).json({ error: "seasonId is required" });
         }
@@ -148,8 +149,13 @@ export default function showsRouter(prisma: PrismaClient) {
             data: {
                 ...(premiereDate !== undefined && { premiereDate }),
                 ...(endDate !== undefined && { endDate }),
+                ...(startDate !== undefined && { startDate }),
             }
         });
+        // Clearing the start date leaves the pre-season row (and any rankings
+        // on it) in place; the frontend just stops showing it without a
+        // startDate, and setting one again brings the same column back.
+        if (startDate) await ensurePreSeasonEpisode(prisma, seasonId);
         res.json(updatedSeason);
     });
 
