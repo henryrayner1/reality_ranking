@@ -88,10 +88,10 @@ export const ItemInfo = ({ name, meta }: { name: string; meta: string }) =>{
             <div className="mt-0.5 text-xs text-[#888] text-left">{meta}</div>
         </div>
 };
-export const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => {
+export const Modal = ({ title, onClose, children, size = "sm" }: { title: string; onClose: () => void; children: React.ReactNode; size?: "sm" | "lg" }) => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-            <div className="w-full max-w-sm rounded-xl bg-white p-5" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+            <div className={`w-full ${size === "lg" ? "max-w-lg" : "max-w-sm"} rounded-xl bg-white p-5`} onClick={(e) => e.stopPropagation()}>
                 <div className="mb-4 flex items-center justify-between border-b border-[#e5e5e5] pb-3">
                     <div className="text-sm font-medium">{title}</div>
                     <button onClick={onClose} className="cursor-pointer border-none bg-transparent text-lg leading-none text-[#888]">&times;</button>
