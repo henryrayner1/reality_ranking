@@ -1,4 +1,4 @@
-import type { Episode } from "./Constants";
+import type { Episode, Show } from "./Constants";
 
 // Assumed fixed episode runtime used to compute when ranking opens.
 // Kept in sync by hand with backend/src/utils/episodeRankability.ts —
@@ -182,3 +182,21 @@ export const isPreSeasonOpen = (season: PreSeasonSeason | null | undefined, now:
 // Column heading / chip label for an episode number ("Pre" for pre-season).
 export const formatEpisodeHeading = (episodeNumber: number): string =>
   episodeNumber === PRE_SEASON_EPISODE_NUMBER ? "Pre" : String(episodeNumber);
+
+// Airing = the show has a current season that hasn't passed its end date,
+// the same rule as Admin's "(airing)" / "(ended)" season labels. A current
+// season with no endDate counts as airing indefinitely.
+export const isShowAiring = (show: Show, now: number = Date.now()): boolean => {
+  const currentSeason = show.seasons?.find((s) => s.isCurrent);
+  return !!currentSeason && !isSeasonEnded(currentSeason, now);
+};
+
+// Shows split into "Currently airing" then "Not currently airing", each A–Z,
+// leaving out an empty group. Used by the homepage cards and ShowSelect.
+export const groupShowsByAiring = (shows: Show[], now: number = Date.now()): { title: string; shows: Show[] }[] => {
+  const byName = (a: Show, b: Show) => a.name.localeCompare(b.name);
+  return [
+    { title: "Currently airing", shows: shows.filter((s) => isShowAiring(s, now)).sort(byName) },
+    { title: "Not currently airing", shows: shows.filter((s) => !isShowAiring(s, now)).sort(byName) },
+  ].filter((group) => group.shows.length > 0);
+};

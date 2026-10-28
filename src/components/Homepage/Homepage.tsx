@@ -4,7 +4,7 @@ import { useShows } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
 import { backendUrl } from "../../utils/apiBase";
-import { isSeasonEnded } from "../../utils/episodeRankability";
+import { groupShowsByAiring } from "../../utils/episodeRankability";
 import PageLoading from "../PageLoading/PageLoading";
 import TvStaticBackground from "../TvStaticBackground/TvStaticBackground";
 import './Homepage.css';
@@ -21,15 +21,6 @@ const fallbackGradientFor = (name: string) => {
   for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
   return FALLBACK_GRADIENTS[hash % FALLBACK_GRADIENTS.length];
 };
-
-// Airing = the show has a current season that hasn't passed its end date,
-// the same rule as Admin's "(airing)" / "(ended)" season labels.
-const isShowAiring = (show: Show) => {
-  const currentSeason = show.seasons?.find((s) => s.isCurrent);
-  return !!currentSeason && !isSeasonEnded(currentSeason);
-};
-
-const byName = (a: Show, b: Show) => a.name.localeCompare(b.name);
 
 const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
   const navigate = useNavigate();
@@ -48,10 +39,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
     return <PageLoading />;
   }
 
-  const showGroups = [
-    { title: "Currently airing", shows: shows.filter(isShowAiring).sort(byName) },
-    { title: "Not currently airing", shows: shows.filter((s) => !isShowAiring(s)).sort(byName) },
-  ].filter((group) => group.shows.length > 0);
+  const showGroups = groupShowsByAiring(shows);
   const cardIndex = new Map(showGroups.flatMap((g) => g.shows).map((show, i) => [show.id, i]));
 
   return (
