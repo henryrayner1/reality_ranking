@@ -2,10 +2,95 @@
   position: sticky;
   top: 0;
   z-index: 1000;
+  padding: 0.55rem 0;
+  background-color: #17151f;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.app-navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.15rem;
+  letter-spacing: -0.01em;
+}
+
+/* Small glowing accent mark before the brand name. */
+.app-navbar-brand::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background-color: #7F77DD;
+  box-shadow: 0 0 10px rgba(127, 119, 221, 0.7);
+}
+
+.app-navbar .navbar-nav {
+  gap: 0.25rem;
+}
+
+/* Pill-shaped links; the active page gets a soft purple fill rather than
+   bold text, so the label doesn't change width when it becomes active. */
+.app-navbar .nav-link {
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.62);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.app-navbar .nav-link:hover,
+.app-navbar .nav-link:focus-visible {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.06);
 }
 
 .app-navbar .nav-link.active {
   color: #ffffff;
-  font-weight: 700;
-  border-bottom: 3px solid rgb(67, 164, 209);
+  background-color: rgba(127, 119, 221, 0.24);
+}
+
+.app-navbar-email {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.42);
+  margin-right: 0.5rem;
+}
+
+.app-navbar .app-navbar-auth {
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.app-navbar .app-navbar-auth:hover,
+.app-navbar .app-navbar-auth:focus-visible {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.app-navbar .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.app-navbar .navbar-toggler:focus {
+  box-shadow: 0 0 0 2px rgba(127, 119, 221, 0.6);
+}
+
+/* Collapsed (mobile) menu: items stack centered, the email sits on its own
+   line, and Login/Logout stays a compact pill instead of stretching across
+   the screen. */
+@media (max-width: 767.98px) {
+  .app-navbar .navbar-collapse {
+    padding-top: 0.5rem;
+  }
+
+  .app-navbar-email {
+    display: block;
+    padding: 0.4rem 0.9rem;
+    margin-right: 0;
+  }
+
+  .app-navbar .app-navbar-auth {
+    display: inline-block;
+    margin: 0.25rem 0;
+  }
 }

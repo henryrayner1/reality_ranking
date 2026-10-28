@@ -43,15 +43,16 @@ const Navbar = (props) => {
             document.documentElement.style.setProperty('--navbar-height', `${height}px`);
         };
         setNavHeight(navRef.current.offsetHeight);
-        const observer = new ResizeObserver(([entry]) => setNavHeight(entry.target.clientHeight));
+        // offsetHeight (not clientHeight) so the bottom border is included.
+        const observer = new ResizeObserver(([entry]) => setNavHeight((entry.target as HTMLElement).offsetHeight));
         observer.observe(navRef.current);
         return () => observer.disconnect();
     }, []);
 
     return(
-        <nav ref={navRef} className="navbar navbar-expand-md navbar-dark bg-dark app-navbar">
+        <nav ref={navRef} className="navbar navbar-expand-md navbar-dark app-navbar">
             <div className="container-fluid">
-                <Link className="navbar-brand font-bold" to="/" onClick={collapseMobileMenu}>Reality Ranking</Link>
+                <Link className="navbar-brand app-navbar-brand font-bold" to="/" onClick={collapseMobileMenu}>Reality Ranking</Link>
                 <button
                     className="navbar-toggler"
                     type="button"
@@ -79,13 +80,13 @@ const Navbar = (props) => {
                     <ul className="navbar-nav ms-auto mb-2 mb-md-0 align-items-md-center">
                         {props.loggedIn && user?.email && (
                             <li className="nav-item">
-                                <span className="navbar-text">{user.email}</span>
+                                <span className="navbar-text app-navbar-email">{user.email}</span>
                             </li>
                         )}
                         <li className="nav-item">
                             {props.loggedIn
-                                ? <a className="nav-link" href="#" onClick={(e) => { e.preventDefault(); props.onLogoutClick(); }}>Logout</a>
-                                : <a className="nav-link" href="#" onClick={(e) => { e.preventDefault(); props.onLoginClick(); }}>Login</a>
+                                ? <a className="nav-link app-navbar-auth" href="#" onClick={(e) => { e.preventDefault(); props.onLogoutClick(); }}>Logout</a>
+                                : <a className="nav-link app-navbar-auth" href="#" onClick={(e) => { e.preventDefault(); props.onLoginClick(); }}>Login</a>
                             }
                         </li>
                     </ul>
