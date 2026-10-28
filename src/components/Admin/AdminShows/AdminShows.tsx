@@ -6,6 +6,7 @@ import { RankingModes, type RankingMode, type Show } from "../../../utils/Consta
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useShows } from "../../../hooks/queries";
 import { slugifyShowName } from "../../../utils/slug";
+import AdminShowLogo from "../AdminShowLogo/AdminShowLogo";
 
 interface AdminShowsProps {
     showId?: string;
@@ -80,6 +81,7 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
             </div>
             {currShow && (
                 <div className="admin-picker-actions">
+                    <AdminShowLogo key={currShow.id} show={currShow} />
                     {currShow.network && <span className="text-xs text-[#888]">{currShow.network}</span>}
                     {/* Radios + an explicit Confirm rather than an instant toggle:
                         switching to Daily makes the server auto-create a "Day N"

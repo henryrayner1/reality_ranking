@@ -42,9 +42,12 @@ export default function imagesRouter(prisma: PrismaClient) {
             const seasonFolder = seasonDigits ? `season_${seasonDigits}` : "unassigned";
             const category = slugify(String(req.body?.category ?? req.query?.category ?? "contestants")) || "contestants";
 
-            const targetDirectory = showFolder
-                ? path.join(uploadsDirectory, showFolder, seasonFolder, category)
-                : uploadsDirectory;
+            // A show's logo isn't tied to a season, so it skips the season folder.
+            const targetDirectory = !showFolder
+                ? uploadsDirectory
+                : category === "logo"
+                    ? path.join(uploadsDirectory, showFolder, "logo")
+                    : path.join(uploadsDirectory, showFolder, seasonFolder, category);
 
             if (!fs.existsSync(targetDirectory)) {
                 fs.mkdirSync(targetDirectory, { recursive: true });
