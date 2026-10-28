@@ -1,3 +1,17 @@
-.showselect {
-/* Add your component-specific styles here */
+/* Group labels in the show dropdown: small muted uppercase, matching the
+   ranking/insights table headers. Scoped under .dropdown-menu so it wins
+   over the old global .dropdown-header rule in index.css (navy fill, fixed
+   width, centered), which Bootstrap's Dropdown.Header also picks up. */
+.dropdown-menu .show-select-group-header {
+  background-color: transparent;
+  width: auto;
+  border-radius: 0;
+  cursor: default;
+  text-align: left;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--rk-subtle);
+  padding: 0.4rem 0.75rem 0.25rem;
 }
