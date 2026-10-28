@@ -57,6 +57,11 @@ Element.prototype.getBoundingClientRect = () =>
     toJSON() {},
   }) as DOMRect;
 
+// jsdom has no canvas implementation and logs a "Not implemented" error on
+// every getContext call (TvStaticBackground). Returning null is the same
+// thing a real browser does for an unsupported context, which it handles.
+HTMLCanvasElement.prototype.getContext = (() => null) as typeof HTMLCanvasElement.prototype.getContext;
+
 afterEach(() => {
   localStorage.clear();
 });
