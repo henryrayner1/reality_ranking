@@ -5,6 +5,21 @@ import { isPreSeasonOpen, isRankableNow, isSeasonEnded } from "../utils/episodeR
 export default function rankingsRouter(prisma: PrismaClient) {
   const router = Router();
 
+  // Once a user has submitted a ranking of a given type for an episode, they
+  // can't go back and first-submit an earlier episode of that season with the
+  // same type (the ranking page shows those as locked too). Only rankings
+  // already saved count, so submitting several episodes in one batch is fine.
+  const hasLaterRanking = async (row: { userId: string; type: RankType; seasonId: string; episodeNumber: number }) =>
+    !!(await prisma.ranking.findFirst({
+      where: {
+        userId: row.userId,
+        type: row.type,
+        episode: { seasonId: row.seasonId, episodeNumber: { gt: row.episodeNumber } },
+      },
+      select: { id: true },
+    }));
+  const LATER_RANKING_ERROR = "You've already ranked a later episode, so earlier episodes are locked";
+
   // Example route to get all rankings
   router.get("/", async (req, res) => {
     const rankings = await prisma.ranking.findMany();
@@ -158,7 +173,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
 
     const episode = await prisma.episode.findUnique({
       where: { id: body.episodeId },
-      select: { airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
+      select: { airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, episodeNumber: true, seasonId: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
     });
     if (!episode) {
       return res.status(404).json({ error: "Episode not found" });
@@ -175,6 +190,9 @@ export default function rankingsRouter(prisma: PrismaClient) {
     }
     if (isSeasonEnded(episode.season)) {
       return res.status(403).json({ error: "This season has ended — rankings are closed" });
+    }
+    if (await hasLaterRanking({ userId: body.userId, type: body.type, seasonId: episode.seasonId, episodeNumber: episode.episodeNumber })) {
+      return res.status(403).json({ error: LATER_RANKING_ERROR });
     }
 
     try {
@@ -236,7 +254,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
     const episodeIds = [...new Set(rankingRows.map((r) => r.episodeId))];
     const episodes = await prisma.episode.findMany({
       where: { id: { in: episodeIds } },
-      select: { id: true, airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
+      select: { id: true, airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, episodeNumber: true, seasonId: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
     });
     const episodeById = new Map(episodes.map((e) => [e.id, e]));
     const notRankable = rankingRows.some((r) => {
@@ -251,6 +269,13 @@ export default function rankingsRouter(prisma: PrismaClient) {
     }
     if (episodes.some((e) => isSeasonEnded(e.season))) {
       return res.status(403).json({ error: "This season has ended — rankings are closed" });
+    }
+    const laterRankingChecks = await Promise.all(rankingRows.map((r) => {
+      const episode = episodeById.get(r.episodeId)!;
+      return hasLaterRanking({ userId: r.userId, type: r.type, seasonId: episode.seasonId, episodeNumber: episode.episodeNumber });
+    }));
+    if (laterRankingChecks.some(Boolean)) {
+      return res.status(403).json({ error: LATER_RANKING_ERROR });
     }
 
     try {

@@ -384,6 +384,12 @@ const RankingComponent2 = () => {
   // first-submittable indefinitely (unchanged, deliberate existing design).
   const latestRankableEpisodeId = rankableEpisodes[rankableEpisodes.length - 1]?.id;
 
+  // Once the user has submitted this tab's ranking type for an episode, every
+  // earlier episode they never ranked (with that type) is locked, so nobody
+  // can go back and fill in an old episode with hindsight. The server rejects
+  // those submissions too (hasLaterRanking in backend/src/routes/rankings.ts).
+  const latestSubmittedEpisodeNumber = Math.max(-Infinity, ...pastRankingForType.map((r) => r.episode?.episodeNumber ?? -Infinity));
+
   const rankingGrid = <div className="ranking-grid-wrapper">
     {/* Overlaid on top of the scrolling grid (not part of its scroll
         content), so it's trivially centered within whatever's currently
@@ -409,7 +415,8 @@ const RankingComponent2 = () => {
         // rejects any submission for an ended season with 403).
         // A pre-season ranking can only be submitted until the first episode airs.
         const preSeasonLocked = !!episode.isPreSeason && !isPreSeasonOpen(currSeason);
-        if (episode.isBackfilled || isMissedDailyDay || preSeasonLocked || seasonEnded) return lockedEpisodeElements(episode);
+        const skippedPast = episode.episodeNumber < latestSubmittedEpisodeNumber;
+        if (episode.isBackfilled || isMissedDailyDay || preSeasonLocked || skippedPast || seasonEnded) return lockedEpisodeElements(episode);
         const isActive = activeEpisodes.has(episode.id);
         const eliminatedIds = getEpisodeEliminatedIds(episode);
         return <EpisodeComponent
