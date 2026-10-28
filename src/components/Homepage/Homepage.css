@@ -32,7 +32,6 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  animation: fade-slide-up 0.7s ease-out both;
 }
 
 /* Dark scrim between the TV static (TvStaticBackground) and the text, so
@@ -275,7 +274,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .homepage-hero,
   .show-card {
     animation: none;
     opacity: 1;
