@@ -512,6 +512,22 @@ export const updateSeasonEndDate = async (seasonId: string, endDate: string | nu
   return response.json();
 };
 
+export const updateSeasonStartDate = async (seasonId: string, startDate: string | null) => {
+  const response = await apiFetch('/api/shows/updateSeason', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ seasonId, startDate }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update season start date: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const deleteSeason = async (seasonId: string) => {
   const deleteRes = await apiFetch(`/api/shows/deleteSeason/${seasonId}`, {
     method: 'DELETE',

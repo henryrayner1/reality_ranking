@@ -3,6 +3,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import './Episode.css';
 import { type Contestant, type Season, type Show } from "../../utils/Constants";
+import { formatEpisodeHeading } from "../../utils/episodeRankability";
 import plusIcon from "../../assets/plus-circle.svg";
 
 interface EpisodeComponentProps {
@@ -34,7 +35,7 @@ const EpisodeComponent = ({ currEpisode, isActive, activeContestants, eliminated
   const getContestantPhotoUrl = (contestantId: string) =>
     contestants.find(c => c.id === contestantId)?.photoUrl;
 
-  const heading = String(currEpisode?.episodeNumber ?? "");
+  const heading = currEpisode ? formatEpisodeHeading(currEpisode.episodeNumber) : "";
 
   const handleDragEnd = (event: any) => {
     const { active, over } = event;

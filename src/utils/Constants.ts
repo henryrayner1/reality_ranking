@@ -21,6 +21,8 @@ export interface Episode {
   airDate?: string;
   dayKey?: string | null;
   isBackfilled?: boolean;
+  // The season's pre-season column (episodeNumber 0). See isPreSeasonOpen.
+  isPreSeason?: boolean;
   eliminations?: Elimination[];
 }
 
@@ -115,6 +117,8 @@ export interface Season {
   seasonNumber: number;
   episodes?: Episode[];
   premiereDate?: string | null;
+  // When pre-season ranking opens; null = no pre-season column.
+  startDate?: string | null;
   endDate?: string | null;
 }
 

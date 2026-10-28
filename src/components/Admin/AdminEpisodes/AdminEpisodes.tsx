@@ -19,7 +19,8 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
     const [airTime, setAirTime] = useState("20:00");
     const { data: seasons = [], isLoading } = useSeasons(showId)
     const currSeason = seasons.find(s => s.id === seasonId);
-    const episodes = [...(currSeason?.episodes ?? [])].sort((a, b) => a.episodeNumber - b.episodeNumber);
+    // The pre-season row is managed by the season's start date, not here.
+    const episodes = [...(currSeason?.episodes ?? [])].filter(e => !e.isPreSeason).sort((a, b) => a.episodeNumber - b.episodeNumber);
     const create = useMutation({ mutationFn: (newEpisode: Partial<Episode>) => addEpisode(newEpisode), onSuccess: () => { qc.invalidateQueries({ queryKey: showsQueryKey() }); setAirDate(""); setAirTime("20:00"); } })
     const remove = useMutation({ mutationFn: (episodeId: string) => deleteEpisode(episodeId), onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }) })
 

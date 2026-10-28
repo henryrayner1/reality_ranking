@@ -1,5 +1,6 @@
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { type EliminationEntry, type InsightsResponse } from "../../../utils/Constants";
+import { PRE_SEASON_EPISODE_NUMBER, formatEpisodeHeading } from "../../../utils/episodeRankability";
 
 interface ChartPoint {
   episodeNumber: number;
@@ -98,7 +99,7 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
     <ResponsiveContainer width="100%" height={300}>
       <ComposedChart data={chartData} margin={{ top: 25, right: 30, bottom: 10, left: 5 }}>
         <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="episodeNumber" label={{ value: "Episode", position: "insideBottom", offset: -5 }} />
+        <XAxis dataKey="episodeNumber" tickFormatter={(n: number) => formatEpisodeHeading(n)} label={{ value: "Episode", position: "insideBottom", offset: -5 }} />
         {/* Lower position = better rank, so the axis is reversed to put rank 1 at the top. */}
         <YAxis
           reversed
@@ -111,7 +112,7 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
             if (name === FIELD_SIZE_SERIES_NAME) return [value, name];
             return [value != null ? value.toFixed(2) : "—", name];
           }}
-          labelFormatter={(episode) => `Episode ${episode}`}
+          labelFormatter={(episode) => episode === PRE_SEASON_EPISODE_NUMBER ? "Pre-season" : `Episode ${episode}`}
           itemSorter={(item) => fieldSizeLastSortKey(item.name)}
         />
         <Legend wrapperStyle={{ paddingTop: 16 }} itemSorter={(item) => fieldSizeLastSortKey(item.value)} />

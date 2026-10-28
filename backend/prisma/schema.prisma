@@ -35,6 +35,10 @@ model Season {
   seasonNumber  Int
   isCurrent     Boolean      @default(false)
   premiereDate  DateTime?
+  // Optional moment pre-season ranking opens. Setting it creates the season's
+  // pre-season Episode row (Episode.isPreSeason); that column stays rankable
+  // until the first real episode airs. See isPreSeasonOpen.
+  startDate     DateTime?
   // Optional moment the season ends: no day/episode rows are created after
   // it, and no rankings are accepted once it has passed. See isSeasonEnded.
   endDate       DateTime?
@@ -76,6 +80,10 @@ model Episode {
   // day timeline (e.g. server downtime spanning multiple days) - never had a
   // real live ranking window, so rankings can never be submitted against them.
   isBackfilled    Boolean       @default(false)
+  // The season's single pre-season row (episodeNumber 0, no airDate/dayKey),
+  // ranked before the first real episode airs. Created when the season gets
+  // a startDate; never shown as an episode in Admin.
+  isPreSeason     Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

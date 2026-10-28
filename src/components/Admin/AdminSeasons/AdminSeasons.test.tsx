@@ -128,6 +128,37 @@ describe("AdminSeasons", () => {
     expect(util.updateSeasonEndDate).toHaveBeenCalledWith("se1", null);
   });
 
+  it("saves and clears the pre-season start date/time", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(util, "updateSeasonStartDate").mockResolvedValue({} as any);
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: [makeSeason({ startDate: "2999-05-01T01:00:00.000Z" })],
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminSeasons showId="s1" seasonId="se1" />);
+    expect(screen.getByText(/Pre-season ranking opens/)).toBeInTheDocument();
+
+    const input = screen.getByLabelText("Pre-season ranking opens at");
+    await user.clear(input);
+    await user.type(input, "2999-05-10T12:00");
+    await user.click(screen.getByText("Save start"));
+    expect(util.updateSeasonStartDate).toHaveBeenCalledWith("se1", new Date("2999-05-10T12:00").toISOString());
+
+    await user.click(screen.getByText("Clear start"));
+    expect(util.updateSeasonStartDate).toHaveBeenCalledWith("se1", null);
+  });
+
+  it("says when the pre-season is open and when it locks", () => {
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: [makeSeason({ startDate: "2020-01-01T00:00:00.000Z", episodes: [{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2999-01-01T00:00:00.000Z" }] })],
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminSeasons showId="s1" seasonId="se1" />);
+    expect(screen.getByText(/Pre-season ranking open — locks/)).toBeInTheDocument();
+  });
+
   it("shows an Ended badge once the end date has passed", () => {
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
     vi.spyOn(queries, "useSeasons").mockReturnValue({

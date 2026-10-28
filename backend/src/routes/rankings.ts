@@ -1,6 +1,6 @@
 import { PrismaClient, type RankType } from "@prisma/client";
 import { Router } from "express";
-import { isRankableNow, isSeasonEnded } from "../utils/episodeRankability.js";
+import { isPreSeasonOpen, isRankableNow, isSeasonEnded } from "../utils/episodeRankability.js";
 
 export default function rankingsRouter(prisma: PrismaClient) {
   const router = Router();
@@ -158,12 +158,16 @@ export default function rankingsRouter(prisma: PrismaClient) {
 
     const episode = await prisma.episode.findUnique({
       where: { id: body.episodeId },
-      select: { airDate: true, dayKey: true, isBackfilled: true, season: { select: { endDate: true, show: { select: { rankingMode: true } } } } },
+      select: { airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
     });
     if (!episode) {
       return res.status(404).json({ error: "Episode not found" });
     }
-    if (!isRankableNow(episode, episode.season.show.rankingMode)) {
+    if (episode.isPreSeason) {
+      if (!isPreSeasonOpen(episode.season)) {
+        return res.status(403).json({ error: "Pre-season ranking isn't open — it opens at the season's start date and locks once the first episode airs" });
+      }
+    } else if (!isRankableNow(episode, episode.season.show.rankingMode)) {
       return res.status(403).json({ error: "Ranking is not yet open for this episode" });
     }
     if (episode.isBackfilled) {
@@ -232,12 +236,15 @@ export default function rankingsRouter(prisma: PrismaClient) {
     const episodeIds = [...new Set(rankingRows.map((r) => r.episodeId))];
     const episodes = await prisma.episode.findMany({
       where: { id: { in: episodeIds } },
-      select: { id: true, airDate: true, dayKey: true, isBackfilled: true, season: { select: { endDate: true, show: { select: { rankingMode: true } } } } },
+      select: { id: true, airDate: true, dayKey: true, isBackfilled: true, isPreSeason: true, season: { select: { endDate: true, startDate: true, premiereDate: true, episodes: { select: { airDate: true, isPreSeason: true } }, show: { select: { rankingMode: true } } } } },
     });
     const episodeById = new Map(episodes.map((e) => [e.id, e]));
     const notRankable = rankingRows.some((r) => {
       const episode = episodeById.get(r.episodeId);
-      return !episode || episode.isBackfilled || !isRankableNow(episode, episode.season.show.rankingMode);
+      if (!episode || episode.isBackfilled) return true;
+      return episode.isPreSeason
+        ? !isPreSeasonOpen(episode.season)
+        : !isRankableNow(episode, episode.season.show.rankingMode);
     });
     if (notRankable) {
       return res.status(403).json({ error: "One or more episodes are not yet open for ranking" });

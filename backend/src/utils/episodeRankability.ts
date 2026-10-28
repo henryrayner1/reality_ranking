@@ -48,3 +48,34 @@ export const isSeasonEnded = (
   const endMs = new Date(season.endDate).getTime();
   return !Number.isNaN(endMs) && now >= endMs;
 };
+
+// Pre-season ranking (the season's Episode.isPreSeason row) is open from the
+// season's startDate until its first real episode airs: the earliest airDate
+// among its other episodes (DAILY day rows carry their Eastern-midnight
+// airDate too), or its premiereDate, whichever comes first. With nothing
+// scheduled yet it stays open. No startDate => no pre-season at all.
+// Kept in sync by hand with src/utils/episodeRankability.ts on the frontend.
+export const getFirstAirMs = (season: {
+  premiereDate?: Date | string | null;
+  episodes: { airDate: Date | string | null; isPreSeason?: boolean }[];
+}): number => {
+  const times = [season.premiereDate, ...season.episodes.filter((e) => !e.isPreSeason).map((e) => e.airDate)]
+    .filter((d): d is Date | string => !!d)
+    .map((d) => new Date(d).getTime())
+    .filter((ms) => !Number.isNaN(ms));
+  return times.length ? Math.min(...times) : Infinity;
+};
+
+export const isPreSeasonOpen = (
+  season: {
+    startDate?: Date | string | null;
+    premiereDate?: Date | string | null;
+    episodes: { airDate: Date | string | null; isPreSeason?: boolean }[];
+  },
+  now: number = Date.now()
+): boolean => {
+  if (!season.startDate) return false;
+  const startMs = new Date(season.startDate).getTime();
+  if (Number.isNaN(startMs) || now < startMs) return false;
+  return now < getFirstAirMs(season);
+};

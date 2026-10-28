@@ -1,11 +1,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addSeason, changeCurrentSeason, deleteSeason, updateSeasonEndDate, updateSeasonPremiereDate } from "../../../utils/util";
+import { addSeason, changeCurrentSeason, deleteSeason, updateSeasonEndDate, updateSeasonPremiereDate, updateSeasonStartDate } from "../../../utils/util";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { RankingModes, type Season } from "../../../utils/Constants";
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
-import { dayKeyToEasternMidnightMs, isSeasonEnded } from "../../../utils/episodeRankability";
+import { dayKeyToEasternMidnightMs, getFirstAirMs, isPreSeasonOpen, isSeasonEnded } from "../../../utils/episodeRankability";
 import { slugifyShowName } from "../../../utils/slug";
 
 // Premiere date is stored/edited as a plain "YYYY-MM-DD" date-input value but
@@ -96,6 +96,19 @@ const AdminSeasons = ({ showId, seasonId }: AdminSeasonsProps) => {
     }
   });
 
+  // Pre-season opening time: same local-input-then-explicit-save pattern as
+  // the end date above.
+  const [startInput, setStartInput] = useState(isoToDateTimeLocal(currSeason?.startDate));
+  useEffect(() => {
+    setStartInput(isoToDateTimeLocal(currSeason?.startDate));
+  }, [currSeason?.id, currSeason?.startDate]);
+  const updateStartDate = useMutation({
+    mutationFn: ({ seasonId, startDate }: { seasonId: string; startDate: string | null }) => updateSeasonStartDate(seasonId, startDate),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: showsQueryKey() });
+    }
+  });
+
   const updatePremiereDate = useMutation({
     mutationFn: ({ seasonId, premiereDate }: { seasonId: string; premiereDate: string | null }) => updateSeasonPremiereDate(seasonId, premiereDate),
     onSuccess: () => {
@@ -139,6 +152,46 @@ const AdminSeasons = ({ showId, seasonId }: AdminSeasonsProps) => {
             </label>
           )}
           <AdminUI.DangerButton onClick={() => { if (window.confirm(`Delete season ${currSeason.seasonNumber}?`)) remove.mutate(currSeason.id) }} />
+        </div>
+      )}
+      {currSeason && (
+        <div className="admin-picker-row admin-season-end-row">
+          <label className="flex items-center gap-2 text-xs text-[#888]">
+            Pre-season opens
+            <AdminUI.Input
+              type="datetime-local"
+              aria-label="Pre-season ranking opens at"
+              value={startInput}
+              onChange={e => setStartInput(e.target.value)}
+              style={{ width: 'auto' }}
+            />
+          </label>
+          <AdminUI.SecondaryButton
+            onClick={() => startInput && updateStartDate.mutate({ seasonId: currSeason.id, startDate: new Date(startInput).toISOString() })}
+            disabled={!startInput || updateStartDate.isPending || startInput === isoToDateTimeLocal(currSeason.startDate)}
+          >
+            {updateStartDate.isPending ? 'Saving...' : 'Save start'}
+          </AdminUI.SecondaryButton>
+          {currSeason.startDate && (
+            <AdminUI.SecondaryButton
+              onClick={() => updateStartDate.mutate({ seasonId: currSeason.id, startDate: null })}
+              disabled={updateStartDate.isPending}
+            >
+              Clear start
+            </AdminUI.SecondaryButton>
+          )}
+          <span className="text-xs text-[#888]">
+            {!currSeason.startDate
+              ? 'No pre-season ranking'
+              : new Date(currSeason.startDate).getTime() > Date.now()
+                ? `Pre-season ranking opens ${formatEndDate(currSeason.startDate)}`
+                : isPreSeasonOpen(currSeason)
+                  ? (getFirstAirMs(currSeason) === Infinity
+                    ? 'Pre-season ranking open until the first episode airs'
+                    : `Pre-season ranking open — locks ${formatEndDate(new Date(getFirstAirMs(currSeason)).toISOString())}`)
+                  : 'Pre-season ranking locked — the first episode has aired'}
+          </span>
+          {updateStartDate.isError && <AdminUI.ErrorMsg />}
         </div>
       )}
       {currSeason && (

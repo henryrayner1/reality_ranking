@@ -11,7 +11,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useNavigate, useParams } from "react-router-dom";
-import { isRankableNow, getTodayDayKey, isSeasonEnded } from "../../utils/episodeRankability";
+import { isRankableNow, getTodayDayKey, isSeasonEnded, isPreSeasonVisible, isPreSeasonOpen, formatEpisodeHeading } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
@@ -77,8 +77,13 @@ const RankingComponent2 = () => {
   // order, so grid columns always render left-to-right in air order.
   const seasonEnded = isSeasonEnded(currSeason);
 
+  // The pre-season column (episodeNumber 0, so it sorts first) shows from the
+  // season's startDate on; it locks once the first episode airs (see the
+  // preSeasonLocked check in the grid).
   const rankableEpisodes = [...(currSeason?.episodes ?? [])]
-    .filter((episode) => isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
+    .filter((episode) => episode.isPreSeason
+      ? isPreSeasonVisible(currSeason)
+      : isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
   // eliminations is fetched once per user across every show/season (see
@@ -282,7 +287,7 @@ const RankingComponent2 = () => {
       .filter((contestant) => wasContestantOnRosterFor(contestant, episode))
       .map((contestant) => contestant.id);
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
-    const heading = String(episodeNumber);
+    const heading = formatEpisodeHeading(episodeNumber);
     // Raw grid items, not wrapped in a single spanning container — matching
     // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
     // every column to exactly the season's contestant count, so each column
@@ -334,7 +339,7 @@ const RankingComponent2 = () => {
     const carriedOrder = getLastRankingNames(episodeNumber);
     const syntheticRanking: Ranking = { id: `locked-${episode.id}`, userId: "", episodeId: episode.id, type: rankingType, contestantIds: carriedOrder };
     const columnEntries = buildPastRankingColumn(syntheticRanking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
-    const heading = String(episodeNumber);
+    const heading = formatEpisodeHeading(episodeNumber);
     return [
       <div className="episode-heading" key={`${episode.id}-heading`}>{heading}</div>,
       ...columnEntries.map((entry, index) => (
@@ -402,7 +407,9 @@ const RankingComponent2 = () => {
         // Once the season's admin-set endDate passes, every not-yet-submitted
         // episode locks the same way a missed daily day does (the server also
         // rejects any submission for an ended season with 403).
-        if (episode.isBackfilled || isMissedDailyDay || seasonEnded) return lockedEpisodeElements(episode);
+        // A pre-season ranking can only be submitted until the first episode airs.
+        const preSeasonLocked = !!episode.isPreSeason && !isPreSeasonOpen(currSeason);
+        if (episode.isBackfilled || isMissedDailyDay || preSeasonLocked || seasonEnded) return lockedEpisodeElements(episode);
         const isActive = activeEpisodes.has(episode.id);
         const eliminatedIds = getEpisodeEliminatedIds(episode);
         return <EpisodeComponent
@@ -433,7 +440,11 @@ const RankingComponent2 = () => {
             : rankingGrid}
       </div>
       <div className="active-episodes-container">
-          {[...activeEpisodes].map((episodeId) => <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X {currShow?.rankingMode === "DAILY" ? "Day" : "Episode"} {rankableEpisodes.find(episode => episode.id === episodeId)?.episodeNumber}</div>)}
+          {[...activeEpisodes].map((episodeId) => {
+            const episode = rankableEpisodes.find(e => e.id === episodeId);
+            const label = episode?.isPreSeason ? "Pre-season" : `${currShow?.rankingMode === "DAILY" ? "Day" : "Episode"} ${episode?.episodeNumber ?? ""}`;
+            return <div className="remove-button px-2 text-xs" key={episodeId} onClick={()=>removeActiveEpisode(episodeId)}>X {label}</div>;
+          })}
         </div>
       </div>
 
@@ -480,7 +491,7 @@ const RankingComponent2 = () => {
           <>
             {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
                 it needs to see not-yet-rankable episodes to find "next up". */}
-            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} endDate={currSeason?.endDate} />
+            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} startDate={currSeason?.startDate} endDate={currSeason?.endDate} />
             <main className="rankings-main">
               {user && rankingContainer}
             </main>
