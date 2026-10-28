@@ -23,6 +23,7 @@ model Show {
   network     String      @default("")
   currSeason  Int         @default(1)
   rankingMode RankingMode @default(EPISODE)
+  logoUrl     String?
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }

@@ -1,32 +1,12 @@
-import survivorLogo from "../../assets/logos/survivorLogo.jpeg";
-import bigBrotherLogo from "../../assets/logos/bigBrotherLogo.jpg";
-import dwtsLogo from "../../assets/logos/dwtsLogo.jpg";
-import dragRaceLogo from "../../assets/logos/dragRaceLogo.jpg";
-import downUnderLogo from "../../assets/logos/downUnderLogo.jpg";
-import cdrAllStarsLogo from "../../assets/logos/cdrAllStarsLogo.png"
-import projectRunwayLogo from "../../assets/logos/projectRunwayLogo.jpeg"
-import dwtsNextProLogo from "../../assets/logos/dwtsNextProLogo.png"
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { useShows } from "../../hooks/queries";
 import { slugifyShowName } from "../../utils/slug";
 import type { Show } from "../../utils/Constants";
+import { backendUrl } from "../../utils/apiBase";
 import PageLoading from "../PageLoading/PageLoading";
 import TvStaticBackground from "../TvStaticBackground/TvStaticBackground";
 import './Homepage.css';
-
-// Keyed by lowercased show name so lookups aren't broken by casing
-// differences between this list and however the name was typed in Admin.
-const SHOW_LOGOS: Record<string, string> = {
-  "survivor": survivorLogo,
-  "big brother": bigBrotherLogo,
-  "dancing with the stars": dwtsLogo,
-  "rupaul's drag race": dragRaceLogo,
-  "drag race down under vs the world": downUnderLogo,
-  "canada's drag race: all stars": cdrAllStarsLogo,
-  "project runway": projectRunwayLogo,
-  "dancing with the stars: the next pro": dwtsNextProLogo
-};
 
 const FALLBACK_GRADIENTS = [
   "linear-gradient(135deg, #7F77DD, #4f8cff)",
@@ -85,7 +65,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
         ) : (
           <div className="shows-grid">
             {shows.map((show, index) => {
-              const logo = SHOW_LOGOS[show.name.toLowerCase()];
+              const logo = show.logoUrl ? backendUrl(show.logoUrl) : undefined;
               return (
                 <div
                   key={show.id}

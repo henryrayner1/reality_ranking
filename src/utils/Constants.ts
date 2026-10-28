@@ -104,6 +104,7 @@ export interface Show {
   currSeason: number;
   network?: string;
   rankingMode?: RankingMode;
+  logoUrl?: string | null;
 }
 
 export interface Season {

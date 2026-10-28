@@ -426,6 +426,44 @@ export const updateShowRankingMode = async (showId: string, rankingMode: string)
   return response.json();
 };
 
+// null removes the logo (the homepage card then shows a coloured letter tile).
+export const updateShowLogo = async (showId: string, logoUrl: string | null) => {
+  const response = await apiFetch('/api/shows/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ showId, logoUrl }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update show: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+// Uploads a show's logo to /uploads/<show-slug>/logo/ and returns its URL.
+export const uploadShowLogo = async (file: File, showName: string) => {
+  const ext = (file.name.match(/\.[a-z0-9]+$/i)?.[0] ?? '.png').toLowerCase();
+  const fd = new FormData();
+  // Field order matters: multer's destination() callback reads these from
+  // req.body, which is only populated for fields parsed before the file.
+  fd.append('showName', showName);
+  fd.append('category', 'logo');
+  fd.append('image', new File([file], `logo${ext}`, { type: file.type }));
+
+  const response = await apiFetch('/api/images/upload', { method: 'POST', body: fd });
+  if (!response.ok) {
+    throw new Error(`Failed to upload logo: ${response.status}`);
+  }
+  const data = await response.json();
+  // Every logo for a show is saved as logo.<ext>, so a replacement usually
+  // lands at the same path as the old one. The ?v= suffix gives it a new URL
+  // so browsers don't keep showing the cached old image.
+  return `${data.file as string}?v=${Date.now()}`;
+};
+
 export const addSeason = async (season: Partial<Season>) => {
   const seasonRes = await apiFetch('/api/shows/addSeason', {
     method: 'POST',

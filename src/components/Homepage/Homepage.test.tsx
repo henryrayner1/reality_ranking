@@ -35,10 +35,16 @@ describe("Homepage", () => {
     expect(screen.getByText("No shows have been added yet.")).toBeInTheDocument();
   });
 
-  it("renders a fallback gradient tile (first letter) for a show with no known logo", () => {
+  it("renders a fallback gradient tile (first letter) for a show with no logo", () => {
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [makeShow({ name: "Unknown Show" })], isLoading: false } as any);
     renderWithProviders(<Homepage openAuthModal={() => {}} />);
     expect(screen.getByText("U")).toBeInTheDocument();
+  });
+
+  it("renders a show's uploaded logo on its card", () => {
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [makeShow({ logoUrl: "/uploads/survivor/logo/logo.jpeg" })], isLoading: false } as any);
+    renderWithProviders(<Homepage openAuthModal={() => {}} />);
+    expect(screen.getByAltText("Survivor")).toHaveAttribute("src", "/uploads/survivor/logo/logo.jpeg");
   });
 
   it("shows Log in / Create account buttons when logged out", () => {
