@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useLayoutEffect, useRef } from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { type Season, type Show } from '../../utils/Constants';
@@ -21,6 +21,8 @@ interface IconProps {
   photoUrl?: string;
 }
 
+
+const MIN_LABEL_SCALE = 0.7;
 
 const ContestantIcon = (props:IconProps) => {
   const {
@@ -45,6 +47,34 @@ const ContestantIcon = (props:IconProps) => {
 
   const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
 
+  // A long first name (e.g. "GUILLERMO") can be wider than the icon, which
+  // clips it. Shrink just that label's font (via --label-scale) until it
+  // fits, no smaller than MIN_LABEL_SCALE of the normal size. Measured
+  // through a ResizeObserver because the label has no width yet on first
+  // layout in some grids, and again once web fonts have loaded, since the
+  // fallback font measures differently.
+  const labelRef = useRef<HTMLParagraphElement>(null);
+  useLayoutEffect(() => {
+    const label = labelRef.current;
+    if (!label) return;
+    let cancelled = false;
+    const fit = () => {
+      if (cancelled) return;
+      label.style.removeProperty('--label-scale');
+      if (label.clientWidth === 0 || label.scrollWidth <= label.clientWidth) return;
+      const scale = Math.max((label.clientWidth / label.scrollWidth) * 0.97, MIN_LABEL_SCALE);
+      label.style.setProperty('--label-scale', scale.toFixed(3));
+    };
+    fit();
+    document.fonts?.ready.then(fit);
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(fit);
+    observer?.observe(label);
+    return () => {
+      cancelled = true;
+      observer?.disconnect();
+    };
+  }, [uppercaseName]);
+
   return (
     <div
       ref={setNodeRef}
@@ -65,7 +95,14 @@ const ContestantIcon = (props:IconProps) => {
       {props.placement
         ? <p className="placement-label">{formatPlacement(props.placement)}</p>
         : props.placementPending ? <p className="placement-label">Pending</p> : null}
-      <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>
+      <p
+        ref={labelRef}
+        className="bg-gray-300 font-black absolute w-full bottom-0 whitespace-nowrap"
+        // The line height stays at the normal size's (0.6rem = 1.5 x 0.4rem), so a
+        // shrunk label keeps the same grey strip height as every other icon,
+        // with its smaller text centred in it.
+        style={{ fontSize: 'calc(0.4rem * var(--label-scale, 1))', lineHeight: '0.6rem' }}
+      >{uppercaseName}</p>
     </div>
   );
 }

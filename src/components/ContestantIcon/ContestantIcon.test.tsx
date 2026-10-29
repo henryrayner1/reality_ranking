@@ -97,3 +97,43 @@ describe("ContestantIcon", () => {
     expect(img.getAttribute("src")).toBeNull();
   });
 });
+
+describe("ContestantIcon label fitting", () => {
+  // jsdom has no layout, so fake each label's text width from its length.
+  const fakeLayout = (iconWidth: number, pxPerChar: number) => {
+    const scroll = vi.spyOn(HTMLElement.prototype, "scrollWidth", "get").mockImplementation(function (this: HTMLElement) {
+      return (this.textContent?.length ?? 0) * pxPerChar;
+    });
+    const client = vi.spyOn(HTMLElement.prototype, "clientWidth", "get").mockReturnValue(iconWidth);
+    return () => { scroll.mockRestore(); client.mockRestore(); };
+  };
+
+  it("shrinks a label that is wider than the icon", () => {
+    const restore = fakeLayout(40, 5);
+    renderIcon({ name: "Guillermo Rodriguez" }); // 9 chars = 45px > 40px
+    const label = screen.getByText("GUILLERMO");
+    const scale = parseFloat(label.style.getPropertyValue("--label-scale"));
+    restore();
+    // The strip keeps the normal size's line height so it lines up with the others.
+    expect(label.style.lineHeight).toBe("0.6rem");
+    // 40/45, less a small safety margin
+    expect(scale).toBeGreaterThan(0.8);
+    expect(scale).toBeLessThan(40 / 45);
+  });
+
+  it("never shrinks below 70% however long the name", () => {
+    const restore = fakeLayout(40, 5);
+    renderIcon({ name: "Bartholomewsworthington Smith" }); // 22 chars = 110px
+    const scale = parseFloat(screen.getByText("BARTHOLOMEWSWORTHINGTON").style.getPropertyValue("--label-scale"));
+    restore();
+    expect(scale).toBe(0.7);
+  });
+
+  it("leaves a label that fits at its normal size", () => {
+    const restore = fakeLayout(40, 5);
+    renderIcon({ name: "Ana Sani" });
+    const scale = screen.getByText("ANA").style.getPropertyValue("--label-scale");
+    restore();
+    expect(scale).toBe("");
+  });
+});
