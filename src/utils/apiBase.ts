@@ -5,4 +5,6 @@
 // work against the same-origin dev server.
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "";
 
-export const backendUrl = (path: string) => `${API_BASE_URL}${path}`;
+// Images uploaded to R2 are stored as absolute URLs, which are used as-is.
+export const backendUrl = (path: string) =>
+  /^https?:\/\//.test(path) ? path : `${API_BASE_URL}${path}`;

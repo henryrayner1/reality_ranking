@@ -523,12 +523,36 @@ export const updateShowLogo = async (showId: string, logoUrl: string | null) => 
   return response.json();
 };
 
-// Uploads a show's logo to /uploads/<show-slug>/logo/ and returns its URL.
+// Uploads a contestant photo to <show-slug>/season_<n>/contestants/ (on R2 in
+// production, uploads/ locally) and returns its URL.
+export const uploadContestantPhoto = async (image: File, showName: string, seasonNumber: number) => {
+  const fd = new FormData();
+  // Field order matters: multer only puts fields parsed before the file into
+  // req.body.
+  fd.append('showName', showName);
+  fd.append('seasonNumber', String(seasonNumber));
+  fd.append('category', 'contestants');
+  fd.append('image', image);
+
+  const response = await apiFetch('/api/images/upload', { method: 'POST', body: fd });
+  if (!response.ok) {
+    throw new Error(`Failed to upload image: ${response.status}`);
+  }
+  const data = await response.json();
+  // The upload's filename is derived from the contestant's name, so a
+  // replacement photo lands at the exact same path as the old one. The ?v=
+  // suffix gives it a new URL so <img> tags don't keep showing the
+  // browser-cached old image.
+  return `${data.file as string}?v=${Date.now()}`;
+};
+
+// Uploads a show's logo to <show-slug>/logo/ (on R2 in production, uploads/
+// locally) and returns its URL.
 export const uploadShowLogo = async (file: File, showName: string) => {
   const ext = (file.name.match(/\.[a-z0-9]+$/i)?.[0] ?? '.png').toLowerCase();
   const fd = new FormData();
-  // Field order matters: multer's destination() callback reads these from
-  // req.body, which is only populated for fields parsed before the file.
+  // Field order matters: multer only puts fields parsed before the file into
+  // req.body.
   fd.append('showName', showName);
   fd.append('category', 'logo');
   fd.append('image', new File([file], `logo${ext}`, { type: file.type }));
