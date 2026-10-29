@@ -1,4 +1,5 @@
-import { buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminations } from "./util";
+import { buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminations, uploadContestantPhoto } from "./util";
+import { backendUrl } from "./apiBase";
 import type { Elimination, Ranking } from "./Constants";
 
 const mockFetch = (body: unknown, status = 200) =>
@@ -72,5 +73,25 @@ describe("finale placements", () => {
 
   it("formats placements", () => {
     expect([1, 2, 3, 4, 11, 12, 13, 21, 22].map(formatPlacement)).toEqual(["Winner", "2nd", "3rd", "4th", "11th", "12th", "13th", "21st", "22nd"]);
+  });
+});
+
+describe("image uploads", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("sends the login token with a contestant photo upload", async () => {
+    localStorage.setItem("user", JSON.stringify({ id: "u1", email: "a@b.com", accountType: "ADMIN", token: "abc.def" }));
+    const fetchSpy = mockFetch({ file: "https://images.example.com/survivor/season_51/contestants/ori.png" });
+
+    const url = await uploadContestantPhoto(new File(["x"], "ori.png", { type: "image/png" }), "Survivor", 51);
+
+    const init = fetchSpy.mock.calls[0][1] as RequestInit;
+    expect(new Headers(init.headers).get("Authorization")).toBe("Bearer abc.def");
+    expect(url).toMatch(/^https:\/\/images\.example\.com\/survivor\/season_51\/contestants\/ori\.png\?v=\d+$/);
+  });
+
+  it("uses absolute image URLs as-is and prefixes backend paths", () => {
+    expect(backendUrl("https://images.example.com/a.png")).toBe("https://images.example.com/a.png");
+    expect(backendUrl("/uploads/a.png")).toBe("/uploads/a.png");
   });
 });

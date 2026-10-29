@@ -6,8 +6,8 @@ import {
   deleteContestant,
   updateContestant,
   getIconLabel,
+  uploadContestantPhoto,
 } from "../../../utils/util";
-import { backendUrl } from "../../../utils/apiBase";
 import * as AdminUI from "../../../utils/AdminComponents";
 import AvatarEditor from "react-avatar-editor";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
@@ -101,27 +101,6 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
     },
   });
 
-  const uploadAction = async (image: File, showName: string, seasonNumber: number) => {
-    const fd = new FormData();
-    // Field order matters: multer's destination() callback reads these from
-    // req.body, which is only populated for fields parsed before the file.
-    fd.append("showName", showName);
-    fd.append("seasonNumber", String(seasonNumber));
-    fd.append("category", "contestants");
-    fd.append("image", image);
-
-    const res = await fetch(backendUrl("/api/images/upload"), { method: "POST", body: fd });
-    if (!res.ok) {
-      throw new Error("Failed to upload image");
-    }
-    const data = await res.json();
-    // The upload's filename is derived from the contestant's name, so a
-    // replacement photo lands at the exact same path as the old one — the
-    // ?v= suffix gives it a new URL so <img> tags don't keep showing the
-    // browser-cached old image. express.static ignores the query string.
-    return `${data.file as string}?v=${Date.now()}`;
-  };
-
   // Crops the current AvatarEditor image (if one was dropped/pasted/picked)
   // and uploads it, returning its photoUrl.
   const uploadCroppedImage = async (name: string): Promise<string | null> => {
@@ -132,7 +111,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
     const blob = await res.blob();
     const fileName = `${name.replace(/\s+/g, "_").toLowerCase()}.png`;
     const file = new File([blob], fileName, { type: "image/png" });
-    return uploadAction(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
+    return uploadContestantPhoto(file, currShow?.name ?? "", currSeason?.seasonNumber ?? 0);
   };
 
   const handleSubmit = async () => {

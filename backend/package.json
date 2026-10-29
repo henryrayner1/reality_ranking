@@ -16,6 +16,7 @@
     "@prisma/adapter-pg": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "@prisma/config": "^7.7.0",
+    "aws4fetch": "^1.0.20",
     "express": "^4.19.2",
     "multer": "^2.0.2",
     "nodemon": "^3.1.14",
