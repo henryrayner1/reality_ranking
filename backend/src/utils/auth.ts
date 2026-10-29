@@ -82,3 +82,19 @@ export function requireAdmin(prisma: PrismaClient) {
         next();
     };
 }
+
+// Requires a valid login token and exposes its user id as res.locals.userId,
+// for routes that act on the caller's own data (e.g. submitting rankings).
+export function requireUser() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return (req: Request<any>, res: Response, next: NextFunction) => {
+        const authHeader = req.header("authorization") ?? "";
+        const token = authHeader.startsWith("Bearer ") ? authHeader.slice("Bearer ".length) : null;
+        const userId = token ? verifyToken(token) : null;
+        if (!userId) {
+            return res.status(401).json({ error: "Your session has expired or you are not logged in. Log in again." });
+        }
+        res.locals.userId = userId;
+        next();
+    };
+}
