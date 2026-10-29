@@ -23,6 +23,8 @@ export interface Episode {
   isBackfilled?: boolean;
   // The season's pre-season column (episodeNumber 0). See isPreSeasonOpen.
   isPreSeason?: boolean;
+  // Marked in Admin as the season's finale (at most one per season).
+  isFinale?: boolean;
   eliminations?: Elimination[];
 }
 

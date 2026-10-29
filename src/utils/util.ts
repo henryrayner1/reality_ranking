@@ -122,6 +122,21 @@ export const deleteEpisode = async (episodeId: string) => {
   return deleteData;
 };
 
+export const setEpisodeFinale = async (episodeId: string, isFinale: boolean) => {
+  const res = await apiFetch(`/api/episodes/${episodeId}/finale`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ isFinale }),
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => 'Failed to update episode');
+    throw new Error(msg);
+  }
+  return res.json();
+};
+
 export const getUserRankings = async (userId: string) => {
   const rankingsRes = await apiFetch(`/api/rankings/userRankings?userId=${userId}`);
   if (!rankingsRes.ok) throw new Error('Failed to fetch user rankings');

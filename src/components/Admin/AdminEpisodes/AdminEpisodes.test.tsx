@@ -68,6 +68,26 @@ describe("AdminEpisodes", () => {
     expect(screen.queryByText("Episode 9")).not.toBeInTheDocument();
   });
 
+  it("marks an episode as the finale and shows which one is", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(util, "setEpisodeFinale").mockResolvedValue({} as any);
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: makeSeasons([
+        { id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-01-01T20:00:00.000Z" },
+        { id: "e2", episodeNumber: 2, seasonId: "se1", airDate: "2026-01-08T20:00:00.000Z", isFinale: true },
+      ]),
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
+
+    expect(screen.getAllByText("Finale")).toHaveLength(1);
+    expect(screen.getByText("Unmark finale")).toBeInTheDocument();
+
+    await user.click(screen.getByText("Mark finale"));
+    expect(util.setEpisodeFinale).toHaveBeenCalledWith("e1", true);
+  });
+
   it("removes an episode", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
