@@ -64,6 +64,19 @@ describe("ContestantDetailPanel", () => {
     expect(setSelectedContestantId).toHaveBeenCalledWith("c1");
   });
 
+  it("the mobile dropdown shows the selected contestant and selects another", async () => {
+    const user = userEvent.setup();
+    const setSelectedContestantId = vi.fn();
+    render(<ContestantDetailPanel {...baseProps} selectedContestantId="c1" setSelectedContestantId={setSelectedContestantId} />);
+    const toggle = screen.getByRole("button", { name: /Alice/ });
+    expect(toggle).toHaveClass("contestant-dropdown-toggle");
+
+    await user.click(toggle);
+    const bobItem = screen.getAllByText("Bob").find((el) => el.closest(".contestant-dropdown-item"))!;
+    await user.click(bobItem);
+    expect(setSelectedContestantId).toHaveBeenCalledWith("c2");
+  });
+
   it("shows the elimination badge for an eliminated selected contestant", () => {
     const eliminations: EliminationEntry[] = [
       { id: "el1", episodeId: "e1", contestantId: "c1", eliminationType: "ELIMINATED", episode: { id: "e1", episodeNumber: 4, seasonId: "se1" } } as any,

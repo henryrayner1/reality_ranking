@@ -473,6 +473,37 @@
   font-weight: 600;
 }
 
+/* Mobile replacement for .contestant-list, see the 800px query below. */
+.contestant-dropdown {
+  display: none;
+}
+
+/* .custom-button is a fixed 1.5rem tall, too short for the photo. */
+.contestant-dropdown .contestant-dropdown-toggle {
+  width: 100%;
+  height: auto;
+  gap: 0.6rem;
+  padding: 0.4rem 1.25rem 0.4rem 0.6rem;
+  border-radius: 12px;
+}
+
+.contestant-dropdown .insights-contestant-thumb {
+  width: 2rem;
+  min-width: 2rem;
+}
+
+.contestant-dropdown-menu {
+  width: 100%;
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+.contestant-dropdown-menu .contestant-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
 @media screen and (max-width: 800px) {
   .insights-page {
     padding-bottom: 5vh;
@@ -526,8 +557,22 @@
   }
 
   .contestant-list {
-    max-height: 16rem;
-    width: 100%;
+    display: none;
+  }
+
+  .contestant-dropdown {
+    display: block;
+  }
+
+  /* The dropdown already shows the selected contestant's photo and name. */
+  .contestant-detail-photo,
+  .contestant-detail-name {
+    display: none;
+  }
+
+  /* Left empty without an elimination badge; would still take a flex gap. */
+  .contestant-detail-header:not(:has(.elimination-badge)) {
+    display: none;
   }
 
   .contestant-detail-panel {
