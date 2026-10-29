@@ -84,6 +84,10 @@ model Episode {
   // ranked before the first real episode airs. Created when the season gets
   // a startDate; never shown as an episode in Admin.
   isPreSeason     Boolean       @default(false)
+  // Set by an admin on the season's finale (at most one per season). Decides
+  // which column shows "results pending", and the elimination routines only
+  // record winner/placement results on this episode.
+  isFinale        Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

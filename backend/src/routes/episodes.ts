@@ -79,6 +79,25 @@ export default function episodesRouter(prisma: PrismaClient) {
     res.json(episode);
   });
 
+  // Marks (or unmarks) an episode as its season's finale. A season has at
+  // most one finale, so marking one clears the flag from the others.
+  router.patch("/:id/finale", requireAdmin(prisma), async (req, res) => {
+    const { id } = req.params;
+    if (typeof req.body.isFinale !== "boolean") {
+      return res.status(400).json({ error: "isFinale must be true or false" });
+    }
+    const episode = await prisma.episode.findUnique({ where: { id }, select: { seasonId: true, isPreSeason: true } });
+    if (!episode) return res.status(404).json({ error: "Episode not found" });
+    if (episode.isPreSeason) return res.status(400).json({ error: "The pre-season can't be the finale" });
+    const updated = await prisma.$transaction(async (tx) => {
+      if (req.body.isFinale) {
+        await tx.episode.updateMany({ where: { seasonId: episode.seasonId, isFinale: true, NOT: { id } }, data: { isFinale: false } });
+      }
+      return tx.episode.update({ where: { id }, data: { isFinale: req.body.isFinale } });
+    });
+    res.json(updated);
+  });
+
   router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {
     const { id } = req.params;
     const deletedEpisode = await prisma.episode.delete({

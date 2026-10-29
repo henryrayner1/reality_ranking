@@ -152,9 +152,12 @@ export const isSeasonEnded = (
 // finale results logged would otherwise show as pending forever.
 export const FINALE_RESULTS_PENDING_MS = 7 * 24 * 60 * 60 * 1000;
 
-// A season's finale is its last real episode, once the season has an end
-// date (which is what makes it a finale rather than just the latest episode).
+// A season's finale is the episode an admin marked as one (Episode.isFinale).
+// Seasons without a marked finale fall back to their last real episode once
+// the season has an end date.
 export const getFinaleEpisode = (season: { endDate?: string | null; episodes?: Episode[] } | null | undefined): Episode | null => {
+  const marked = (season?.episodes ?? []).find((episode) => episode.isFinale && !episode.isPreSeason);
+  if (marked) return marked;
   if (!season?.endDate) return null;
   const episodes = (season.episodes ?? []).filter((episode) => !episode.isPreSeason);
   if (episodes.length === 0) return null;

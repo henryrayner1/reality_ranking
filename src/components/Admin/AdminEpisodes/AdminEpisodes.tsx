@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { addEpisode, deleteEpisode } from "../../../utils/util";
+import { addEpisode, deleteEpisode, setEpisodeFinale } from "../../../utils/util";
 import { RankingModes, type Episode } from "../../../utils/Constants";
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
@@ -23,6 +23,11 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
     const episodes = [...(currSeason?.episodes ?? [])].filter(e => !e.isPreSeason).sort((a, b) => a.episodeNumber - b.episodeNumber);
     const create = useMutation({ mutationFn: (newEpisode: Partial<Episode>) => addEpisode(newEpisode), onSuccess: () => { qc.invalidateQueries({ queryKey: showsQueryKey() }); setAirDate(""); setAirTime("20:00"); } })
     const remove = useMutation({ mutationFn: (episodeId: string) => deleteEpisode(episodeId), onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }) })
+    // Marking an episode as the finale clears it from any other episode in the season (server-side).
+    const markFinale = useMutation({
+        mutationFn: ({ episodeId, isFinale }: { episodeId: string; isFinale: boolean }) => setEpisodeFinale(episodeId, isFinale),
+        onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }),
+    })
 
     const formatDate = (d?: string) => d ? new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBD'
 
@@ -65,10 +70,20 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
             {episodes.map(ep => (
                 <AdminUI.ListItem key={ep.id}
                     left={<><AdminUI.Avatar name={`E${ep.episodeNumber}`} rounded /><AdminUI.ItemInfo name={`Episode ${ep.episodeNumber}`} meta={`Season ${currSeason?.seasonNumber ?? '?'} · ${formatDate(ep.airDate)}`} /></>}
-                    right={<AdminUI.DangerButton onClick={() => remove.mutate(ep.id)} />}
+                    right={<>
+                        {ep.isFinale && <AdminUI.Badge label="Finale" variant="purple" />}
+                        <AdminUI.SecondaryButton
+                            onClick={() => markFinale.mutate({ episodeId: ep.id, isFinale: !ep.isFinale })}
+                            disabled={markFinale.isPending}
+                        >
+                            {ep.isFinale ? 'Unmark finale' : 'Mark finale'}
+                        </AdminUI.SecondaryButton>
+                        <AdminUI.DangerButton onClick={() => remove.mutate(ep.id)} />
+                    </>}
                 />
             ))}
             </div>
+            {markFinale.isError && <AdminUI.ErrorMsg />}
             </AdminUI.Card>
         </AdminUI.TwoCol>
     )

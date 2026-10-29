@@ -1,4 +1,4 @@
-import { FINALE_RESULTS_PENDING_MS, formatEpisodeHeading, getFirstAirMs, isFinaleResultsPending, isPreSeasonOpen, isPreSeasonVisible } from "./episodeRankability";
+import { FINALE_RESULTS_PENDING_MS, formatEpisodeHeading, getFinaleEpisode, getFirstAirMs, isFinaleResultsPending, isPreSeasonOpen, isPreSeasonVisible } from "./episodeRankability";
 import type { Episode } from "./Constants";
 
 const START = "2026-01-01T00:00:00.000Z";
@@ -76,5 +76,23 @@ describe("isFinaleResultsPending", () => {
 
   it("needs an end date to know which episode is the finale", () => {
     expect(isFinaleResultsPending({ episodes }, ms(FINALE_AIR) + 1000)).toBe(false);
+  });
+});
+
+describe("getFinaleEpisode", () => {
+  const episodes: Episode[] = [
+    { id: "e1", episodeNumber: 1, seasonId: "s" },
+    { id: "e2", episodeNumber: 2, seasonId: "s", isFinale: true },
+    { id: "e3", episodeNumber: 3, seasonId: "s" },
+  ];
+
+  it("uses the episode marked as the finale, even without an end date", () => {
+    expect(getFinaleEpisode({ episodes })?.id).toBe("e2");
+  });
+
+  it("falls back to the last episode of a season with an end date", () => {
+    const unmarked = episodes.map((e) => ({ ...e, isFinale: false }));
+    expect(getFinaleEpisode({ episodes: unmarked, endDate: "2026-01-01T00:00:00.000Z" })?.id).toBe("e3");
+    expect(getFinaleEpisode({ episodes: unmarked })).toBeNull();
   });
 });
