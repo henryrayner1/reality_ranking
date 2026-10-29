@@ -126,6 +126,9 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
           stroke="none"
           legendType="none"
           tooltipType="none"
+          // A range area's hover dot would land on its lower edge (the x-axis);
+          // the dashed field-size Line below already marks the top.
+          activeDot={false}
           isAnimationActive={false}
         />
         <Line
