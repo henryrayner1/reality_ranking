@@ -1,3 +1,4 @@
+import { Dropdown } from "react-bootstrap";
 import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../../utils/Constants";
 import { formatPlacement } from "../../../utils/util";
 import ContestantIcon from "../../ContestantIcon/ContestantIcon";
@@ -44,6 +45,20 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
   const selected = sortedContestants.find((c) => c.id === props.selectedContestantId) ?? null;
   const selectedEliminationInfo = selected ? eliminationByContestant.get(selected.id) ?? null : null;
 
+  const thumb = (contestant: (typeof sortedContestants)[number]) => (
+    <div className="insights-contestant-thumb">
+      <ContestantIcon
+        name={contestant.name}
+        photoUrl={contestant.photoUrl}
+        id={contestant.id}
+        isActive={false}
+        isEliminated={isEliminated(contestant.id)}
+        season={currSeason}
+        show={currShow}
+      />
+    </div>
+  );
+
   return (
     <div className="insights-two-pane">
       <div className="contestant-list">
@@ -53,23 +68,34 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
             className={`contestant-list-item${contestant.id === props.selectedContestantId ? ' contestant-list-item-active' : ''}`}
             onClick={() => props.setSelectedContestantId(contestant.id)}
           >
-            <div className="insights-contestant-thumb">
-              <ContestantIcon
-                name={contestant.name}
-                photoUrl={contestant.photoUrl}
-                id={contestant.id}
-                isActive={false}
-                isEliminated={isEliminated(contestant.id)}
-                season={currSeason}
-                show={currShow}
-              />
-            </div>
+            {thumb(contestant)}
             <span>{contestant.name}</span>
           </div>
         ))}
       </div>
 
       <div className="contestant-detail-panel">
+        {/* Mobile only (Insights.css): replaces the contestant list above,
+            which takes too much vertical space when stacked. */}
+        <Dropdown className="contestant-dropdown">
+          <Dropdown.Toggle variant="" id="contestant-detail-dropdown" className="custom-button contestant-dropdown-toggle">
+            {selected && thumb(selected)}
+            <span className="truncate min-w-0 flex-1 text-left">{selected?.name ?? "Select a contestant"}</span>
+          </Dropdown.Toggle>
+          <Dropdown.Menu className="contestant-dropdown-menu">
+            {sortedContestants.map((contestant) => (
+              <Dropdown.Item
+                key={contestant.id}
+                active={contestant.id === props.selectedContestantId}
+                onClick={() => props.setSelectedContestantId(contestant.id)}
+                className="contestant-dropdown-item"
+              >
+                {thumb(contestant)}
+                <span>{contestant.name}</span>
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
         {!selected || !favoriteInsights || !winnerInsights ? (
           <p className="insights-placeholder">Select a contestant to view their insights.</p>
         ) : (
