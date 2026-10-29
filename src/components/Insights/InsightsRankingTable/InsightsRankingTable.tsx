@@ -4,6 +4,7 @@ import "react-tooltip/dist/react-tooltip.css";
 import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../../utils/Constants";
 import ContestantIcon from "../../ContestantIcon/ContestantIcon";
 import { formatEpisodeHeading } from "../../../utils/episodeRankability";
+import { placeFinalistsFirst } from "../../../utils/util";
 import PageLoading from "../../PageLoading/PageLoading";
 
 interface InsightsRankingTableProps {
@@ -51,7 +52,7 @@ const buildRankColumn = (
 // matching the elimination-bucket ordering convention used elsewhere (e.g.
 // buildPastRankingColumn on the Ranking page).
 const getEliminationBackfillIds = (
-  eliminationByContestant: Map<string, { episodeNumber: number; eliminationType: string }>,
+  eliminationByContestant: Map<string, { episodeNumber: number; eliminationType: string; placement?: number | null }>,
   contestantsById: Record<string, Contestant>,
   presentIds: Set<string>,
   asOfEpisodeNumber: number
@@ -87,13 +88,24 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   const contestantsById: Record<string, Contestant> = {};
   (currSeason?.contestants ?? []).forEach((c) => { contestantsById[c.id] = c; });
 
-  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();
+  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string; placement?: number | null }>();
   props.eliminations.forEach((e: any) => {
     eliminationByContestant.set(e.contestantId, {
       episodeNumber: e.episode?.episodeNumber ?? 0,
       eliminationType: e.eliminationType,
+      placement: e.placement,
     });
   });
+
+  // Final placements decided at or before an episode (i.e. in the finale).
+  const placementsAsOf = (episodeNumber: number) => {
+    const placements = new Map<string, number>();
+    eliminationByContestant.forEach((elim, id) => {
+      if (elim.placement != null && elim.episodeNumber <= episodeNumber) placements.set(id, elim.placement);
+    });
+    return placements;
+  };
+  const getContestantName = (id: string) => contestantsById[id]?.name ?? "";
 
   const isEliminatedByEpisode = (contestantId: string, episodeNumber: number) => {
     const elim = eliminationByContestant.get(contestantId);
@@ -143,7 +155,19 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
 
   if (!insights) return loadingPanel;
 
-  const sortedEpisodes = [...insights.episodes].sort((a, b) => a.episodeNumber - b.episodeNumber);
+  // Nobody can rank the finale (rankings close at the season's end date), so
+  // it has no insights entry of its own. Add it whenever finalists have been
+  // placed, so the results still get a column.
+  const finaleOnlyEpisodes = new Map<string, number>();
+  props.eliminations.forEach((e) => {
+    if (e.placement != null && e.episode && !insights.episodes.some((ep) => ep.episodeId === e.episodeId)) {
+      finaleOnlyEpisodes.set(e.episodeId, e.episode.episodeNumber);
+    }
+  });
+  const sortedEpisodes = [
+    ...insights.episodes.map((episode) => ({ ...episode, isFinaleOnly: false })),
+    ...[...finaleOnlyEpisodes].map(([episodeId, episodeNumber]) => ({ episodeId, episodeNumber, isBackfilled: false, isFinaleOnly: true, contestantAverages: [] })),
+  ].sort((a, b) => a.episodeNumber - b.episodeNumber);
 
   if (sortedEpisodes.length === 0) {
     return (
@@ -163,16 +187,19 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   let lastRealOrder: string[] = [];
 
   const episodeColumns = sortedEpisodes.map((episode) => {
-    if (episode.isBackfilled) {
+    const placements = placementsAsOf(episode.episodeNumber);
+    if (episode.isBackfilled || episode.isFinaleOnly) {
       const carriedOrder = lastRealOrder.length > 0
         ? lastRealOrder
         : Object.keys(contestantsById).sort((a, b) => (contestantsById[a]?.name ?? "").localeCompare(contestantsById[b]?.name ?? ""));
       const carriedItems = carriedOrder.map((id, index) => ({ contestantId: id, value: index }));
       return {
         episodeNumber: episode.episodeNumber,
-        isBackfilled: true,
+        isBackfilled: !!episode.isBackfilled,
+        isFinaleOnly: episode.isFinaleOnly,
+        placements,
         backfillIds: new Set<string>(),
-        contestantIds: buildRankColumn(carriedItems, contestantsById, rowCount),
+        contestantIds: placeFinalistsFirst(buildRankColumn(carriedItems, contestantsById, rowCount), placements, getContestantName),
       };
     }
     const presentIds = new Set(episode.contestantAverages.map((ca) => ca.contestantId));
@@ -187,12 +214,14 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
     return {
       episodeNumber: episode.episodeNumber,
       isBackfilled: false,
+      isFinaleOnly: false,
+      placements,
       // Backfilled entries have no real ranking data for this episode — they're
       // shown only because the contestant was already eliminated by this point —
       // so they should always render grayed, regardless of isEliminatedByEpisode's
       // usual "next episode onward" threshold for contestants with real data.
       backfillIds: new Set(backfillIds),
-      contestantIds,
+      contestantIds: placeFinalistsFirst(contestantIds, placements, getContestantName),
     };
   });
 
@@ -261,10 +290,17 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
                       photoUrl={contestantsById[contestantId]?.photoUrl}
                       id={contestantId}
                       isActive={false}
-                      isEliminated={episode.isBackfilled
-                        ? isEliminatedByEpisode(contestantId, episode.episodeNumber)
-                        : (episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber))}
-                      dimmed={episode.isBackfilled}
+                      isEliminated={episode.placements.has(contestantId)
+                        ? false
+                        : episode.isFinaleOnly
+                          // Everyone else left by the finale was eliminated by now.
+                          ? (eliminationByContestant.get(contestantId)?.episodeNumber ?? Infinity) <= episode.episodeNumber
+                          : episode.isBackfilled
+                            ? isEliminatedByEpisode(contestantId, episode.episodeNumber)
+                            : (episode.backfillIds.has(contestantId) || isEliminatedByEpisode(contestantId, episode.episodeNumber))}
+                      // A carried-over column isn't a real submission, but a placement is a real result.
+                      dimmed={(episode.isBackfilled || episode.isFinaleOnly) && !episode.placements.has(contestantId)}
+                      placement={episode.placements.get(contestantId)}
                       season={currSeason}
                       show={currShow}
                     />
@@ -293,7 +329,8 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
                   photoUrl={contestantsById[contestantId]?.photoUrl}
                   id={contestantId}
                   isActive={false}
-                  isEliminated={eliminationByContestant.has(contestantId)}
+                  // A placed finalist wasn't eliminated, so stays in colour here too.
+                  isEliminated={eliminationByContestant.has(contestantId) && eliminationByContestant.get(contestantId)?.placement == null}
                   season={currSeason}
                   show={currShow}
                 />

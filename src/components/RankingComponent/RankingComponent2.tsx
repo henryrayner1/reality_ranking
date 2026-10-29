@@ -305,6 +305,7 @@ const RankingComponent2 = () => {
               isActive={false}
               isEliminated={entry.eliminated}
               dimmed={selectedContestantId != null && entry.contestantId !== selectedContestantId}
+              placement={entry.placement}
               season={currSeason}
               show={currShow}
             />
@@ -351,7 +352,10 @@ const RankingComponent2 = () => {
               id={entry.contestantId}
               isActive={false}
               isEliminated={entry.eliminated}
-              dimmed={true}
+              // A finalist's placement is a real result, unlike the carried-over
+              // order around it, so it isn't dimmed.
+              dimmed={!entry.placement}
+              placement={entry.placement}
               season={currSeason}
               show={currShow}
             />

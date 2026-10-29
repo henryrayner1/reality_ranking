@@ -3,7 +3,7 @@ import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { type Season, type Show } from '../../utils/Constants';
 import { backendUrl } from '../../utils/apiBase';
-import { getIconLabel } from '../../utils/util';
+import { formatPlacement, getIconLabel, placementTier } from '../../utils/util';
 
 
 interface IconProps {
@@ -12,6 +12,9 @@ interface IconProps {
     isActive?: boolean;
     isEliminated?: boolean;
     dimmed?: boolean;
+    // Final placement for a finalist (1 = winner): adds a medal-coloured
+    // border and a placement label (styles in index.css).
+    placement?: number | null;
     season: Season;
   show?: Show;
   photoUrl?: string;
@@ -63,7 +66,12 @@ const ContestantIcon = (props:IconProps) => {
   const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
 
   return (
-    <div ref={setNodeRef} style={props.isActive ? style : {cursor: 'default'}} {...dragProps} className='flex flex-col relative overflow-hidden contestant-icon'>
+    <div
+      ref={setNodeRef}
+      style={props.isActive ? style : {cursor: 'default'}}
+      {...dragProps}
+      className={`flex flex-col relative overflow-hidden contestant-icon${props.placement ? ` contestant-icon-placed placement-${placementTier(props.placement)}` : ''}`}
+    >
       <img
         src={getImagePath()}
         alt={props.name}
@@ -74,6 +82,7 @@ const ContestantIcon = (props:IconProps) => {
           ...(props.dimmed ? { opacity: 0.25 } : {}),
         }}
       />
+      {props.placement ? <p className="placement-label">{formatPlacement(props.placement)}</p> : null}
       <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>
     </div>
   );

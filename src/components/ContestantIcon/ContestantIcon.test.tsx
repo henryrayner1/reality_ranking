@@ -60,6 +60,31 @@ describe("ContestantIcon", () => {
     expect(img.style.opacity).toBe("0.25");
   });
 
+  it("shows a medal border class and label for a placed finalist", () => {
+    const { container } = renderIcon({ placement: 1 });
+    expect(container.querySelector(".contestant-icon")).toHaveClass("contestant-icon-placed", "placement-gold");
+    expect(screen.getByText("Winner")).toHaveClass("placement-label");
+  });
+
+  it("uses bronze for 3rd and the purple tier below that", () => {
+    const { container, rerender } = renderIcon({ placement: 3 });
+    expect(container.querySelector(".contestant-icon")).toHaveClass("placement-bronze");
+    rerender(
+      <DndContext>
+        <SortableContext items={["c1"]}>
+          <ContestantIcon id="c1" name="Jane Doe" season={season} placement={5} />
+        </SortableContext>
+      </DndContext>
+    );
+    expect(container.querySelector(".contestant-icon")).toHaveClass("placement-other");
+    expect(screen.getByText("5th")).toBeInTheDocument();
+  });
+
+  it("has no placement label for an ordinary contestant", () => {
+    const { container } = renderIcon();
+    expect(container.querySelector(".placement-label")).not.toBeInTheDocument();
+  });
+
   it("renders without crashing when neither photoUrl nor show is set", () => {
     renderIcon({ photoUrl: undefined, show: undefined });
     const img = screen.getByAltText("Jane Doe") as HTMLImageElement;

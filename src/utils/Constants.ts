@@ -149,6 +149,8 @@ export interface Elimination {
   seasonId: string;
   contestantIds: string[];
   eliminationType: string;
+  // contestantId -> final placement (1 = winner) for finalists placed in this episode.
+  placements?: Record<string, number>;
 }
 
 // Single elimination record, e.g. from GET /api/eliminations/bySeason/:seasonId
@@ -157,6 +159,8 @@ export interface EliminationEntry {
   episodeId: string;
   contestantId: string;
   eliminationType: EliminationType;
+  // Final placement (1 = winner, 2 = runner-up, ...); null for an ordinary elimination.
+  placement?: number | null;
   episode?: { episodeNumber: number };
 }
 
