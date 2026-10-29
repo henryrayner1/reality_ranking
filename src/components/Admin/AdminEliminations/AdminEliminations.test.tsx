@@ -78,6 +78,22 @@ describe("AdminEliminations", () => {
     expect(util.addElimination).toHaveBeenCalled();
   });
 
+  it("sends a final placement for a finalist, and fixes it for winner and runner-up", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AdminEliminations showId="s1" seasonId="se1" />);
+    const placementInput = screen.getByLabelText("Final placement");
+
+    await user.selectOptions(screen.getByDisplayValue("Select an episode..."), "e1");
+    await user.selectOptions(screen.getByDisplayValue("Select a contestant..."), "c1");
+    await user.type(placementInput, "3");
+    await user.click(screen.getByText("Log elimination", { selector: "button" }));
+    expect(util.addElimination).toHaveBeenCalledWith(expect.objectContaining({ contestantId: "c1", placement: 3 }));
+
+    await user.selectOptions(screen.getByDisplayValue("Eliminated"), "WINNER");
+    expect(placementInput).toBeDisabled();
+    expect(placementInput).toHaveValue(1);
+  });
+
   it("shows the right badge label per elimination type and removes an entry", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useEliminationsBySeason").mockReturnValue({

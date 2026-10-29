@@ -2,6 +2,14 @@ import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import { requireAdmin } from "../utils/auth.js";
 
+// Winner and runner-up always mean 1st and 2nd; any other finalist's place
+// (3rd, 4th, ...) has to be given explicitly.
+const defaultPlacement = (eliminationType: string | undefined, placement: number | null | undefined) => {
+    if (eliminationType === "WINNER") return 1;
+    if (eliminationType === "RUNNER_UP") return 2;
+    return placement ?? null;
+};
+
 export default function eliminationsRouter(prisma: PrismaClient) {
     const router = Router();
 
@@ -27,14 +35,18 @@ export default function eliminationsRouter(prisma: PrismaClient) {
                     episodeId: elim.episodeId,
                     episodeNumber: elim.episode.episodeNumber,
                     seasonId: elim.episode.seasonId,
-                    contestantIds: []
+                    contestantIds: [],
+                    placements: {}
                 };
             }
             if (elim.contestantId && !acc[elim.episodeId].contestantIds.includes(elim.contestantId)) {
                 acc[elim.episodeId].contestantIds.push(elim.contestantId);
             }
+            if (elim.contestantId && elim.placement != null) {
+                acc[elim.episodeId].placements[elim.contestantId] = elim.placement;
+            }
             return acc;
-        }, {} as { [key: string]: { episodeId: string, episodeNumber: number, seasonId: string, contestantIds: string[] } });
+        }, {} as { [key: string]: { episodeId: string, episodeNumber: number, seasonId: string, contestantIds: string[], placements: Record<string, number> } });
 
         // Convert to array and sort by episodeNumber to guarantee order
         const episodeEliminations = Object.values(episodeEliminationsMap).sort((a, b) => a.episodeNumber - b.episodeNumber);
@@ -69,12 +81,17 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         if (!episodeId || !contestantId) {
             return res.status(400).json({ error: "episodeId and contestantId are required" });
         }
+        if (req.body.placement != null && !(Number.isInteger(req.body.placement) && req.body.placement >= 1)) {
+            return res.status(400).json({ error: "placement must be a whole number of 1 or more" });
+        }
+        const placement = defaultPlacement(eliminationType, req.body.placement);
         const newElimination = await prisma.$transaction(async (tx) => {
             const elimination = await tx.elimination.create({
                 data: {
                     id: randomId,
                     episodeId: episodeId,
                     contestantId: contestantId,
+                    placement,
                     ...(eliminationType ? { eliminationType } : {})
                 },
                 include: {

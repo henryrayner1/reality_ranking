@@ -97,6 +97,10 @@ model Elimination {
   contestantId    String          @unique
   contestant      Contestant?     @relation(fields: [contestantId], references: [id], onDelete: Cascade)
   eliminationType EliminationType @default(ELIMINATED)
+  // Final placement (1 = winner, 2 = runner-up, 3 = third, ...) for
+  // contestants who reached the finale; null for an ordinary elimination.
+  // Placed contestants are shown at the top of the finale column, not greyed.
+  placement       Int?
 }
 
 model Ranking {

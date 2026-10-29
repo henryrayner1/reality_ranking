@@ -290,3 +290,39 @@ body {
   --rk-muted: #56607a;
   --rk-subtle: #4a5470;
 }
+
+/* Finale placements (ContestantIcon's `placement` prop), used by both the
+   Ranking and Insights grids, so kept here rather than in either page's
+   lazily-loaded CSS. Gold/silver/bronze for 1st-3rd, the purple accent for
+   every lower placement. The border is an ::after overlay so it draws on top
+   of the photo instead of shrinking it. */
+.contestant-icon-placed {
+  --placement-color: var(--rk-accent);
+  --placement-text: #ffffff;
+}
+.contestant-icon-placed.placement-gold { --placement-color: #D4A72C; --placement-text: #2b2105; }
+.contestant-icon-placed.placement-silver { --placement-color: #848D9C; --placement-text: #ffffff; }
+.contestant-icon-placed.placement-bronze { --placement-color: #B8733A; --placement-text: #ffffff; }
+.contestant-icon-placed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--placement-color);
+  pointer-events: none;
+  z-index: 2;
+}
+.placement-label {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  margin: 0;
+  background-color: var(--placement-color);
+  color: var(--placement-text);
+  font-size: 0.4rem;
+  font-weight: 900;
+  line-height: 1.4;
+  text-transform: uppercase;
+  text-align: center;
+  z-index: 1;
+}

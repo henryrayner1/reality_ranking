@@ -1,4 +1,5 @@
 import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../../utils/Constants";
+import { formatPlacement } from "../../../utils/util";
 import ContestantIcon from "../../ContestantIcon/ContestantIcon";
 import PageLoading from "../../PageLoading/PageLoading";
 import ContestantTrendChart from "../ContestantTrendChart/ContestantTrendChart";
@@ -27,13 +28,17 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
     return <p className="insights-placeholder">No contestants have been added to this season yet.</p>;
   }
 
-  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string }>();
+  const eliminationByContestant = new Map<string, { episodeNumber: number; eliminationType: string; placement?: number | null }>();
   props.eliminations.forEach((e: any) => {
     eliminationByContestant.set(e.contestantId, {
       episodeNumber: e.episode?.episodeNumber ?? 0,
       eliminationType: e.eliminationType,
+      placement: e.placement,
     });
   });
+  // A finalist with a final placement wasn't eliminated, so isn't greyed out.
+  const isEliminated = (contestantId: string) =>
+    eliminationByContestant.has(contestantId) && eliminationByContestant.get(contestantId)?.placement == null;
 
   const sortedContestants = [...currSeason.contestants].sort((a, b) => a.name.localeCompare(b.name));
   const selected = sortedContestants.find((c) => c.id === props.selectedContestantId) ?? null;
@@ -54,7 +59,7 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
                 photoUrl={contestant.photoUrl}
                 id={contestant.id}
                 isActive={false}
-                isEliminated={eliminationByContestant.has(contestant.id)}
+                isEliminated={isEliminated(contestant.id)}
                 season={currSeason}
                 show={currShow}
               />
@@ -76,7 +81,8 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
                   photoUrl={selected.photoUrl}
                   id={selected.id}
                   isActive={false}
-                  isEliminated={!!selectedEliminationInfo}
+                  isEliminated={isEliminated(selected.id)}
+                  placement={selectedEliminationInfo?.placement}
                   season={currSeason}
                   show={currShow}
                 />
@@ -85,7 +91,9 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
                 <div className="contestant-detail-name">{selected.name}</div>
                 {selectedEliminationInfo && (
                   <div className="elimination-badge">
-                    Eliminated Episode {selectedEliminationInfo.episodeNumber}
+                    {selectedEliminationInfo.placement != null
+                      ? `${selectedEliminationInfo.placement === 1 ? "Winner" : `${formatPlacement(selectedEliminationInfo.placement)} place`} · Episode ${selectedEliminationInfo.episodeNumber}`
+                      : `Eliminated Episode ${selectedEliminationInfo.episodeNumber}`}
                   </div>
                 )}
               </div>

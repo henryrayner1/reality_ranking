@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
 import { EliminationTypes, type EliminationEntry, type EliminationType } from "../../../utils/Constants"
-import { addElimination, deleteElimination } from "../../../utils/util"
+import { addElimination, deleteElimination, formatPlacement } from "../../../utils/util"
 import * as AdminUI from "../../../utils/AdminComponents"
 import { eliminationsBySeasonQueryKey, showsQueryKey, useEliminationsBySeason, useSeasons } from "../../../hooks/queries"
 
@@ -40,6 +40,9 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
     const ELIM_VARIANTS: Record<EliminationType, AdminUI.BadgeVariant> = {
         ELIMINATED: 'red', QUIT: 'amber', MEDICAL: 'amber', WINNER: 'green', RUNNER_UP: 'purple',
     }
+    // Winner and runner-up always mean 1st and 2nd (the server sets these too).
+    const FIXED_PLACEMENTS: Partial<Record<EliminationType, number>> = { WINNER: 1, RUNNER_UP: 2 }
+    const fixedPlacement = elimination.eliminationType ? FIXED_PLACEMENTS[elimination.eliminationType] : undefined
 
     return (
         <AdminUI.TwoCol>
@@ -62,6 +65,21 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
                     {Object.entries(ELIM_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                 </AdminUI.Select>
                 </AdminUI.FormGroup>
+                <AdminUI.FormGroup label="Final placement (finalists only)">
+                <AdminUI.Input
+                    type="number"
+                    min={1}
+                    step={1}
+                    placeholder="Leave blank for an ordinary elimination"
+                    aria-label="Final placement"
+                    disabled={fixedPlacement !== undefined}
+                    value={fixedPlacement ?? elimination.placement ?? ''}
+                    onChange={e => {
+                        const value = parseInt(e.target.value, 10)
+                        setElimination(f => ({ ...f, placement: Number.isInteger(value) && value >= 1 ? value : null }))
+                    }}
+                />
+                </AdminUI.FormGroup>
                 <AdminUI.PrimaryButton onClick={() => elimination.episodeId && elimination.contestantId && create.mutate()} disabled={create.isPending}>{create.isPending ? 'Logging...' : 'Log elimination'}</AdminUI.PrimaryButton>
                 {create.isError && <AdminUI.ErrorMsg />}
             </div>
@@ -78,6 +96,9 @@ const AdminEliminations = ({ showId, seasonId }: AdminEliminationsProps) => {
                         <span style={{ fontSize: 12, color: 'var(--color-text-secondary,#888)', minWidth: 40 }}>E{episode?.episodeNumber || '?'}</span>
                         <AdminUI.Avatar name={contestant?.name || '?'} size={28} />
                         <span style={{ fontSize: 14, flex: 1 }}>{contestant?.name || 'Unknown'}</span>
+                        {elim.placement != null && FIXED_PLACEMENTS[elim.eliminationType] === undefined && (
+                            <AdminUI.Badge label={`${formatPlacement(elim.placement)} place`} variant="gray" />
+                        )}
                         <AdminUI.Badge label={ELIM_LABELS[elim.eliminationType]} variant={ELIM_VARIANTS[elim.eliminationType]} />
                         <AdminUI.DangerButton onClick={() => remove.mutate(elim.id)} />
                     </div>

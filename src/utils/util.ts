@@ -184,7 +184,7 @@ export const addElimination = async (elimination: Partial<EliminationEntry>) => 
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ episodeId: elimination.episodeId, contestantId: elimination.contestantId, eliminationType: elimination.eliminationType }),
+    body: JSON.stringify({ episodeId: elimination.episodeId, contestantId: elimination.contestantId, eliminationType: elimination.eliminationType, placement: elimination.placement ?? null }),
   });
   if (!elimRes.ok) {
     const msg = await elimRes.text().catch(() => 'Failed to add elimination');
@@ -286,9 +286,51 @@ export const getEliminationOrder = (
   return eliminatedContestants;
 }
 
+// Final placements (contestantId -> 1 for the winner, 2, 3, ...) decided at or
+// before the given episode, i.e. in the finale.
+export const getPlacements = (eliminations: Elimination[], episodeNumber: number) => {
+  const placements = new Map<string, number>();
+  for (const episodeData of eliminations) {
+    if (episodeData.episodeNumber > episodeNumber) continue;
+    for (const [contestantId, placement] of Object.entries(episodeData.placements ?? {})) {
+      placements.set(contestantId, placement);
+    }
+  }
+  return placements;
+};
+
+// "Winner", "2nd", "3rd", "4th", ... ("11th"-"13th" included).
+export const formatPlacement = (placement: number) => {
+  if (placement === 1) return "Winner";
+  const lastTwo = placement % 100;
+  const suffix = lastTwo >= 11 && lastTwo <= 13 ? "th" : ({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[placement % 10] ?? "th";
+  return `${placement}${suffix}`;
+};
+
+// Medal colours for 1st-3rd; every lower placement shares the purple accent.
+export const placementTier = (placement: number) =>
+  placement === 1 ? "gold" : placement === 2 ? "silver" : placement === 3 ? "bronze" : "other";
+
+// Moves placed finalists to the top of a column, best placement first, and
+// leaves everyone else in their existing order. Shared by the Ranking page
+// (buildPastRankingColumn) and the Insights table.
+export const placeFinalistsFirst = <T extends string | null>(
+  ids: T[],
+  placements: Map<string, number>,
+  getContestantName: (contestantId: string) => string = () => ""
+): T[] => {
+  const placed = ids
+    .filter((id): id is T & string => id !== null && placements.has(id))
+    .sort((a, b) => (placements.get(a)! - placements.get(b)!) || getContestantName(a).localeCompare(getContestantName(b)));
+  return [...placed, ...ids.filter((id) => id === null || !placements.has(id))];
+};
+
 export interface RankingColumnEntry {
   contestantId: string | null;
   eliminated: boolean;
+  // Set for a finalist with a final placement: shown at the top of the
+  // column with a medal border instead of greyed out with the eliminations.
+  placement?: number;
 }
 
 // Builds one ordered column of a past-rankings table for a single episode's ranking:
@@ -337,7 +379,15 @@ export const buildPastRankingColumn = (
     .filter((id) => !stillUncoveredIds.has(id))
     .map((id) => ({ contestantId: id, eliminated: false }));
 
-  const column: RankingColumnEntry[] = [...active, ...eliminated, ...unaccountedFor];
+  // Finalists placed in the finale aren't eliminations: they go above
+  // everyone else, ordered by placement, and render in colour.
+  const placements = getPlacements(eliminations, episodeNumber);
+  const placed = placeFinalistsFirst(eliminatedIds.filter((id) => placements.has(id)), placements, getContestantName)
+    .map((id) => ({ contestantId: id, eliminated: false, placement: placements.get(id) }));
+  const unplaced = (entries: RankingColumnEntry[]) =>
+    entries.filter((entry) => entry.contestantId === null || !placements.has(entry.contestantId));
+
+  const column: RankingColumnEntry[] = [...placed, ...unplaced(active), ...unplaced(eliminated), ...unplaced(unaccountedFor)];
 
   // Pad/truncate to exactly the season's row count (mirrors
   // InsightsRankingTable's buildRankColumn) so every column contributes the

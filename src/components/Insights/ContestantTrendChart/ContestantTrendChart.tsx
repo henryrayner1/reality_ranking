@@ -1,6 +1,7 @@
 import { Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { type EliminationEntry, type InsightsResponse } from "../../../utils/Constants";
 import { PRE_SEASON_EPISODE_NUMBER, formatEpisodeHeading } from "../../../utils/episodeRankability";
+import { formatPlacement } from "../../../utils/util";
 
 interface ChartPoint {
   episodeNumber: number;
@@ -15,7 +16,7 @@ interface ContestantTrendChartProps {
   winnerInsights: InsightsResponse;
   contestantCount: number;
   eliminations: EliminationEntry[];
-  eliminationInfo?: { episodeNumber: number; eliminationType: string } | null;
+  eliminationInfo?: { episodeNumber: number; eliminationType: string; placement?: number | null } | null;
 }
 
 // Submitted rankings only contain still-active contestants, so the worst
@@ -141,9 +142,14 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
         {props.eliminationInfo && (
           <ReferenceLine
             x={props.eliminationInfo.episodeNumber}
-            stroke="red"
+            stroke={props.eliminationInfo.placement != null ? "#7F77DD" : "red"}
             strokeDasharray="4 4"
-            label={{ value: `Eliminated`, position: "top", fill: "red", fontSize: 11 }}
+            label={{
+              value: props.eliminationInfo.placement != null ? formatPlacement(props.eliminationInfo.placement) : "Eliminated",
+              position: "top",
+              fill: props.eliminationInfo.placement != null ? "#7F77DD" : "red",
+              fontSize: 11,
+            }}
           />
         )}
       </ComposedChart>

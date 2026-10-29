@@ -108,6 +108,43 @@ describe("InsightsRankingTable", () => {
     expect(names).toEqual(["BOB", "ALICE", "CAROL"]);
   });
 
+  it("adds an unranked finale column with placed finalists on top, in colour", () => {
+    // Episode 1 was ranked; nobody could rank the episode 2 finale, where Bob
+    // won, Alice came 2nd and Carol was eliminated without a placement.
+    const favoriteInsights: InsightsResponse = {
+      seasonId: "se1",
+      type: "FAVORITE",
+      episodes: [{
+        episodeId: "ep1",
+        episodeNumber: 1,
+        contestantAverages: [
+          { contestantId: "c3", averagePosition: 1 },
+          { contestantId: "c1", averagePosition: 2 },
+          { contestantId: "c2", averagePosition: 3 },
+        ],
+      }],
+      overall: [],
+    };
+    const eliminations = [
+      { id: "x1", episodeId: "ep2", contestantId: "c2", eliminationType: "WINNER", placement: 1, episode: { episodeNumber: 2 } },
+      { id: "x2", episodeId: "ep2", contestantId: "c1", eliminationType: "RUNNER_UP", placement: 2, episode: { episodeNumber: 2 } },
+      { id: "x3", episodeId: "ep2", contestantId: "c3", eliminationType: "ELIMINATED", placement: null, episode: { episodeNumber: 2 } },
+    ] as EliminationEntry[];
+    const { container } = render(
+      <InsightsRankingTable {...baseProps} eliminations={eliminations} currSeason={season} favoriteInsights={favoriteInsights} winnerInsights={emptyInsights} />
+    );
+
+    const headings = Array.from(container.querySelectorAll(".insights-episode-heading")).map((h) => h.textContent);
+    expect(headings).toContain("2");
+    // Cells 3-5 are the finale column (cells 0-2 are episode 1).
+    const finaleCells = Array.from(container.querySelectorAll(".insights-cell")).slice(3, 6);
+    expect(finaleCells.map((cell) => cell.querySelector(".contestant-icon p:last-child")?.textContent)).toEqual(["BOB", "ALICE", "CAROL"]);
+    expect(finaleCells[0].querySelector(".placement-label")?.textContent).toBe("Winner");
+    expect(finaleCells[1].querySelector(".placement-label")?.textContent).toBe("2nd");
+    expect(finaleCells[0].querySelector("img")).not.toHaveStyle({ filter: "grayscale(100%)" });
+    expect(finaleCells[2].querySelector("img")).toHaveStyle({ filter: "grayscale(100%)" });
+  });
+
   it("switches rank type tabs", async () => {
     const user = userEvent.setup();
     const setRankingType = vi.fn();
