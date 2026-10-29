@@ -1,7 +1,15 @@
 import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Ranking, RankType, Season, Show } from "./Constants";
 import { backendUrl } from "./apiBase";
 
-const apiFetch = (path: string, init?: RequestInit) => fetch(backendUrl(path), init);
+// Every request carries the logged-in user's token (if any); the backend only
+// requires it on admin routes, and ignores it everywhere else.
+const apiFetch = (path: string, init?: RequestInit) => {
+  const token = checkUserLoggedIn()?.token;
+  if (!token) return fetch(backendUrl(path), init);
+  const headers = new Headers(init?.headers);
+  headers.set('Authorization', `Bearer ${token}`);
+  return fetch(backendUrl(path), { ...init, headers });
+};
 
 export const getUserId = async (email: string) => {
   const userRes = await apiFetch(`/api/users/lookup?email=${email}`);
@@ -43,6 +51,10 @@ export const createUser = async (email: string, password: string) => {
     },
     body: JSON.stringify({ email, password }),
   });
+  if (!createRes.ok) {
+    const body = await createRes.json().catch(() => null);
+    throw new Error(body?.error ?? 'Account creation failed');
+  }
   const createData = await createRes.json();
   localStorage.setItem('user', JSON.stringify(createData));
   return createData;
@@ -53,9 +65,12 @@ export const checkUserLoggedIn = () => {
   if (userStr) {
     try {
       const user = JSON.parse(userStr);
-      if (user && user.id && user.email) {
+      // A session saved before login tokens existed has no token, and every
+      // admin request would fail with it, so treat it as logged out.
+      if (user && user.id && user.email && user.token) {
         return user;
       }
+      localStorage.removeItem('user');
     } catch (e) {
       console.error('Failed to parse user from localStorage', e);
       return null;

@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin } from "../utils/auth.js";
 
 export default function eliminationsRouter(prisma: PrismaClient) {
     const router = Router();
@@ -62,7 +63,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         res.json(eliminations);
     });
 
-    router.post("/add", async (req, res) => {
+    router.post("/add", requireAdmin(prisma), async (req, res) => {
         const randomId = Math.random().toString(36).slice(2, 12).toLowerCase();
         const { episodeId, contestantId, eliminationType } = req.body;
         if (!episodeId || !contestantId) {
@@ -93,7 +94,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         });
     });
 
-    router.delete("/delete/:id", async (req, res) => {
+    router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {
         const { id } = req.params;
         const deletedElimination = await prisma.$transaction(async (tx) => {
             const deleted = await tx.elimination.delete({
@@ -108,7 +109,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         res.json(deletedElimination);
     });
 
-    router.post("/addMany", async (req, res) => {
+    router.post("/addMany", requireAdmin(prisma), async (req, res) => {
         const eliminationsList = req.body.eliminationsList;
 
         if (!eliminationsList || !Array.isArray(eliminationsList) || eliminationsList.length === 0) {
@@ -162,7 +163,7 @@ export default function eliminationsRouter(prisma: PrismaClient) {
         res.json(episodeEliminations);
     });
 
-    router.delete("/deleteMany", async (req, res) => {
+    router.delete("/deleteMany", requireAdmin(prisma), async (req, res) => {
         const  eliminationsList  = req.body;
         if (!eliminationsList || !Array.isArray(eliminationsList) || eliminationsList.length === 0) {
             return res.status(400).json({ error: "eliminationsList is required and must be a non-empty array" });

@@ -1,5 +1,6 @@
 import { PrismaClient, type RankType } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin, requireUser } from "../utils/auth.js";
 import { isPreSeasonOpen, isRankableNow, isSeasonEnded } from "../utils/episodeRankability.js";
 
 export default function rankingsRouter(prisma: PrismaClient) {
@@ -148,13 +149,16 @@ export default function rankingsRouter(prisma: PrismaClient) {
     res.json(rankings);
   });
 
-  router.post("/create", async (req, res) => {
+  router.post("/create", requireUser(), async (req, res) => {
     const randomId = Math.random().toString(36).slice(2, 8).toLowerCase();
     const body = req.body;
     if (!body.userId || typeof body.userId !== "string") {
       return res
         .status(400)
         .json({ error: "userId is required and must be a string" });
+    }
+    if (body.userId !== res.locals.userId) {
+      return res.status(403).json({ error: "You can only submit rankings for your own account" });
     }
     if (!body.episodeId || typeof body.episodeId !== "string") {
       return res
@@ -211,7 +215,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
     }
   });
 
-  router.post("/createMany", async (req, res) => {
+  router.post("/createMany", requireUser(), async (req, res) => {
     const body = req.body;
     if (
       !body.rankingsList ||
@@ -249,6 +253,9 @@ export default function rankingsRouter(prisma: PrismaClient) {
       });
     } catch (error) {
       return res.status(400).json({ error: (error as Error).message });
+    }
+    if (rankingRows.some((r) => r.userId !== res.locals.userId)) {
+      return res.status(403).json({ error: "You can only submit rankings for your own account" });
     }
 
     const episodeIds = [...new Set(rankingRows.map((r) => r.episodeId))];
@@ -300,7 +307,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
     res.json(ranking);
   });
 
-  router.delete("/delete/:id", async (req, res) => {
+  router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {
     const { id } = req.params;
     try {
       const deletedRanking = await prisma.ranking.delete({

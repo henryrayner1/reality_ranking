@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin } from "../utils/auth.js";
 import path from "path";
 import fs from "fs";
 import multer from "multer";
@@ -62,7 +63,7 @@ export default function imagesRouter(prisma: PrismaClient) {
 
     const upload = multer({ storage });
 
-    router.post("/upload", upload.single("image"), (req, res) => {
+    router.post("/upload", requireAdmin(prisma), upload.single("image"), (req, res) => {
         if (!req.file) {
             return res.status(400).json({ error: "No file uploaded" });
         }

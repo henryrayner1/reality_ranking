@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin } from "../utils/auth.js";
 import fs from "fs";
 import path from "path";
 import { ensureTodaysDailyEpisode, ensureTodaysDailyEpisodesForAllShows } from "../utils/dailyEpisode.js";
@@ -83,7 +84,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json(currentSeason);
     });
 
-    router.post("/add", async (req, res) => {
+    router.post("/add", requireAdmin(prisma), async (req, res) => {
         const payload = req.body?.show ?? req.body;
         if (!payload || !payload.name) {
             return res.status(400).json({ error: "name is required" });
@@ -107,7 +108,7 @@ export default function showsRouter(prisma: PrismaClient) {
 
     // Only updates the fields actually present in the body (logoUrl: null
     // clears the logo), so changing one setting never wipes another.
-    router.post("/update", async (req, res) => {
+    router.post("/update", requireAdmin(prisma), async (req, res) => {
         const { showId, rankingMode, logoUrl } = req.body;
         if (!showId) {
             return res.status(400).json({ error: "showId is required" });
@@ -135,7 +136,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json(updatedShow);
     });
 
-    router.post("/updateSeason", async (req, res) => {
+    router.post("/updateSeason", requireAdmin(prisma), async (req, res) => {
         const { seasonId, premiereDate, endDate, startDate } = req.body;
         if (!seasonId) {
             return res.status(400).json({ error: "seasonId is required" });
@@ -159,7 +160,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json(updatedSeason);
     });
 
-    router.post("/changeCurrentSeason", async (req, res) => {
+    router.post("/changeCurrentSeason", requireAdmin(prisma), async (req, res) => {
         const { showId, newSeasonId } = req.body;
         if (!showId || !newSeasonId) {
             return res.status(400).json({ error: "showId and newSeasonId are required" });
@@ -187,7 +188,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json(updatedSeason);
     });
 
-    router.post("/addSeason", async (req, res) => {
+    router.post("/addSeason", requireAdmin(prisma), async (req, res) => {
         const randomId = Math.random().toString(36).substring(2, 12);
         const { showId, seasonNumber, isCurrent, premiereDate } = req.body;
         if (!showId || !seasonNumber) {
@@ -222,7 +223,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json(newSeason);
     });
 
-    router.delete("/deleteSeason/:seasonId", async (req, res) => {
+    router.delete("/deleteSeason/:seasonId", requireAdmin(prisma), async (req, res) => {
         const { seasonId } = req.params;
         await prisma.season.delete({
             where: {
@@ -232,7 +233,7 @@ export default function showsRouter(prisma: PrismaClient) {
         res.json({ success: true });
     });
 
-    router.delete("/delete/:showId", async (req, res) => {
+    router.delete("/delete/:showId", requireAdmin(prisma), async (req, res) => {
         const { showId } = req.params;
         await prisma.show.delete({
             where: {
