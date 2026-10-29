@@ -2,8 +2,7 @@ import React from 'react';
 import {useSortable} from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 import { type Season, type Show } from '../../utils/Constants';
-import { backendUrl } from '../../utils/apiBase';
-import { formatPlacement, getIconLabel, placementTier } from '../../utils/util';
+import { formatPlacement, getContestantPhotoUrl, getIconLabel, placementTier } from '../../utils/util';
 
 
 interface IconProps {
@@ -32,27 +31,6 @@ const ContestantIcon = (props:IconProps) => {
     transition,
   } = useSortable({id: props.id});
 
-  const getImagePath = () => {
-    if (props.photoUrl) {
-      return backendUrl(props.photoUrl);
-    }
-    if (!props.show?.name) {
-      return undefined;
-    }
-
-    const prefix = `/uploads/`;
-    const showFolder = props.show.name
-      .trim()
-      .toLowerCase()
-      .replace(/['’]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    const seasonNumber = `season_${props.season.seasonNumber}`;
-    const contestantName = `${props.name?.replace(/\s+/g, '_').replace(/['']/g, '').toLowerCase()}.png`;
-
-    return backendUrl(`${prefix}${showFolder}/${seasonNumber}/contestants/${contestantName}`);
-  }
-  
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -75,7 +53,7 @@ const ContestantIcon = (props:IconProps) => {
       className={`flex flex-col relative overflow-hidden contestant-icon${props.placement ? ` contestant-icon-placed placement-${placementTier(props.placement)}` : props.placementPending ? ' contestant-icon-pending' : ''}`}
     >
       <img
-        src={getImagePath()}
+        src={getContestantPhotoUrl(props.name, props.photoUrl, props.season, props.show)}
         alt={props.name}
         className='mt-[-5px] mb-[5px]'
         style={{

@@ -1,7 +1,7 @@
 import { Dropdown } from "react-bootstrap";
 import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../../utils/Constants";
 import { formatPlacement } from "../../../utils/util";
-import ContestantIcon from "../../ContestantIcon/ContestantIcon";
+import ContestantPhoto from "../../ContestantPhoto/ContestantPhoto";
 import PageLoading from "../../PageLoading/PageLoading";
 import ContestantTrendChart from "../ContestantTrendChart/ContestantTrendChart";
 
@@ -46,17 +46,15 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
   const selectedEliminationInfo = selected ? eliminationByContestant.get(selected.id) ?? null : null;
 
   const thumb = (contestant: (typeof sortedContestants)[number]) => (
-    <div className="insights-contestant-thumb">
-      <ContestantIcon
-        name={contestant.name}
-        photoUrl={contestant.photoUrl}
-        id={contestant.id}
-        isActive={false}
-        isEliminated={isEliminated(contestant.id)}
-        season={currSeason}
-        show={currShow}
-      />
-    </div>
+    <ContestantPhoto
+      name={contestant.name}
+      photoUrl={contestant.photoUrl}
+      isEliminated={isEliminated(contestant.id)}
+      placement={eliminationByContestant.get(contestant.id)?.placement}
+      season={currSeason}
+      show={currShow}
+      className="insights-contestant-thumb"
+    />
   );
 
   return (
@@ -101,18 +99,15 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
         ) : (
           <>
             <div className="contestant-detail-header">
-              <div className="contestant-detail-photo">
-                <ContestantIcon
-                  name={selected.name}
-                  photoUrl={selected.photoUrl}
-                  id={selected.id}
-                  isActive={false}
-                  isEliminated={isEliminated(selected.id)}
-                  placement={selectedEliminationInfo?.placement}
-                  season={currSeason}
-                  show={currShow}
-                />
-              </div>
+              <ContestantPhoto
+                name={selected.name}
+                photoUrl={selected.photoUrl}
+                isEliminated={isEliminated(selected.id)}
+                placement={selectedEliminationInfo?.placement}
+                season={currSeason}
+                show={currShow}
+                className="contestant-detail-photo"
+              />
               <div>
                 <div className="contestant-detail-name">{selected.name}</div>
                 {selectedEliminationInfo && (

@@ -523,6 +523,25 @@ export const updateShowLogo = async (showId: string, logoUrl: string | null) => 
   return response.json();
 };
 
+// A contestant's photo URL: their stored photoUrl, else the old naming
+// convention under /uploads/<show-slug>/season_<n>/contestants/.
+export const getContestantPhotoUrl = (name: string, photoUrl: string | undefined, season: Season, show?: Show | null) => {
+  if (photoUrl) {
+    return backendUrl(photoUrl);
+  }
+  if (!show?.name) {
+    return undefined;
+  }
+  const showFolder = show.name
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const contestantName = `${name.replace(/\s+/g, '_').replace(/['']/g, '').toLowerCase()}.png`;
+  return backendUrl(`/uploads/${showFolder}/season_${season.seasonNumber}/contestants/${contestantName}`);
+};
+
 // Uploads a contestant photo to <show-slug>/season_<n>/contestants/ (on R2 in
 // production, uploads/ locally) and returns its URL.
 export const uploadContestantPhoto = async (image: File, showName: string, seasonNumber: number) => {

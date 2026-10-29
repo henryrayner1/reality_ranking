@@ -404,6 +404,24 @@
   transition: background-color 0.15s, color 0.15s;
 }
 
+/* ContestantPhoto: a plain square photo (no name strip), since the name is
+   always shown beside it here. */
+.contestant-photo {
+  display: block;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 8px;
+  background-color: var(--rk-card-raised);
+}
+
+.contestant-photo-eliminated {
+  filter: grayscale(100%);
+}
+
+.contestant-photo-placed {
+  box-shadow: 0 0 0 2px var(--placement-color);
+}
+
 .contestant-list-item .insights-contestant-thumb {
   width: 2.25rem;
   min-width: 2.25rem;
@@ -453,6 +471,11 @@
 .contestant-detail-photo {
   width: 8rem;
   min-width: 8rem;
+  border-radius: 12px;
+}
+
+.contestant-detail-photo.contestant-photo-placed {
+  box-shadow: 0 0 0 3px var(--placement-color);
 }
 
 .contestant-detail-name {
