@@ -95,9 +95,13 @@
    than the Favorite/Winner switch below it (lighter active pill), since
    this one swaps the whole page's content rather than one table's data. */
 .insights-mode-tabs {
-  display: flex;
-  flex-direction: row;
+  /* Equal-width columns (each as wide as the longer label) so the sliding
+     highlight below is the same size on either tab. */
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   gap: 0.25rem;
+  position: relative;
   margin: 0.5rem 0 0.25rem;
   padding: 0.25rem;
   background-color: var(--rk-card-bg);
@@ -113,8 +117,9 @@
   font-size: 0.9375rem;
   border-radius: 999px;
   padding: 0.4rem 1.5rem;
+  text-align: center;
   white-space: nowrap;
-  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: color 0.25s;
 }
 
 .insights-mode-tab:hover {
@@ -124,10 +129,40 @@
 .insights-mode-tab-active,
 .insights-mode-tab-active:hover {
   cursor: default;
-  background-color: var(--rk-accent);
   color: #fff;
-  box-shadow: 0 2px 8px rgba(127, 119, 221, 0.35);
 }
+
+/* Sliding highlight: one pill behind both tabs that moves to whichever is
+   active, instead of the active tab filling itself in. Both tabs are the same
+   width, so it's half the track wide and slides by its own width plus the gap. */
+.insights-mode-tabs::before {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  width: calc((100% - 2 * 0.25rem - 0.25rem) / 2);
+  border-radius: 999px;
+  background-color: var(--rk-accent);
+  box-shadow: 0 2px 8px rgba(127, 119, 221, 0.35);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.insights-mode-tabs:has(> .insights-mode-tab-active:nth-child(2))::before {
+  transform: translateX(calc(100% + 0.25rem));
+}
+
+.insights-mode-tabs > .insights-mode-tab {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insights-mode-tabs::before {
+    transition: none;
+  }
+}
+
 
 /* Fixed to the same full width as the top bar (rather than shrink-wrapping
    to the grid), matching the Ranking page — spare room is absorbed by the
@@ -171,7 +206,7 @@
   font-size: 0.9375rem;
   border-radius: 999px;
   padding: 0.4rem 1.25rem;
-  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: color 0.25s;
 }
 
 .insights-tab:hover {
@@ -180,10 +215,40 @@
 
 .insights-tab-active {
   cursor: default;
-  background-color: var(--rk-card-raised);
   color: var(--rk-accent-text);
-  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
 }
+
+/* Sliding highlight: one pill behind both tabs that moves to whichever is
+   active, instead of the active tab filling itself in. Both tabs are the same
+   width, so it's half the track wide and slides by its own width plus the gap. */
+.insights-tabs::before {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  width: calc((100% - 2 * 0.25rem - 0.25rem) / 2);
+  border-radius: 999px;
+  background-color: var(--rk-card-raised);
+  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.insights-tabs:has(> .insights-tab-active:nth-child(2))::before {
+  transform: translateX(calc(100% + 0.25rem));
+}
+
+.insights-tabs > .insights-tab {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .insights-tabs::before {
+    transition: none;
+  }
+}
+
 
 .insights-grid {
   display: grid;

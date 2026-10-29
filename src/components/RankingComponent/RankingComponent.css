@@ -339,7 +339,7 @@
   font-size: 0.9375rem;
   border-radius: 999px;
   padding: 0.4rem 1.25rem;
-  transition: background-color 0.15s, color 0.15s, box-shadow 0.15s;
+  transition: color 0.25s;
 }
 
 .rank-tab:hover {
@@ -348,10 +348,40 @@
 
 .rank-tab-active {
   cursor: default;
-  background-color: var(--rk-card-raised);
   color: var(--rk-accent-text);
-  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
 }
+
+/* Sliding highlight: one pill behind both tabs that moves to whichever is
+   active, instead of the active tab filling itself in. Both tabs are the same
+   width, so it's half the track wide and slides by its own width plus the gap. */
+.rank-tabs::before {
+  content: "";
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  left: 0.25rem;
+  width: calc((100% - 2 * 0.25rem - 0.25rem) / 2);
+  border-radius: 999px;
+  background-color: var(--rk-card-raised);
+  box-shadow: 0 1px 3px rgba(20, 16, 60, 0.12);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rank-tabs:has(> .rank-tab-active:nth-child(2))::before {
+  transform: translateX(calc(100% + 0.25rem));
+}
+
+.rank-tabs > .rank-tab {
+  position: relative;
+  z-index: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rank-tabs::before {
+    transition: none;
+  }
+}
+
 
 /* Spacing below the tabs goes on the wrapper, not the grid: the "Episode"
    overlay is absolutely positioned against the wrapper, so a margin on the
