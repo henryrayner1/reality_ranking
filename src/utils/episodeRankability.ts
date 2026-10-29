@@ -147,6 +147,38 @@ export const isSeasonEnded = (
   return !Number.isNaN(endMs) && now >= endMs;
 };
 
+// How long after a finale airs its column keeps showing "results pending"
+// while no results have been entered. Older ended seasons that never had
+// finale results logged would otherwise show as pending forever.
+export const FINALE_RESULTS_PENDING_MS = 7 * 24 * 60 * 60 * 1000;
+
+// A season's finale is its last real episode, once the season has an end
+// date (which is what makes it a finale rather than just the latest episode).
+export const getFinaleEpisode = (season: { endDate?: string | null; episodes?: Episode[] } | null | undefined): Episode | null => {
+  if (!season?.endDate) return null;
+  const episodes = (season.episodes ?? []).filter((episode) => !episode.isPreSeason);
+  if (episodes.length === 0) return null;
+  return episodes.reduce((last, episode) => (episode.episodeNumber > last.episodeNumber ? episode : last));
+};
+
+// True from the moment the finale starts (rankings close at the season's end
+// date) until any result for it is logged, capped at FINALE_RESULTS_PENDING_MS
+// after it aired. The Ranking page shows the finale column with a "pending"
+// label during this time instead of a faded carried-over order.
+export const isFinaleResultsPending = (
+  season: { endDate?: string | null; episodes?: Episode[] } | null | undefined,
+  now: number = Date.now()
+): boolean => {
+  const finale = getFinaleEpisode(season);
+  if (!finale || !isSeasonEnded(season, now)) return false;
+  if ((finale.eliminations?.length ?? 0) > 0) return false;
+  const airedMs = finale.airDate
+    ? new Date(finale.airDate).getTime()
+    : finale.dayKey ? dayKeyToEasternMidnightMs(finale.dayKey) : NaN;
+  if (Number.isNaN(airedMs) || now < airedMs) return false;
+  return now - airedMs < FINALE_RESULTS_PENDING_MS;
+};
+
 // Pre-season ranking (the season's Episode.isPreSeason row, episodeNumber 0)
 // is open from the season's startDate until its first real episode airs: the
 // earliest airDate among its other episodes (DAILY day rows carry their
