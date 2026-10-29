@@ -296,13 +296,14 @@ body {
    lazily-loaded CSS. Gold/silver/bronze for 1st-3rd, the purple accent for
    every lower placement. The border is an ::after overlay so it draws on top
    of the photo instead of shrinking it. */
-.contestant-icon-placed {
+.contestant-icon-placed,
+.contestant-photo-placed {
   --placement-color: var(--rk-accent);
   --placement-text: #ffffff;
 }
-.contestant-icon-placed.placement-gold { --placement-color: #D4A72C; --placement-text: #2b2105; }
-.contestant-icon-placed.placement-silver { --placement-color: #848D9C; --placement-text: #ffffff; }
-.contestant-icon-placed.placement-bronze { --placement-color: #B8733A; --placement-text: #ffffff; }
+.contestant-icon-placed.placement-gold, .contestant-photo-placed.placement-gold { --placement-color: #D4A72C; --placement-text: #2b2105; }
+.contestant-icon-placed.placement-silver, .contestant-photo-placed.placement-silver { --placement-color: #848D9C; --placement-text: #ffffff; }
+.contestant-icon-placed.placement-bronze, .contestant-photo-placed.placement-bronze { --placement-color: #B8733A; --placement-text: #ffffff; }
 .contestant-icon-placed::after {
   content: "";
   position: absolute;
