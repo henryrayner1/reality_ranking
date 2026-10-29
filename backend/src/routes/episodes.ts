@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin } from "../utils/auth.js";
 import { ensureTodaysDailyEpisode } from "../utils/dailyEpisode.js";
 import { isSeasonEnded } from "../utils/episodeRankability.js";
 
@@ -44,7 +45,7 @@ export default function episodesRouter(prisma: PrismaClient) {
     res.json(episodes);
   });
 
-  router.post("/create", async (req, res) => {
+  router.post("/create", requireAdmin(prisma), async (req, res) => {
     const randomId = Math.random().toString(36).slice(2, 8).toLowerCase();
     const body = req.body;
     const season = await prisma.season.findUnique({ where: { id: body.seasonId }, select: { endDate: true } });
@@ -78,7 +79,7 @@ export default function episodesRouter(prisma: PrismaClient) {
     res.json(episode);
   });
 
-  router.delete("/delete/:id", async (req, res) => {
+  router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {
     const { id } = req.params;
     const deletedEpisode = await prisma.episode.delete({
       where: { id },

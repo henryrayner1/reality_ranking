@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
+import { requireAdmin } from "../utils/auth.js";
 
 export default function contestantsRouter(prisma: PrismaClient) {
     const router = Router();
@@ -41,7 +42,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
         res.json(contestants);
     });
 
-    router.post("/add", async (req, res) => {
+    router.post("/add", requireAdmin(prisma), async (req, res) => {
         const { name, seasonId, photoUrl, firstNameHasSpace } = req.body;
         if (!name || !seasonId) {
             return res.status(400).json({ error: "name and seasonId are required" });
@@ -57,7 +58,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
         res.json(newContestant);
     });
 
-    router.patch("/:contestantId", async (req, res) => {
+    router.patch("/:contestantId", requireAdmin(prisma), async (req, res) => {
         const { contestantId } = req.params;
         const { name, photoUrl, firstNameHasSpace } = req.body;
         const updatedContestant = await prisma.contestant.update({
@@ -73,7 +74,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
         res.json(updatedContestant);
     });
 
-    router.delete("/delete/:contestantId", async (req, res) => {
+    router.delete("/delete/:contestantId", requireAdmin(prisma), async (req, res) => {
         const { contestantId } = req.params;
         await prisma.contestant.delete({
             where: {
@@ -83,7 +84,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
         res.json({ success: true });
     });
 
-    router.post("/addMany", async (req, res) => {
+    router.post("/addMany", requireAdmin(prisma), async (req, res) => {
         const contestantsList = req.body.contestantsList;
         if (!contestantsList || !Array.isArray(contestantsList)) {
             return res.status(400).json({ error: "contestantsList is required and should be an array" });

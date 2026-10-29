@@ -34,6 +34,7 @@ const LoginModal = (props: ModalProps) => {
         dispatch(setUser({id: loginRes.id, email: loginRes.email, accountType: loginRes.accountType}));
       }
     } catch (error) {
+      setLoadingFlag(false);
       setLoginError(error instanceof Error ? error.message : 'Login failed');
     }
   };
@@ -49,6 +50,7 @@ const LoginModal = (props: ModalProps) => {
         dispatch(setUser({id: createRes.id, email: createRes.email, accountType: createRes.accountType}));
       }
     } catch (error) {
+      setLoadingFlag(false);
       setLoginError(error instanceof Error ? error.message : 'Account creation failed');
     }
   };
