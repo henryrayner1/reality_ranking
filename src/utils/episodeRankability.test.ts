@@ -1,4 +1,5 @@
-import { formatEpisodeHeading, getFirstAirMs, isPreSeasonOpen, isPreSeasonVisible } from "./episodeRankability";
+import { FINALE_RESULTS_PENDING_MS, formatEpisodeHeading, getFirstAirMs, isFinaleResultsPending, isPreSeasonOpen, isPreSeasonVisible } from "./episodeRankability";
+import type { Episode } from "./Constants";
 
 const START = "2026-01-01T00:00:00.000Z";
 const FIRST_AIR = "2026-02-01T00:00:00.000Z";
@@ -46,5 +47,34 @@ describe("pre-season rankability", () => {
   it("labels the pre-season column 'Pre'", () => {
     expect(formatEpisodeHeading(0)).toBe("Pre");
     expect(formatEpisodeHeading(3)).toBe("3");
+  });
+});
+
+describe("isFinaleResultsPending", () => {
+  const FINALE_AIR = "2026-11-25T01:00:00.000Z";
+  const episodes: Episode[] = [
+    { id: "pre", episodeNumber: 0, seasonId: "s", isPreSeason: true },
+    { id: "e10", episodeNumber: 10, seasonId: "s", airDate: "2026-11-18T01:00:00.000Z", eliminations: [{} as never] },
+    { id: "e11", episodeNumber: 11, seasonId: "s", airDate: FINALE_AIR, eliminations: [] },
+  ];
+  const season = { endDate: FINALE_AIR, episodes };
+
+  it("is pending from the finale's start until results are logged", () => {
+    expect(isFinaleResultsPending(season, ms(FINALE_AIR) - 1)).toBe(false);
+    expect(isFinaleResultsPending(season, ms(FINALE_AIR))).toBe(true);
+    expect(isFinaleResultsPending(season, ms(FINALE_AIR) + 3 * 60 * 60 * 1000)).toBe(true);
+  });
+
+  it("stops once any finale result is logged", () => {
+    const withResults = { ...season, episodes: episodes.map((e) => (e.id === "e11" ? { ...e, eliminations: [{} as never] } : e)) };
+    expect(isFinaleResultsPending(withResults, ms(FINALE_AIR) + 1000)).toBe(false);
+  });
+
+  it("gives up after a week, so old seasons without results aren't pending forever", () => {
+    expect(isFinaleResultsPending(season, ms(FINALE_AIR) + FINALE_RESULTS_PENDING_MS)).toBe(false);
+  });
+
+  it("needs an end date to know which episode is the finale", () => {
+    expect(isFinaleResultsPending({ episodes }, ms(FINALE_AIR) + 1000)).toBe(false);
   });
 });

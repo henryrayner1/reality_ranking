@@ -80,6 +80,12 @@ describe("ContestantIcon", () => {
     expect(screen.getByText("5th")).toBeInTheDocument();
   });
 
+  it("shows a pending label for a finalist awaiting the finale's result", () => {
+    const { container } = renderIcon({ placementPending: true });
+    expect(container.querySelector(".contestant-icon")).toHaveClass("contestant-icon-pending");
+    expect(screen.getByText("Pending")).toHaveClass("placement-label");
+  });
+
   it("has no placement label for an ordinary contestant", () => {
     const { container } = renderIcon();
     expect(container.querySelector(".placement-label")).not.toBeInTheDocument();

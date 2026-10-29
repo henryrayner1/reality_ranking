@@ -74,6 +74,11 @@ describe("RankingCountdown", () => {
     expect(screen.getByText("This season has ended — rankings are closed.")).toBeInTheDocument();
   });
 
+  it("adds that results are on their way while the finale's results are pending", () => {
+    render(<RankingCountdown episodes={[]} endDate="2025-12-31T00:00:00.000Z" resultsPending />);
+    expect(screen.getByText("This season has ended — rankings are closed. Final results are on their way.")).toBeInTheDocument();
+  });
+
   it("shows 'Rankings close in' while an endDate is in the future (only while the countdown is enabled)", () => {
     const episodes: Episode[] = [
       { id: "e1", episodeNumber: 3, seasonId: "s1", airDate: "2026-01-01T02:00:00.000Z" },

@@ -9,6 +9,8 @@ interface RankingCountdownProps {
   premiereDate?: string | null;
   startDate?: string | null;
   endDate?: string | null;
+  // The finale has aired but its results haven't been logged yet.
+  resultsPending?: boolean;
 }
 
 const useNowTick = (intervalMs: number) => {
@@ -65,7 +67,7 @@ const DailyCountdown = ({ premiereDate, endAt, now, preSeasonNote }: { premiereD
   );
 };
 
-const RankingCountdown = ({ episodes, rankingMode, premiereDate, startDate, endDate }: RankingCountdownProps) => {
+const RankingCountdown = ({ episodes, rankingMode, premiereDate, startDate, endDate, resultsPending }: RankingCountdownProps) => {
   const now = useNowTick(15_000);
   const endAt = endDate ? new Date(endDate).getTime() : null;
   const preSeasonNote = <PreSeasonNote startDate={startDate} premiereDate={premiereDate} episodes={episodes ?? []} now={now} />;
@@ -86,7 +88,11 @@ const RankingCountdown = ({ episodes, rankingMode, premiereDate, startDate, endD
   }, [episodes, now, endAt]);
 
   if (isSeasonEnded({ endDate }, now)) {
-    return <div className="ranking-countdown">This season has ended — rankings are closed.</div>;
+    return (
+      <div className="ranking-countdown">
+        This season has ended — rankings are closed.{resultsPending ? " Final results are on their way." : ""}
+      </div>
+    );
   }
 
   if (rankingMode === "DAILY") {

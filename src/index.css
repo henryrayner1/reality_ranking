@@ -326,3 +326,18 @@ body {
   text-align: center;
   z-index: 1;
 }
+/* Still in a finale whose result hasn't been logged yet (Ranking page's
+   finale column, see isFinaleResultsPending): a dashed accent border and a
+   "Pending" label in the same spot as a placement label. */
+.contestant-icon-pending {
+  --placement-color: var(--rk-accent-tint);
+  --placement-text: var(--rk-accent-text);
+}
+.contestant-icon-pending::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px dashed var(--rk-accent);
+  pointer-events: none;
+  z-index: 2;
+}

@@ -11,7 +11,7 @@ import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
 import ShowSelect from "../ShowSelect/ShowSelect";
 import { useNavigate, useParams } from "react-router-dom";
-import { isRankableNow, getTodayDayKey, isSeasonEnded, isPreSeasonVisible, isPreSeasonOpen, formatEpisodeHeading } from "../../utils/episodeRankability";
+import { isRankableNow, getTodayDayKey, isSeasonEnded, isPreSeasonVisible, isPreSeasonOpen, formatEpisodeHeading, getFinaleEpisode, isFinaleResultsPending } from "../../utils/episodeRankability";
 import RankingCountdown from "../RankingCountdown/RankingCountdown";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEliminations, useShows, useShowTree, useUserRankings, userRankingsQueryKey } from "../../hooks/queries";
@@ -77,13 +77,21 @@ const RankingComponent2 = () => {
   // order, so grid columns always render left-to-right in air order.
   const seasonEnded = isSeasonEnded(currSeason);
 
+  // Between the finale starting (rankings close at the season's end date) and
+  // its results being logged, the finale column shows its remaining
+  // contestants as "pending" rather than a faded carried-over order. It's
+  // shown from the start of the finale instead of an hour in, since nobody
+  // can rank it anyway.
+  const finalePending = isFinaleResultsPending(currSeason);
+  const finaleEpisodeId = getFinaleEpisode(currSeason)?.id;
+
   // The pre-season column (episodeNumber 0, so it sorts first) shows from the
   // season's startDate on; it locks once the first episode airs (see the
   // preSeasonLocked check in the grid).
   const rankableEpisodes = [...(currSeason?.episodes ?? [])]
     .filter((episode) => episode.isPreSeason
       ? isPreSeasonVisible(currSeason)
-      : isRankableNow(episode, currShow?.rankingMode ?? "EPISODE"))
+      : isRankableNow(episode, currShow?.rankingMode ?? "EPISODE") || (finalePending && episode.id === finaleEpisodeId))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
   // eliminations is fetched once per user across every show/season (see
@@ -341,6 +349,7 @@ const RankingComponent2 = () => {
     const syntheticRanking: Ranking = { id: `locked-${episode.id}`, userId: "", episodeId: episode.id, type: rankingType, contestantIds: carriedOrder };
     const columnEntries = buildPastRankingColumn(syntheticRanking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
     const heading = formatEpisodeHeading(episodeNumber);
+    const awaitingResults = finalePending && episode.id === finaleEpisodeId;
     return [
       <div className="episode-heading" key={`${episode.id}-heading`}>{heading}</div>,
       ...columnEntries.map((entry, index) => (
@@ -353,9 +362,11 @@ const RankingComponent2 = () => {
               isActive={false}
               isEliminated={entry.eliminated}
               // A finalist's placement is a real result, unlike the carried-over
-              // order around it, so it isn't dimmed.
-              dimmed={!entry.placement}
+              // order around it, so it isn't dimmed; nor is a finalist still
+              // waiting on the finale's result.
+              dimmed={!entry.placement && !(awaitingResults && !entry.eliminated)}
               placement={entry.placement}
+              placementPending={awaitingResults && !entry.eliminated}
               season={currSeason}
               show={currShow}
             />
@@ -502,7 +513,7 @@ const RankingComponent2 = () => {
           <>
             {/* Fed the full, unfiltered episode list (not rankableEpisodes) —
                 it needs to see not-yet-rankable episodes to find "next up". */}
-            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} startDate={currSeason?.startDate} endDate={currSeason?.endDate} />
+            <RankingCountdown episodes={currSeason?.episodes ?? []} rankingMode={currShow?.rankingMode} premiereDate={currSeason?.premiereDate} startDate={currSeason?.startDate} endDate={currSeason?.endDate} resultsPending={finalePending} />
             <main className="rankings-main">
               {user && rankingContainer}
             </main>

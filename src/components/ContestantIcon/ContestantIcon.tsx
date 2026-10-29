@@ -15,6 +15,8 @@ interface IconProps {
     // Final placement for a finalist (1 = winner): adds a medal-coloured
     // border and a placement label (styles in index.css).
     placement?: number | null;
+    // Still in the finale, whose result hasn't been logged yet.
+    placementPending?: boolean;
     season: Season;
   show?: Show;
   photoUrl?: string;
@@ -70,7 +72,7 @@ const ContestantIcon = (props:IconProps) => {
       ref={setNodeRef}
       style={props.isActive ? style : {cursor: 'default'}}
       {...dragProps}
-      className={`flex flex-col relative overflow-hidden contestant-icon${props.placement ? ` contestant-icon-placed placement-${placementTier(props.placement)}` : ''}`}
+      className={`flex flex-col relative overflow-hidden contestant-icon${props.placement ? ` contestant-icon-placed placement-${placementTier(props.placement)}` : props.placementPending ? ' contestant-icon-pending' : ''}`}
     >
       <img
         src={getImagePath()}
@@ -82,7 +84,9 @@ const ContestantIcon = (props:IconProps) => {
           ...(props.dimmed ? { opacity: 0.25 } : {}),
         }}
       />
-      {props.placement ? <p className="placement-label">{formatPlacement(props.placement)}</p> : null}
+      {props.placement
+        ? <p className="placement-label">{formatPlacement(props.placement)}</p>
+        : props.placementPending ? <p className="placement-label">Pending</p> : null}
       <p className="bg-gray-300 text-[0.4rem] font-black absolute w-full bottom-0">{uppercaseName}</p>
     </div>
   );
