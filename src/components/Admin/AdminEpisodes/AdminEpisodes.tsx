@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { addEpisode, deleteEpisode, setEpisodeFinale } from "../../../utils/util";
+import { addEpisode, deleteEpisode, setEpisodeEliminationCount, setEpisodeFinale } from "../../../utils/util";
 import { RankingModes, type Episode } from "../../../utils/Constants";
 import * as AdminUI from "../../../utils/AdminComponents";
 import { showsQueryKey, useSeasons, useShows } from "../../../hooks/queries";
@@ -26,6 +26,12 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
     // Marking an episode as the finale clears it from any other episode in the season (server-side).
     const markFinale = useMutation({
         mutationFn: ({ episodeId, isFinale }: { episodeId: string; isFinale: boolean }) => setEpisodeFinale(episodeId, isFinale),
+        onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }),
+    })
+
+    // How many contestants leave each episode; predictions must pick that many.
+    const setCount = useMutation({
+        mutationFn: ({ episodeId, eliminationCount }: { episodeId: string; eliminationCount: number }) => setEpisodeEliminationCount(episodeId, eliminationCount),
         onSuccess: () => qc.invalidateQueries({ queryKey: showsQueryKey() }),
     })
 
@@ -72,6 +78,20 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
                     left={<><AdminUI.Avatar name={`E${ep.episodeNumber}`} rounded /><AdminUI.ItemInfo name={`Episode ${ep.episodeNumber}`} meta={`Season ${currSeason?.seasonNumber ?? '?'} · ${formatDate(ep.airDate)}`} /></>}
                     right={<>
                         {ep.isFinale && <AdminUI.Badge label="Finale" variant="purple" />}
+                        {!ep.isFinale && (
+                            <label className="text-xs text-[#888] flex items-center gap-1" title="How many contestants leave this episode (0 = no elimination)">
+                                Elims
+                                <select
+                                    aria-label={`Eliminations in episode ${ep.episodeNumber}`}
+                                    value={ep.eliminationCount ?? 1}
+                                    disabled={setCount.isPending}
+                                    onChange={e => setCount.mutate({ episodeId: ep.id, eliminationCount: Number(e.target.value) })}
+                                    className="border rounded px-1 py-0.5 text-xs"
+                                >
+                                    {[0, 1, 2, 3, 4].map(n => <option key={n} value={n}>{n}</option>)}
+                                </select>
+                            </label>
+                        )}
                         <AdminUI.SecondaryButton
                             onClick={() => markFinale.mutate({ episodeId: ep.id, isFinale: !ep.isFinale })}
                             disabled={markFinale.isPending}
@@ -83,7 +103,7 @@ const AdminEpisodes = ({ showId, seasonId }: AdminEpisodesProps) => {
                 />
             ))}
             </div>
-            {markFinale.isError && <AdminUI.ErrorMsg />}
+            {(markFinale.isError || setCount.isError) && <AdminUI.ErrorMsg />}
             </AdminUI.Card>
         </AdminUI.TwoCol>
     )

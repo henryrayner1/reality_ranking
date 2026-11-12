@@ -1,4 +1,4 @@
-import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Ranking, RankType, Season, Show } from "./Constants";
+import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Prediction, Ranking, RankType, Season, Show } from "./Constants";
 import { backendUrl } from "./apiBase";
 
 // Every request carries the logged-in user's token (if any); the backend only
@@ -133,6 +133,42 @@ export const setEpisodeFinale = async (episodeId: string, isFinale: boolean) => 
   if (!res.ok) {
     const msg = await res.text().catch(() => 'Failed to update episode');
     throw new Error(msg);
+  }
+  return res.json();
+};
+
+export const setEpisodeEliminationCount = async (episodeId: string, eliminationCount: number) => {
+  const res = await apiFetch(`/api/episodes/${episodeId}/eliminationCount`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ eliminationCount }),
+  });
+  if (!res.ok) {
+    const msg = await res.text().catch(() => 'Failed to update episode');
+    throw new Error(msg);
+  }
+  return res.json();
+};
+
+export const getMyPredictions = async (seasonId: string): Promise<Prediction[]> => {
+  const res = await apiFetch(`/api/predictions/mine?seasonId=${encodeURIComponent(seasonId)}`);
+  if (!res.ok) throw new Error('Failed to fetch predictions');
+  return res.json();
+};
+
+export const savePrediction = async (episodeId: string, contestantIds: string[]): Promise<Prediction> => {
+  const res = await apiFetch('/api/predictions', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ episodeId, contestantIds }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => null);
+    throw new Error(body?.error ?? 'Failed to save prediction');
   }
   return res.json();
 };

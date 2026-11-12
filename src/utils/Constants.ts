@@ -25,7 +25,20 @@ export interface Episode {
   isPreSeason?: boolean;
   // Marked in Admin as the season's finale (at most one per season).
   isFinale?: boolean;
+  // How many contestants leave in this episode (0 = none); a prediction for
+  // it must pick exactly this many. Defaults to 1 server-side.
+  eliminationCount?: number;
   eliminations?: Elimination[];
+}
+
+// A user's guess for an upcoming episode (GET /api/predictions/mine). For an
+// ordinary episode contestantIds holds the picks; for the finale it's the
+// predicted placement order, winner first.
+export interface Prediction {
+  id: string;
+  episodeId: string;
+  contestantIds: string[];
+  updatedAt: string;
 }
 
 export const RankTypes = {

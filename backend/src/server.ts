@@ -9,6 +9,7 @@ import episodesRouter from "./routes/episodes.js";
 import eliminationsRouter from "./routes/eliminations.js";
 import contestantsRouter from "./routes/contestant.js";
 import showsRouter from "./routes/show.js";
+import predictionsRouter from "./routes/predictions.js";
 import process from "process";
 import imagesRouter from "./routes/images.js";
 import { startDailyEpisodeScheduler } from "./utils/dailyEpisodeScheduler.js";
@@ -32,6 +33,7 @@ app.use("/api/episodes", episodesRouter(db));
 app.use("/api/eliminations", eliminationsRouter(db));
 app.use("/api/contestants", contestantsRouter(db));
 app.use("/api/shows", showsRouter(db));
+app.use("/api/predictions", predictionsRouter(db));
 
 app.use('/api/images', imagesRouter(db));
 

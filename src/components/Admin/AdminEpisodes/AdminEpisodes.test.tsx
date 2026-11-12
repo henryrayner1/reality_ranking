@@ -88,6 +88,26 @@ describe("AdminEpisodes", () => {
     expect(util.setEpisodeFinale).toHaveBeenCalledWith("e1", true);
   });
 
+  it("sets how many contestants leave an episode (not shown for the finale)", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(util, "setEpisodeEliminationCount").mockResolvedValue({} as any);
+    vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: makeSeasons([
+        { id: "e1", episodeNumber: 1, seasonId: "se1", airDate: "2026-01-01T20:00:00.000Z" },
+        { id: "e2", episodeNumber: 2, seasonId: "se1", airDate: "2026-01-08T20:00:00.000Z", isFinale: true },
+      ]),
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminEpisodes showId="s1" seasonId="se1" />);
+
+    const select = screen.getByLabelText("Eliminations in episode 1");
+    expect(select).toHaveValue("1");
+    expect(screen.queryByLabelText("Eliminations in episode 2")).not.toBeInTheDocument();
+    await user.selectOptions(select, "2");
+    expect(util.setEpisodeEliminationCount).toHaveBeenCalledWith("e1", 2);
+  });
+
   it("removes an episode", async () => {
     const user = userEvent.setup();
     vi.spyOn(queries, "useShows").mockReturnValue({ data: [episodeShow], isLoading: false } as any);

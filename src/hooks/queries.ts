@@ -6,6 +6,7 @@ import {
   getEliminationsBySeason,
   getUserRankings,
   getRankingsInsights,
+  getMyPredictions,
 } from "../utils/util";
 import type { RankType, Season, Show } from "../utils/Constants";
 
@@ -72,6 +73,18 @@ export const useRankingsInsights = (seasonId: string | undefined, type: RankType
     queryKey: rankingsInsightsQueryKey(seasonId, type),
     queryFn: () => getRankingsInsights(seasonId as string, type),
     enabled: !!seasonId,
+  });
+
+// The logged-in user's own predictions for a season (token-scoped server-side;
+// userId is only in the key so logging in as someone else refetches).
+export const predictionsQueryKey = (seasonId: string | undefined, userId: string | undefined) =>
+  ["predictions", seasonId, userId] as const;
+
+export const usePredictions = (seasonId: string | undefined, userId: string | undefined) =>
+  useQuery({
+    queryKey: predictionsQueryKey(seasonId, userId),
+    queryFn: () => getMyPredictions(seasonId as string),
+    enabled: !!seasonId && !!userId,
   });
 
 export interface ShowTree extends Show {

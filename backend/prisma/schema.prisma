@@ -12,6 +12,7 @@ model User {
   password      String
   accountType   AccountType @default(USER)
   rankings      Ranking[]
+  predictions   Prediction[]
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 }
@@ -88,6 +89,10 @@ model Episode {
   // which column shows "results pending", and the elimination routines only
   // record winner/placement results on this episode.
   isFinale        Boolean       @default(false)
+  // How many contestants leave in this episode (0 = no elimination). Users
+  // predicting it must pick exactly this many. See utils/predictions.ts.
+  eliminationCount Int          @default(1)
+  predictions     Prediction[]
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -118,6 +123,21 @@ model Ranking {
 }
 
 
+// A user's guess for an upcoming episode, editable until it airs. For an
+// ordinary episode contestantIds holds the eliminationCount picks (unordered);
+// for the finale it's the full predicted placement order, winner first.
+model Prediction {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  episodeId     String
+  episode       Episode   @relation(fields: [episodeId], references: [id], onDelete: Cascade)
+  contestantIds String[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@unique([userId, episodeId])
+}
 
 enum AccountType {
   ADMIN

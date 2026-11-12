@@ -18,6 +18,7 @@ import PageLoading from "./components/PageLoading/PageLoading";
 const Admin = lazy(() => import("./components/Admin/Admin/Admin"));
 const RankingComponent2 = lazy(() => import("./components/RankingComponent/RankingComponent2"));
 const Insights = lazy(() => import("./components/Insights/Insights/Insights"));
+const Predictions = lazy(() => import("./components/Predictions/Predictions/Predictions"));
 
 function App() {
   const dispatch = useAppDispatch();
@@ -76,6 +77,8 @@ function App() {
           <Route path="/ranking/:showSlug" element={<RankingComponent2 />} />
           <Route path="/insights" element={<Insights />} />
           <Route path="/insights/:showSlug" element={<Insights />} />
+          <Route path="/predictions" element={<Predictions />} />
+          <Route path="/predictions/:showSlug" element={<Predictions />} />
           <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Suspense>
