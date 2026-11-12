@@ -143,6 +143,34 @@ describe("AdminContestants", () => {
     expect(util.updateContestant).toHaveBeenCalledWith("c1", { firstNameHasSpace: true });
   });
 
+  it("previews a nickname as the icon label and saves it on a new contestant", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
+    await user.type(screen.getByPlaceholderText("e.g. Tiyana Kaloko"), "William Smith");
+    await user.type(screen.getByPlaceholderText(/Used instead of their first name/), "Bubba");
+    expect(screen.getByText("Icon label: BUBBA")).toBeInTheDocument();
+    await user.click(screen.getByText("Add contestant", { selector: "button" }));
+    expect(util.addContestant).toHaveBeenCalledWith(
+      expect.objectContaining({ name: "William Smith", nickname: "Bubba" }),
+      expect.anything()
+    );
+  });
+
+  it("clears a nickname by saving it as null", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(queries, "useSeasons").mockReturnValue({
+      data: [{ ...season, contestants: [{ id: "c1", name: "William Smith", seasonId: "se1", status: "ACTIVE", nickname: "Bubba" }] }],
+      isLoading: false,
+    } as any);
+    renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);
+    await user.click(screen.getAllByText("Edit")[0]);
+    const nicknameInput = screen.getByPlaceholderText(/Used instead of their first name/);
+    expect(nicknameInput).toHaveValue("Bubba");
+    await user.clear(nicknameInput);
+    await user.click(screen.getByText("Save changes"));
+    expect(util.updateContestant).toHaveBeenCalledWith("c1", { nickname: null });
+  });
+
   it("doesn't call the API when saving an edit with nothing changed", async () => {
     const user = userEvent.setup();
     renderWithProviders(<AdminContestants showId="s1" seasonId="se1" />);

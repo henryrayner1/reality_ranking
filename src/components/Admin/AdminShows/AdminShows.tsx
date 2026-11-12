@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { addShow, deleteShow, updateShowRankingMode } from "../../../utils/util";
+import { addShow, deleteShow, updateShowDisplayFullName, updateShowRankingMode } from "../../../utils/util";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { RankingModes, type RankingMode, type Show } from "../../../utils/Constants";
@@ -69,6 +69,16 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
         }
     })
 
+    // Predictions page shows full names (e.g. drag names) instead of first
+    // names. Instant toggle: it only changes how names are displayed.
+    const updateFullName = useMutation({
+        mutationFn: ({ showId, displayFullName }: { showId: string; displayFullName: boolean }) => updateShowDisplayFullName(showId, displayFullName),
+        onSuccess: (_data, { showId, displayFullName }) => {
+            qc.setQueryData<Show[]>(showsQueryKey(), old => old?.map(s => s.id === showId ? { ...s, displayFullName } : s));
+            qc.invalidateQueries({ queryKey: showsQueryKey() });
+        }
+    })
+
     return (
         <div className="admin-picker-row">
             <div className="admin-picker-field">
@@ -124,6 +134,16 @@ const AdminShows = ({ showId }: AdminShowsProps) => {
                             {updateMode.isError && <AdminUI.ErrorMsg />}
                         </>
                     )}
+                    <label className="flex items-center gap-2 text-[13px] text-[#333]" title="Show contestants' full names on the Predictions page instead of first names. Contestant icons always use first names.">
+                        <AdminUI.Toggle
+                            checked={!!currShow.displayFullName}
+                            disabled={updateFullName.isPending}
+                            onChange={(checked) => updateFullName.mutate({ showId: currShow.id, displayFullName: checked })}
+                            title="Display full name"
+                        />
+                        Display full name
+                    </label>
+                    {updateFullName.isError && <AdminUI.ErrorMsg />}
                     <AdminUI.DangerButton onClick={() => { if (window.confirm(`Delete ${currShow.name}?`)) remove.mutate(currShow.id) }} />
                 </div>
             )}

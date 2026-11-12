@@ -62,6 +62,16 @@ describe("AdminShows", () => {
     expect(util.addShow).not.toHaveBeenCalled();
   });
 
+  it("saves the Display full name toggle straight away", async () => {
+    const user = userEvent.setup();
+    vi.spyOn(util, "updateShowDisplayFullName").mockResolvedValue({} as any);
+    renderWithProviders(<AdminShows showId="s1" />);
+    const toggle = screen.getByRole("switch", { name: "Display full name" });
+    expect(toggle).toHaveAttribute("aria-checked", "false");
+    await user.click(toggle);
+    expect(util.updateShowDisplayFullName).toHaveBeenCalledWith("s1", true);
+  });
+
   it("only saves a new ranking mode once it's confirmed", async () => {
     const user = userEvent.setup();
     renderWithProviders(<AdminShows showId="s1" />);

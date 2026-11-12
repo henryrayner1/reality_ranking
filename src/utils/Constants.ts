@@ -122,6 +122,8 @@ export interface Show {
   network?: string;
   rankingMode?: RankingMode;
   logoUrl?: string | null;
+  // Predictions page shows full names instead of first names.
+  displayFullName?: boolean;
 }
 
 export interface Season {
@@ -145,6 +147,8 @@ export interface Contestant {
   status?: 'ACTIVE' | 'ELIMINATED';
   createdAt?: string;
   firstNameHasSpace?: boolean;
+  // Used instead of the first name wherever a first name is shown.
+  nickname?: string | null;
 }
 
 export const EliminationTypes = {

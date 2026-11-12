@@ -29,17 +29,23 @@ describe("FinalePredictor", () => {
       <FinalePredictor contestants={contestants} initialOrder={["b", "a", "c"]} season={season} hasSaved={false} isSaving={false} onSubmit={onSubmit} />
     );
     const rows = screen.getAllByRole("listitem");
-    expect(within(rows[0]).getByText("Bob Jones")).toBeInTheDocument();
+    expect(within(rows[0]).getByText("Bob")).toBeInTheDocument();
     expect(rows[0].querySelector(".finale-order-place")).toHaveTextContent("Winner");
     expect(rows[1].querySelector(".finale-order-place")).toHaveTextContent("2nd");
     await user.click(screen.getByRole("button", { name: "Submit Prediction" }));
     expect(onSubmit).toHaveBeenCalledWith(["b", "a", "c"]);
   });
 
-  it("disables Update until the saved order changes", () => {
+  it("shows a saved prediction as a summary, then reopens the order on Update", async () => {
+    const user = userEvent.setup();
     render(
-      <FinalePredictor contestants={contestants} initialOrder={["a", "b", "c"]} season={season} hasSaved isSaving={false} onSubmit={vi.fn()} />
+      <FinalePredictor contestants={contestants} initialOrder={["c", "a", "b"]} season={season} hasSaved isSaving={false} onSubmit={vi.fn()} />
     );
-    expect(screen.getByRole("button", { name: "Update Prediction" })).toBeDisabled();
+    expect(screen.getByText(/You have predicted/)).toHaveTextContent("You have predicted Cara will win the season.");
+    await user.click(screen.getByRole("button", { name: "Update Prediction" }));
+    expect(screen.getByText(/It's the finale!/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Save Prediction" })).toBeDisabled();
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText(/You have predicted/)).toBeInTheDocument();
   });
 });

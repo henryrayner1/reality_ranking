@@ -1,4 +1,5 @@
 import {
+  formatNameList,
   getAiredEpisodes,
   getNextPredictableEpisode,
   getRemainingContestantIds,
@@ -67,5 +68,13 @@ describe("next and aired episodes", () => {
 
   it("lists aired real episodes newest first", () => {
     expect(getAiredEpisodes(season, NOW).map((e) => e.id)).toEqual(["e1"]);
+  });
+});
+
+describe("formatNameList", () => {
+  it("joins names in plain English", () => {
+    expect(formatNameList(["A"])).toBe("A");
+    expect(formatNameList(["A", "B"])).toBe("A and B");
+    expect(formatNameList(["A", "B", "C"])).toBe("A, B and C");
   });
 });

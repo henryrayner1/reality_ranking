@@ -543,6 +543,22 @@ export const updateShowRankingMode = async (showId: string, rankingMode: string)
 };
 
 // null removes the logo (the homepage card then shows a coloured letter tile).
+export const updateShowDisplayFullName = async (showId: string, displayFullName: boolean) => {
+  const response = await apiFetch('/api/shows/update', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ showId, displayFullName }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to update show: ${response.status}`);
+  }
+
+  return response.json();
+};
+
 export const updateShowLogo = async (showId: string, logoUrl: string | null) => {
   const response = await apiFetch('/api/shows/update', {
     method: 'POST',
@@ -763,7 +779,7 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name: contestant.name, seasonId: contestant.seasonId, photoUrl: contestant.photoUrl, firstNameHasSpace: contestant.firstNameHasSpace }),
+    body: JSON.stringify({ name: contestant.name, seasonId: contestant.seasonId, photoUrl: contestant.photoUrl, firstNameHasSpace: contestant.firstNameHasSpace, nickname: contestant.nickname }),
   });
   if (!contestantRes.ok) {
     const msg = await contestantRes.text().catch(() => 'Failed to add contestant');
@@ -773,7 +789,7 @@ export const addContestant = async (contestant: Partial<Contestant>) => {
   return contestantData;
 };
 
-export const updateContestant = async (contestantId: string, changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean }) => {
+export const updateContestant = async (contestantId: string, changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean; nickname?: string | null }) => {
   const updateRes = await apiFetch(`/api/contestants/${contestantId}`, {
     method: 'PATCH',
     headers: {
@@ -792,8 +808,24 @@ export const updateContestant = async (contestantId: string, changes: { name?: s
 // Label shown on a contestant's icon: their first name, which is the first
 // word of their full name, or the first two words when the admin has marked
 // the first name as containing a space (e.g. "Thien An Nguyen" → "THIEN AN").
-export const getIconLabel = (name: string, firstNameHasSpace?: boolean) =>
-  name.trim().toUpperCase().split(/\s+/).slice(0, firstNameHasSpace ? 2 : 1).join(' ');
+// A contestant's first name: their nickname if they have one, else the
+// first word of their name, or the first two when firstNameHasSpace is set
+// (e.g. "Thien An Nguyen").
+export const getFirstName = (name: string, firstNameHasSpace?: boolean, nickname?: string | null) =>
+  nickname?.trim() || name.trim().split(/\s+/).slice(0, firstNameHasSpace ? 2 : 1).join(' ');
+
+export const getIconLabel = (name: string, firstNameHasSpace?: boolean, nickname?: string | null) =>
+  getFirstName(name, firstNameHasSpace, nickname).toUpperCase();
+
+// How the Predictions page names a contestant: their full name on shows with
+// Show.displayFullName (e.g. drag names), otherwise their first name.
+export const getPredictionName = (
+  contestant: Pick<Contestant, "name" | "firstNameHasSpace" | "nickname">,
+  show?: Pick<Show, "displayFullName"> | null
+) =>
+  show?.displayFullName
+    ? contestant.name.trim()
+    : getFirstName(contestant.name, contestant.firstNameHasSpace, contestant.nickname);
 
 export const deleteContestant = async (contestantId: string) => {
   const deleteRes = await apiFetch(`/api/contestants/delete/${contestantId}`, {

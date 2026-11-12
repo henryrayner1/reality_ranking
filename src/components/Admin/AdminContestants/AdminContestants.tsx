@@ -93,7 +93,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
     },
   });
   const update = useMutation({
-    mutationFn: ({ id, changes }: { id: string; changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean } }) =>
+    mutationFn: ({ id, changes }: { id: string; changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean; nickname?: string | null } }) =>
       updateContestant(id, changes),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: showsQueryKey() });
@@ -120,10 +120,12 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
 
     if (editingContestant) {
       const photoUrl = await uploadCroppedImage(name);
-      const changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean } = {};
+      const changes: { name?: string; photoUrl?: string; firstNameHasSpace?: boolean; nickname?: string | null } = {};
       if (name !== editingContestant.name) changes.name = name;
       const firstNameHasSpace = !!contestant.firstNameHasSpace;
       if (firstNameHasSpace !== !!editingContestant.firstNameHasSpace) changes.firstNameHasSpace = firstNameHasSpace;
+      const nickname = contestant.nickname?.trim() || null;
+      if (nickname !== (editingContestant.nickname?.trim() || null)) changes.nickname = nickname;
       if (photoUrl) changes.photoUrl = photoUrl;
       if (Object.keys(changes).length === 0) {
         resetForm();
@@ -139,7 +141,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
 
   const startEditing = (c: Contestant) => {
     setEditingId(c.id);
-    setContestant({ name: c.name, firstNameHasSpace: !!c.firstNameHasSpace });
+    setContestant({ name: c.name, firstNameHasSpace: !!c.firstNameHasSpace, nickname: c.nickname ?? "" });
     setImage(null);
     setScale(1.2);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -167,6 +169,15 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
                 }
               />
             </AdminUI.FormGroup>
+            <AdminUI.FormGroup label="Nickname (optional)">
+              <AdminUI.Input
+                placeholder="Used instead of their first name, e.g. Bubba"
+                value={contestant.nickname || ""}
+                onChange={(e) =>
+                  setContestant((c) => ({ ...c, nickname: e.target.value }))
+                }
+              />
+            </AdminUI.FormGroup>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
               <AdminUI.Toggle
                 checked={!!contestant.firstNameHasSpace}
@@ -176,7 +187,7 @@ const AdminContestants = ({ showId, seasonId }: AdminContestantsProps) => {
               <div style={{ fontSize: 13 }}>
                 <div>First name has a space</div>
                 <div style={{ color: "var(--color-text-secondary,#888)" }}>
-                  Icon label: {contestant.name?.trim() ? getIconLabel(contestant.name, contestant.firstNameHasSpace) : "—"}
+                  Icon label: {contestant.name?.trim() || contestant.nickname?.trim() ? getIconLabel(contestant.name ?? "", contestant.firstNameHasSpace, contestant.nickname) : "—"}
                 </div>
               </div>
             </div>

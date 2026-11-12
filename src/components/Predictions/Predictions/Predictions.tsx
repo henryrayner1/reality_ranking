@@ -146,7 +146,7 @@ const Predictions = () => {
       <>
         <section className="prediction-card">{renderNext()}</section>
         {currSeason && (
-          <section className="prediction-card">
+          <section className="prediction-card prediction-history-card">
             <h2 className="prediction-section-title">Past episodes</h2>
             <PredictionHistory
               episodes={getAiredEpisodes(currSeason, now)}

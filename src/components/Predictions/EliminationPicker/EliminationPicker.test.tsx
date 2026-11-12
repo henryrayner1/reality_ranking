@@ -54,14 +54,37 @@ describe("EliminationPicker", () => {
     expect(onSubmit).toHaveBeenCalledWith(["a", "b"]);
   });
 
-  it("pre-fills a saved prediction and only enables Update once it changes", async () => {
-    const user = userEvent.setup();
+  it("shows a saved prediction as a summary with an enabled Update button", () => {
     renderPicker({ initialPicks: ["c"], hasSaved: true });
-    expect(option("Cara Lee")).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByText("Prediction saved")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Update Prediction" })).toBeDisabled();
-    await user.click(option("Alice Smith"));
+    expect(screen.getByText(/You have predicted/)).toHaveTextContent("You have predicted Cara will go home this episode.");
+    expect(screen.queryByRole("group", { name: "Contestants" })).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Update Prediction" })).toBeEnabled();
+  });
+
+  it("names every pick in the summary of a multi-elimination prediction", () => {
+    renderPicker({ count: 2, initialPicks: ["a", "c"], hasSaved: true });
+    expect(screen.getByText(/You have predicted/)).toHaveTextContent("Alice and Cara will go home");
+  });
+
+  it("reopens the picker on Update, saves only a changed pick, and Cancel restores the summary", async () => {
+    const user = userEvent.setup();
+    const onSubmit = renderPicker({ initialPicks: ["c"], hasSaved: true });
+    await user.click(screen.getByRole("button", { name: "Update Prediction" }));
+    expect(option("Cara Lee")).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "Save Prediction" })).toBeDisabled();
+
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(screen.getByText(/You have predicted/)).toHaveTextContent("Cara");
+
+    await user.click(screen.getByRole("button", { name: "Update Prediction" }));
+    await user.click(option("Alice Smith"));
+    await user.click(screen.getByRole("button", { name: "Save Prediction" }));
+    expect(onSubmit).toHaveBeenCalledWith(["a"]);
+  });
+
+  it("has no Cancel button before the first submission", () => {
+    renderPicker();
+    expect(screen.queryByRole("button", { name: "Cancel" })).not.toBeInTheDocument();
   });
 
   it("shows a save error", () => {
