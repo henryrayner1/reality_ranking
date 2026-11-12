@@ -1,5 +1,7 @@
 import {
   formatNameList,
+  getPredictionRanksFor,
+  getPredictionStandings,
   getAiredEpisodes,
   getNextPredictableEpisode,
   getRemainingContestantIds,
@@ -76,5 +78,64 @@ describe("formatNameList", () => {
     expect(formatNameList(["A"])).toBe("A");
     expect(formatNameList(["A", "B"])).toBe("A and B");
     expect(formatNameList(["A", "B", "C"])).toBe("A, B and C");
+  });
+});
+
+describe("getPredictionStandings", () => {
+  const roster = [
+    { id: "a", name: "Ann" },
+    { id: "b", name: "Bea" },
+    { id: "c", name: "Cal" },
+    { id: "d", name: "Dee" },
+    { id: "e", name: "Eve" },
+  ];
+
+  it("ranks by votes, shares percent of predictors, and puts everyone tied for last at the bottom rank", () => {
+    const s = getPredictionStandings({ predictorCount: 10, votes: { b: 6, a: 3, c: 1 } }, roster);
+    expect(s.map((x) => [x.contestantId, x.rank, x.percent])).toEqual([
+      ["b", 1, 0.6],
+      ["a", 2, 0.3],
+      ["c", 3, 0.1],
+      ["d", 5, 0],
+      ["e", 5, 0],
+    ]);
+  });
+
+  it("uses competition ranking for ties above last place", () => {
+    const s = getPredictionStandings({ predictorCount: 4, votes: { a: 2, b: 2, c: 1 } }, roster);
+    expect(s.map((x) => x.rank)).toEqual([1, 1, 3, 5, 5]);
+  });
+
+  it("lets percentages pass 100% in total when each person picks several", () => {
+    const s = getPredictionStandings({ predictorCount: 2, votes: { a: 2, b: 2 } }, roster.slice(0, 3));
+    expect(s.map((x) => x.percent)).toEqual([1, 1, 0]);
+  });
+
+  it("treats an all-way tie as tied for first, not last", () => {
+    const s = getPredictionStandings({ predictorCount: 3, votes: { a: 1, b: 1, c: 1 } }, roster.slice(0, 3));
+    expect(s.map((x) => x.rank)).toEqual([1, 1, 1]);
+  });
+});
+
+describe("getPredictionRanksFor", () => {
+  it("ranks a contestant among those still in at each episode", () => {
+    const season = {
+      id: "se1", showId: "s1", isCurrent: true, seasonNumber: 1,
+      contestants: [
+        { id: "a", name: "Ann", seasonId: "se1" },
+        { id: "b", name: "Bea", seasonId: "se1" },
+        { id: "c", name: "Cal", seasonId: "se1" },
+      ],
+      episodes: [
+        { id: "e1", episodeNumber: 1, seasonId: "se1", eliminations: [{ contestantId: "a" }] },
+        { id: "e2", episodeNumber: 2, seasonId: "se1", eliminations: [] },
+      ],
+    } as unknown as Season;
+    const ranks = getPredictionRanksFor("c", season, [
+      { episodeId: "e1", episodeNumber: 1, isFinale: false, predictorCount: 2, votes: { a: 2 } },
+      { episodeId: "e2", episodeNumber: 2, isFinale: false, predictorCount: 2, votes: { c: 2 } },
+    ]);
+    // Episode 1: three still in, c tied for last with b -> 3. Episode 2: a gone, c most predicted -> 1.
+    expect([...ranks]).toEqual([[1, 3], [2, 1]]);
   });
 });

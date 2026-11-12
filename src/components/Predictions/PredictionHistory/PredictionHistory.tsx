@@ -2,6 +2,7 @@ import ContestantChip from "../ContestantChip/ContestantChip";
 import type { Contestant, Episode, Prediction, Season, Show } from "../../../utils/Constants";
 import { getEpisodeEliminations } from "../../../utils/predictions";
 import { getPredictionName } from "../../../utils/util";
+import "./PredictionHistory.css";
 
 interface PredictionHistoryProps {
   // Aired episodes, newest first.

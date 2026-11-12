@@ -1,0 +1,44 @@
+.vote-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  width: 100%;
+}
+
+.vote-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  margin-bottom: 0.2rem;
+}
+
+.vote-bar-name {
+  font-weight: 600;
+  color: var(--rk-subtle);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vote-bar-percent {
+  color: var(--rk-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.vote-bar-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rk-hairline);
+  overflow: hidden;
+}
+
+.vote-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--rk-accent);
+}

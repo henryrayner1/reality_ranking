@@ -2,17 +2,18 @@ import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { type Ranking, type RankType } from "../../../utils/Constants";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEliminationsBySeason, useRankingsInsights, useShowTree, useShows, useUserRankings } from "../../../hooks/queries";
+import { useEliminationsBySeason, usePredictionInsights, useRankingsInsights, useShowTree, useShows, useUserRankings } from "../../../hooks/queries";
 import { slugifyShowName } from "../../../utils/slug";
 import { buildOwnInsights } from "../../../utils/util";
 import ShowSelect from "../../ShowSelect/ShowSelect";
 import SeasonSelect from "../SeasonSelect/SeasonSelect";
 import InsightsRankingTable from "../InsightsRankingTable/InsightsRankingTable";
 import ContestantDetailPanel from "../ContestantDetailPanel/ContestantDetailPanel";
+import PredictionInsights from "../PredictionInsights/PredictionInsights";
 import PageLoading from "../../PageLoading/PageLoading";
 import "./Insights.css";
 
-type PageMode = "table" | "contestant";
+type PageMode = "table" | "contestant" | "predictions";
 type DataScope = "all" | "own";
 
 const Insights = () => {
@@ -45,6 +46,9 @@ const Insights = () => {
   const favoriteInsightsQuery = useRankingsInsights(currSeason?.id, "FAVORITE");
   const winnerInsightsQuery = useRankingsInsights(currSeason?.id, "WINNER");
   const eliminationsQuery = useEliminationsBySeason(currSeason?.id);
+  // Anonymous totals for aired episodes; always everyone's data (the
+  // All User Data / My Submissions switch doesn't apply to predictions).
+  const predictionInsightsQuery = usePredictionInsights(currSeason?.id);
   const userRankingsQuery = useUserRankings(user?.id);
   const eliminations = eliminationsQuery.data ?? [];
 
@@ -62,6 +66,7 @@ const Insights = () => {
   const winnerInsights = dataScope === "own" ? ownWinnerInsights : (winnerInsightsQuery.data ?? null);
   const loadingFlag = currShowTree.isLoading || (!!currSeason?.id &&
     (favoriteInsightsQuery.isLoading || winnerInsightsQuery.isLoading || eliminationsQuery.isLoading ||
+      predictionInsightsQuery.isLoading ||
       (!!user && userRankingsQuery.isLoading)));
 
   // Default the season picker to the show's current season whenever the
@@ -109,8 +114,16 @@ const Insights = () => {
           onChange={setSelectedSeasonId}
         />
       </div>
+      {/* Predictions are always everyone's data, so the switch is hidden there,
+          but with visibility rather than unmounting: it keeps its space, so
+          switching tabs doesn't shift the page. visibility: hidden also takes
+          it out of the tab order and the accessibility tree. */}
       {user && (
-        <div className="data-scope-toggle">
+        <div
+          className="data-scope-toggle"
+          style={pageMode === "predictions" ? { visibility: "hidden" } : undefined}
+          aria-hidden={pageMode === "predictions" || undefined}
+        >
           <label className="data-scope-option">
             <input
               type="radio"
@@ -144,6 +157,10 @@ const Insights = () => {
         className={`insights-mode-tab${pageMode === "contestant" ? " insights-mode-tab-active" : ""}`}
         onClick={() => setPageMode("contestant")}
       >By Contestant</div>
+      <div
+        className={`insights-mode-tab${pageMode === "predictions" ? " insights-mode-tab-active" : ""}`}
+        onClick={() => setPageMode("predictions")}
+      >Predictions</div>
     </div>
   );
 
@@ -168,6 +185,13 @@ const Insights = () => {
                 setRankingType={setRankingType}
                 loadingFlag={loadingFlag}
               />
+            ) : pageMode === "predictions" ? (
+              <PredictionInsights
+                currSeason={currSeason}
+                currShow={currShow}
+                insights={predictionInsightsQuery.data ?? []}
+                loadingFlag={loadingFlag}
+              />
             ) : (
               <ContestantDetailPanel
                 currSeason={currSeason}
@@ -177,6 +201,7 @@ const Insights = () => {
                 eliminations={eliminations}
                 selectedContestantId={selectedContestantId}
                 setSelectedContestantId={setSelectedContestantId}
+                predictionInsights={dataScope === "all" ? (predictionInsightsQuery.data ?? []) : null}
                 loadingFlag={loadingFlag}
               />
             )}

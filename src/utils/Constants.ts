@@ -196,6 +196,17 @@ export interface InsightsOverall {
   overallAveragePosition: number | null;
 }
 
+// One aired episode's anonymous prediction totals
+// (GET /api/predictions/insights/:seasonId). For the finale, votes count
+// predicted winners only.
+export interface PredictionInsightsEpisode {
+  episodeId: string;
+  episodeNumber: number;
+  isFinale: boolean;
+  predictorCount: number;
+  votes: Record<string, number>;
+}
+
 export interface InsightsResponse {
   seasonId: string;
   type: RankType;

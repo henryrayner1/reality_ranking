@@ -1,0 +1,155 @@
+/* Episode-by-episode history rows: the Predictions page's "Past episodes"
+   and Insights' Predictions view both use them, so they live with the
+   component rather than in a page stylesheet (each page's CSS is only
+   loaded with that page). */
+
+/* History. The card is capped at the visible screen height (below the
+   sticky navbar and page header, above .predictions-main's 2rem bottom
+   padding, with 1rem to spare) so that scrolled to the bottom of the page its
+   top is still in view; the episode list scrolls inside it instead. */
+.prediction-history-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--navbar-height, 59px) - var(--page-header-height, 24px) - 3rem);
+  min-height: 16rem;
+}
+
+.prediction-history {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.5rem 0 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Always-visible scrollbar: a styled ::-webkit-scrollbar opts out of macOS's
+   auto-hiding overlay scrollbars in Chrome/Safari/Edge. Firefox gets the
+   standard properties instead (setting them in Chrome would switch it back
+   to the overlay style). */
+.prediction-history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.prediction-history::-webkit-scrollbar-track {
+  background: var(--rk-hairline);
+  border-radius: 999px;
+}
+
+.prediction-history::-webkit-scrollbar-thumb {
+  background: var(--rk-accent);
+  border-radius: 999px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .prediction-history {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rk-accent) var(--rk-hairline);
+  }
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rk-hairline);
+}
+
+.history-row:first-child {
+  border-top: none;
+}
+
+.history-heading {
+  font-weight: 700;
+  color: var(--rk-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history-finale-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--rk-accent-tint);
+  color: var(--rk-accent-text);
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.history-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rk-muted);
+}
+
+.history-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 2rem;
+  align-items: center;
+}
+
+.history-person {
+  position: relative;
+  width: 8.5rem;
+}
+
+.history-mark {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  z-index: 2;
+}
+
+.history-person-correct .history-mark {
+  background: #2f8f5b;
+}
+
+.history-person-wrong .history-mark {
+  background: #b04444;
+}
+
+.history-empty {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--rk-muted);
+}
+
+.history-winner {
+  font-size: 0.8rem;
+  color: var(--rk-subtle);
+}
+
+@media (max-width: 640px) {
+  .history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-heading {
+    flex-direction: row;
+    align-items: center;
+  }
+}

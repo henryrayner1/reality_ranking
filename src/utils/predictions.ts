@@ -1,4 +1,4 @@
-import type { Episode, EliminationEntry, Season } from "./Constants";
+import type { Contestant, Episode, EliminationEntry, PredictionInsightsEpisode, Season } from "./Constants";
 import { isSeasonEnded } from "./episodeRankability";
 
 // Kept in sync by hand with backend/src/utils/predictions.ts. If the two
@@ -77,3 +77,63 @@ export const seedFinaleOrder = (contestants: { id: string }[], saved: string[]):
 // "A", "A and B", "A, B and C".
 export const formatNameList = (names: string[]): string =>
   names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+
+export interface PredictionStanding {
+  contestantId: string;
+  votes: number;
+  // Share of predictors who picked them (0-1). Can sum past 1 when an
+  // episode eliminates several contestants and everyone picks several.
+  percent: number;
+  // 1 = most predicted to go home (finale: to win). Competition ranking
+  // (1, 2, 2, 4), except that everyone tied for last gets the lowest
+  // possible rank, the number of contestants still in, unless everyone is tied.
+  rank: number;
+}
+
+// Standings for one aired episode: every contestant still in going into it
+// (zero-vote ones included), most votes first, then by name.
+export const getPredictionStandings = (
+  agg: Pick<PredictionInsightsEpisode, "predictorCount" | "votes">,
+  remaining: Pick<Contestant, "id" | "name">[]
+): PredictionStanding[] => {
+  const rows = remaining
+    .map((c) => ({ contestantId: c.id, name: c.name, votes: agg.votes[c.id] ?? 0 }))
+    .sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name));
+  const lowest = rows.length ? rows[rows.length - 1].votes : 0;
+  const allTied = rows.every((r) => r.votes === rows[0]?.votes);
+  return rows.map((r) => ({
+    contestantId: r.contestantId,
+    votes: r.votes,
+    percent: agg.predictorCount > 0 ? r.votes / agg.predictorCount : 0,
+    rank: !allTied && r.votes === lowest
+      ? rows.length
+      : rows.findIndex((x) => x.votes === r.votes) + 1,
+  }));
+};
+
+// Contestants still in going into an episode, as roster entries.
+export const getRemainingContestants = (season: Season, episodeNumber: number): Contestant[] => {
+  const ids = new Set(
+    getRemainingContestantIds(season.contestants.map((c) => c.id), getSeasonEliminations(season), episodeNumber)
+  );
+  return season.contestants.filter((c) => ids.has(c.id));
+};
+
+// episodeNumber -> a contestant's prediction rank, for the trend chart.
+export const getPredictionRanksFor = (
+  contestantId: string,
+  season: Season,
+  insights: PredictionInsightsEpisode[]
+): Map<number, number> => {
+  const ranks = new Map<number, number>();
+  for (const agg of insights) {
+    if (agg.predictorCount === 0) continue;
+    const standing = getPredictionStandings(agg, getRemainingContestants(season, agg.episodeNumber))
+      .find((s) => s.contestantId === contestantId);
+    if (standing) ranks.set(agg.episodeNumber, standing.rank);
+  }
+  return ranks;
+};
+
+// 0.625 -> "63%"
+export const formatPercent = (percent: number) => `${Math.round(percent * 100)}%`;

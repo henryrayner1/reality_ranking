@@ -1,4 +1,4 @@
-import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Prediction, Ranking, RankType, Season, Show } from "./Constants";
+import type { Contestant, Elimination, EliminationEntry, Episode, InsightsResponse, Prediction, PredictionInsightsEpisode, Ranking, RankType, Season, Show } from "./Constants";
 import { backendUrl } from "./apiBase";
 
 // Every request carries the logged-in user's token (if any); the backend only
@@ -276,6 +276,12 @@ export const getRankingsInsights = async (seasonId: string, type: string) => {
   if (!insightsRes.ok) throw new Error('Failed to fetch rankings insights');
   const insightsData = await insightsRes.json();
   return insightsData;
+};
+
+export const getPredictionInsights = async (seasonId: string): Promise<PredictionInsightsEpisode[]> => {
+  const res = await apiFetch(`/api/predictions/insights/${encodeURIComponent(seasonId)}`);
+  if (!res.ok) throw new Error('Failed to fetch prediction insights');
+  return res.json();
 };
 
 export const addManyEliminations = async (eliminationsList: { episodeId: string; contestantIds: string[] }[]) => {

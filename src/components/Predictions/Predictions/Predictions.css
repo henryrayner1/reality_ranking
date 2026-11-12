@@ -1,6 +1,7 @@
 /* Predictions page. Shares the Ranking/Insights light-card palette (--rk-*
-   in index.css). Also styles EliminationPicker, FinalePredictor and
-   PredictionHistory, which only render inside this page. */
+   in index.css). Also styles EliminationPicker and FinalePredictor, which
+   only render inside this page. ContestantChip and PredictionHistory carry
+   their own stylesheets because Insights uses them too. */
 
 .predictions-main {
   width: 100%;
@@ -96,58 +97,12 @@
   color: var(--rk-accent-text);
 }
 
-/* Contestant cards (ContestantChip): square photo with the first name
-   beside it. Used as buttons in the picker grid and as plain boxes in the
-   history. */
+/* Picker grid of ContestantChip buttons (card styles in ContestantChip.css;
+   Past episodes rows in PredictionHistory.css). */
 .prediction-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.6rem;
-}
-
-.prediction-chip {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  padding: 0.4rem 0.6rem 0.4rem 0.4rem;
-  border: 2px solid transparent;
-  border-radius: 10px;
-  background: var(--rk-card-raised);
-  text-align: left;
-}
-
-/* Sized here rather than relying on .contestant-photo, whose styles live in
-   the lazily loaded Insights.css. */
-.prediction-chip-photo {
-  display: block;
-  width: 2.5rem;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.prediction-chip-photo.contestant-photo-placed {
-  box-shadow: 0 0 0 2px var(--placement-color);
-}
-
-.prediction-chip-text {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.prediction-chip-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--rk-subtle);
-  overflow-wrap: anywhere;
-}
-
-.prediction-chip-placement {
-  font-size: 0.7rem;
-  color: var(--rk-muted);
 }
 
 /* Picker: the whole card is the click target (cursor included). */
@@ -312,155 +267,4 @@
 .finale-order-name {
   font-weight: 600;
   color: var(--rk-subtle);
-}
-
-/* History. The card is capped at the visible screen height (below the
-   sticky navbar and page header, above .predictions-main's 2rem bottom
-   padding, with 1rem to spare) so that scrolled to the bottom of the page its
-   top is still in view; the episode list scrolls inside it instead. */
-.prediction-history-card {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100dvh - var(--navbar-height, 59px) - var(--page-header-height, 24px) - 3rem);
-  min-height: 16rem;
-}
-
-.prediction-history {
-  list-style: none;
-  margin: 0;
-  padding: 0 0.5rem 0 0;
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-}
-
-/* Always-visible scrollbar: a styled ::-webkit-scrollbar opts out of macOS's
-   auto-hiding overlay scrollbars in Chrome/Safari/Edge. Firefox gets the
-   standard properties instead (setting them in Chrome would switch it back
-   to the overlay style). */
-.prediction-history::-webkit-scrollbar {
-  width: 8px;
-}
-
-.prediction-history::-webkit-scrollbar-track {
-  background: var(--rk-hairline);
-  border-radius: 999px;
-}
-
-.prediction-history::-webkit-scrollbar-thumb {
-  background: var(--rk-accent);
-  border-radius: 999px;
-}
-
-@supports not selector(::-webkit-scrollbar) {
-  .prediction-history {
-    scrollbar-width: thin;
-    scrollbar-color: var(--rk-accent) var(--rk-hairline);
-  }
-}
-
-.history-row {
-  display: grid;
-  grid-template-columns: 7rem 1fr 1fr;
-  gap: 0.75rem;
-  align-items: start;
-  padding: 0.75rem 0;
-  border-top: 1px solid var(--rk-hairline);
-}
-
-.history-row:first-child {
-  border-top: none;
-}
-
-.history-heading {
-  font-weight: 700;
-  color: var(--rk-subtle);
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.history-finale-badge {
-  align-self: flex-start;
-  font-size: 0.7rem;
-  font-weight: 600;
-  padding: 0.05rem 0.5rem;
-  border-radius: 999px;
-  background: var(--rk-accent-tint);
-  color: var(--rk-accent-text);
-}
-
-.history-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.history-label {
-  font-size: 0.75rem;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: var(--rk-muted);
-}
-
-.history-people {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  min-height: 2rem;
-  align-items: center;
-}
-
-.history-person {
-  position: relative;
-  width: 8.5rem;
-}
-
-.history-mark {
-  position: absolute;
-  top: -7px;
-  right: -7px;
-  width: 1.1rem;
-  height: 1.1rem;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #fff;
-  z-index: 2;
-}
-
-.history-person-correct .history-mark {
-  background: #2f8f5b;
-}
-
-.history-person-wrong .history-mark {
-  background: #b04444;
-}
-
-.history-empty {
-  font-size: 0.85rem;
-  font-style: italic;
-  color: var(--rk-muted);
-}
-
-.history-winner {
-  font-size: 0.8rem;
-  color: var(--rk-subtle);
-}
-
-@media (max-width: 640px) {
-  .history-row {
-    grid-template-columns: 1fr;
-  }
-
-  .history-heading {
-    flex-direction: row;
-    align-items: center;
-  }
 }

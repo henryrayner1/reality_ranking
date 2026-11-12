@@ -88,9 +88,11 @@ export const ItemInfo = ({ name, meta }: { name: string; meta: string }) =>{
             <div className="mt-0.5 text-xs text-[#888] text-left">{meta}</div>
         </div>
 };
+// z-[1050] (Bootstrap's modal layer) so the backdrop covers the navbar and
+// the sticky .page-header, which both sit at z-index 1000.
 export const Modal = ({ title, onClose, children, size = "sm" }: { title: string; onClose: () => void; children: React.ReactNode; size?: "sm" | "lg" }) => {
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
             <div className={`w-full ${size === "lg" ? "max-w-lg" : "max-w-sm"} rounded-xl bg-white p-5`} onClick={(e) => e.stopPropagation()}>
                 <div className="mb-4 flex items-center justify-between border-b border-[#e5e5e5] pb-3">
                     <div className="text-sm font-medium">{title}</div>
