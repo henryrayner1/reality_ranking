@@ -1,0 +1,337 @@
+/* Predictions page. Shares the Ranking/Insights light-card palette (--rk-*
+   in index.css). Also styles EliminationPicker, FinalePredictor and
+   PredictionHistory, which only render inside this page. */
+
+.predictions-main {
+  width: 100%;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 0 1rem 2rem;
+}
+
+.predictions-top-bar {
+  width: 100%;
+  max-width: 48rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.predictions-top-bar .w-full {
+  width: auto;
+}
+
+.predictions-season {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--rk-subtle);
+}
+
+.prediction-card {
+  width: 100%;
+  /* App.css centres text under #root; this card's rows are left-aligned. */
+  text-align: left;
+  max-width: 48rem;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 14px;
+  box-shadow: var(--rk-card-shadow);
+  padding: 1rem 1.25rem;
+}
+
+.prediction-card-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.prediction-card-header h2,
+.prediction-section-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--rk-accent-text);
+}
+
+.prediction-section-title {
+  margin-bottom: 0.75rem;
+}
+
+.prediction-locks {
+  font-size: 0.85rem;
+  color: var(--rk-muted);
+}
+
+.prediction-placeholder {
+  color: rgb(90, 85, 120);
+  font-style: italic;
+  padding: 1rem;
+  margin: 0;
+  text-align: center;
+}
+
+.prediction-instructions {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  color: var(--rk-subtle);
+}
+
+.prediction-pick-count {
+  font-weight: 600;
+  color: var(--rk-accent-text);
+}
+
+/* Contestant pick grid: rectangular cards, photo with the full name beside
+   it. The whole card is the click target (cursor included). */
+.prediction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  gap: 0.6rem;
+}
+
+.prediction-option {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem 0.4rem 0.4rem;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--rk-card-raised);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease;
+}
+
+.prediction-option * {
+  cursor: inherit;
+}
+
+.prediction-option:hover {
+  border-color: var(--rk-hairline);
+}
+
+.prediction-option:focus-visible {
+  outline: 2px solid var(--rk-accent);
+  outline-offset: 2px;
+}
+
+.prediction-option-selected,
+.prediction-option-selected:hover {
+  border-color: var(--rk-accent);
+  background: var(--rk-accent-tint);
+}
+
+/* Sized here rather than relying on .contestant-photo, whose styles live in
+   the lazily loaded Insights.css. */
+.prediction-option-photo {
+  display: block;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.prediction-option-name {
+  min-width: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--rk-subtle);
+  overflow-wrap: anywhere;
+}
+
+.prediction-option-selected .prediction-option-name {
+  color: var(--rk-accent-text);
+}
+
+.prediction-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.prediction-submit {
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  background: var(--rk-accent);
+  cursor: pointer;
+}
+
+.prediction-submit:hover:not(:disabled) {
+  background: var(--rk-accent-hover);
+}
+
+.prediction-submit:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.prediction-saved {
+  font-size: 0.85rem;
+  color: var(--rk-muted);
+}
+
+.prediction-error {
+  margin: 0.5rem 0 0;
+  text-align: center;
+  color: #A32D2D;
+  font-size: 0.85rem;
+}
+
+/* Finale order */
+.finale-order {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.finale-order-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.6rem;
+  background: var(--rk-card-raised);
+  border-radius: 10px;
+}
+
+.finale-order-place {
+  width: 3.5rem;
+  font-weight: 700;
+  color: var(--rk-accent-text);
+}
+
+.finale-order-name {
+  font-weight: 600;
+  color: var(--rk-subtle);
+}
+
+/* History */
+.prediction-history {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-row {
+  display: grid;
+  grid-template-columns: 7rem 1fr 1fr;
+  gap: 0.75rem;
+  align-items: start;
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--rk-hairline);
+}
+
+.history-row:first-child {
+  border-top: none;
+}
+
+.history-heading {
+  font-weight: 700;
+  color: var(--rk-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.history-finale-badge {
+  align-self: flex-start;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--rk-accent-tint);
+  color: var(--rk-accent-text);
+}
+
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.history-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--rk-muted);
+}
+
+.history-people {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  min-height: 2rem;
+  align-items: center;
+}
+
+.history-person {
+  position: relative;
+  width: 40px;
+}
+
+.history-mark {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  width: 1.1rem;
+  height: 1.1rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #fff;
+  z-index: 2;
+}
+
+.history-person-correct .history-mark {
+  background: #2f8f5b;
+}
+
+.history-person-wrong .history-mark {
+  background: #b04444;
+}
+
+.history-empty {
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--rk-muted);
+}
+
+.history-winner {
+  font-size: 0.8rem;
+  color: var(--rk-subtle);
+}
+
+@media (max-width: 640px) {
+  .history-row {
+    grid-template-columns: 1fr;
+  }
+
+  .history-heading {
+    flex-direction: row;
+    align-items: center;
+  }
+}

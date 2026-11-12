@@ -1,0 +1,95 @@
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "../../../test/renderWithProviders";
+import Predictions from "./Predictions";
+import * as util from "../../../utils/util";
+
+const loggedInUser = { id: "u1", email: "u@example.com", accountType: "USER" };
+const future = () => new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString();
+const past = () => new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString();
+
+const makeShows = (overrides: Record<string, unknown> = {}, episodes?: unknown[]) => [
+  {
+    id: "s1",
+    name: "Survivor",
+    currSeason: 1,
+    rankingMode: "EPISODE",
+    ...overrides,
+    seasons: [
+      {
+        id: "se1",
+        showId: "s1",
+        isCurrent: true,
+        seasonNumber: 1,
+        contestants: [
+          { id: "a", name: "Alice Smith", seasonId: "se1" },
+          { id: "b", name: "Bob Jones", seasonId: "se1" },
+        ],
+        episodes: episodes ?? [
+          { id: "e1", episodeNumber: 1, seasonId: "se1", airDate: past(), eliminationCount: 1, eliminations: [] },
+          { id: "e2", episodeNumber: 2, seasonId: "se1", airDate: future(), eliminationCount: 1, eliminations: [] },
+        ],
+      },
+    ],
+  },
+];
+
+const renderPage = (route = "/predictions/survivor", preloadedState: any = { user: { value: loggedInUser } }) =>
+  renderWithProviders(<Predictions />, {
+    route,
+    routePath: route === "/predictions" ? "/predictions" : "/predictions/:showSlug",
+    preloadedState,
+  });
+
+describe("Predictions", () => {
+  beforeEach(() => {
+    vi.spyOn(util, "getShows").mockResolvedValue(makeShows() as any);
+    vi.spyOn(util, "getMyPredictions").mockResolvedValue([]);
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("asks for a show when none is selected", async () => {
+    renderPage("/predictions");
+    expect(await screen.findByText("Please select a show.")).toBeInTheDocument();
+  });
+
+  it("lets a user pick and submit for the next episode", async () => {
+    const user = userEvent.setup();
+    const save = vi.spyOn(util, "savePrediction").mockResolvedValue({ id: "p", episodeId: "e2", contestantIds: ["a"], updatedAt: "x" });
+    renderPage();
+    expect(await screen.findByText("Episode 2")).toBeInTheDocument();
+    await user.click(await screen.findByRole("button", { name: "Alice Smith" }));
+    await user.click(screen.getByRole("button", { name: "Submit Prediction" }));
+    await waitFor(() => expect(save).toHaveBeenCalledWith("e2", ["a"]));
+    // Episode 1 already aired, so it's in the history instead.
+    expect(screen.getByText("Episode 1")).toBeInTheDocument();
+  });
+
+  it("asks logged-out users to log in", async () => {
+    renderPage("/predictions/survivor", { user: { value: null } });
+    expect(await screen.findByText("Log in to make predictions.")).toBeInTheDocument();
+  });
+
+  it("shows the finale predictor when the next episode is the finale", async () => {
+    vi.spyOn(util, "getShows").mockResolvedValue(
+      makeShows({}, [{ id: "e9", episodeNumber: 9, seasonId: "se1", airDate: future(), isFinale: true, eliminations: [] }]) as any
+    );
+    renderPage();
+    expect(await screen.findByText(/It's the finale!/)).toBeInTheDocument();
+  });
+
+  it("explains that daily shows aren't supported", async () => {
+    vi.spyOn(util, "getShows").mockResolvedValue(makeShows({ rankingMode: "DAILY" }) as any);
+    renderPage();
+    expect(await screen.findByText("Predictions aren't available for daily shows yet.")).toBeInTheDocument();
+  });
+
+  it("says when no next episode is scheduled", async () => {
+    vi.spyOn(util, "getShows").mockResolvedValue(
+      makeShows({}, [{ id: "e1", episodeNumber: 1, seasonId: "se1", airDate: past(), eliminations: [] }]) as any
+    );
+    renderPage();
+    expect(await screen.findByText(/hasn't been scheduled yet/)).toBeInTheDocument();
+  });
+});

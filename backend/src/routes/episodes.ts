@@ -98,6 +98,21 @@ export default function episodesRouter(prisma: PrismaClient) {
     res.json(updated);
   });
 
+  // Sets how many contestants leave in an episode (0 = no elimination), which
+  // is how many picks a prediction for it must have.
+  router.patch("/:id/eliminationCount", requireAdmin(prisma), async (req, res) => {
+    const { id } = req.params;
+    const count = req.body.eliminationCount;
+    if (!Number.isInteger(count) || count < 0 || count > 20) {
+      return res.status(400).json({ error: "eliminationCount must be a whole number from 0 to 20" });
+    }
+    const episode = await prisma.episode.findUnique({ where: { id }, select: { isPreSeason: true } });
+    if (!episode) return res.status(404).json({ error: "Episode not found" });
+    if (episode.isPreSeason) return res.status(400).json({ error: "The pre-season has no eliminations" });
+    const updated = await prisma.episode.update({ where: { id }, data: { eliminationCount: count } });
+    res.json(updated);
+  });
+
   router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {
     const { id } = req.params;
     const deletedEpisode = await prisma.episode.delete({

@@ -20,9 +20,10 @@ const Navbar = (props) => {
     // switching between Admin/My Rankings/Insights carries the show you're
     // currently looking at along with you rather than bouncing back to
     // whichever show happens to be first in the list.
-    const currentShowSlug = location.pathname.match(/^\/(?:ranking|insights|admin)\/([^/]+)/)?.[1];
+    const currentShowSlug = location.pathname.match(/^\/(?:ranking|insights|predictions|admin)\/([^/]+)/)?.[1];
     const rankingPath = currentShowSlug ? `/ranking/${currentShowSlug}` : "/ranking";
     const insightsPath = currentShowSlug ? `/insights/${currentShowSlug}` : "/insights";
+    const predictionsPath = currentShowSlug ? `/predictions/${currentShowSlug}` : "/predictions";
     const adminPath = currentShowSlug ? `/admin/${currentShowSlug}` : "/admin";
 
     // On mobile the menu is a Bootstrap .collapse toggled via data-bs-toggle;
@@ -73,6 +74,9 @@ const Navbar = (props) => {
                         {props.loggedIn && <li className="nav-item">
                             <NavLink className="nav-link" to={rankingPath} onClick={collapseMobileMenu}>My Rankings</NavLink>
                         </li>}
+                        <li className="nav-item">
+                            <NavLink className="nav-link" to={predictionsPath} onClick={collapseMobileMenu}>Predictions</NavLink>
+                        </li>
                         <li className="nav-item">
                             <NavLink className="nav-link" to={insightsPath} onClick={collapseMobileMenu}>Insights</NavLink>
                         </li>
