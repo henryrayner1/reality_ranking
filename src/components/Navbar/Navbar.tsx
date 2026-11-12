@@ -53,7 +53,12 @@ const Navbar = (props) => {
     return(
         <nav ref={navRef} className="navbar navbar-expand-md navbar-dark app-navbar">
             <div className="container-fluid">
-                <Link className="navbar-brand app-navbar-brand font-bold" to="/" onClick={collapseMobileMenu}>Reality Ranking</Link>
+                <Link className="navbar-brand app-navbar-brand font-bold" to="/" onClick={collapseMobileMenu}>
+                    {/* Same image as the iOS home-screen icon (public/apple-touch-icon.png).
+                        BASE_URL so it also resolves under the GitHub Pages base path. */}
+                    <img className="app-navbar-logo" src={`${import.meta.env.BASE_URL}apple-touch-icon.png`} alt="" aria-hidden="true" />
+                    Reality Ranking
+                </Link>
                 <button
                     className="navbar-toggler"
                     type="button"

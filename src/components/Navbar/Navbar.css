@@ -15,14 +15,15 @@
   letter-spacing: -0.01em;
 }
 
-/* Small glowing accent mark before the brand name. */
-.app-navbar-brand::before {
-  content: "";
-  width: 10px;
-  height: 10px;
-  border-radius: 3px;
-  background-color: #7F77DD;
-  box-shadow: 0 0 10px rgba(127, 119, 221, 0.7);
+/* The app's iOS home-screen icon, shown as a small app tile: rounded like an
+   iOS icon (~22% corner radius), with a faint ring so its dark background
+   doesn't melt into the navbar. */
+.app-navbar-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14), 0 2px 6px rgba(0, 0, 0, 0.35);
+  flex-shrink: 0;
 }
 
 .app-navbar .navbar-nav {
