@@ -66,6 +66,13 @@ describe("Predictions", () => {
     expect(screen.getByText("Episode 1")).toBeInTheDocument();
   });
 
+  it("shows a saved prediction as a summary instead of the picker", async () => {
+    vi.spyOn(util, "getMyPredictions").mockResolvedValue([{ id: "p", episodeId: "e2", contestantIds: ["b"], updatedAt: "x" }]);
+    renderPage();
+    expect(await screen.findByText(/You have predicted/)).toHaveTextContent("Bob will go home this episode.");
+    expect(screen.getByRole("button", { name: "Update Prediction" })).toBeEnabled();
+  });
+
   it("asks logged-out users to log in", async () => {
     renderPage("/predictions/survivor", { user: { value: null } });
     expect(await screen.findByText("Log in to make predictions.")).toBeInTheDocument();

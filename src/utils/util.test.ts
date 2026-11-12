@@ -1,4 +1,4 @@
-import { buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminations, uploadContestantPhoto } from "./util";
+import { buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminations, getFirstName, getIconLabel, getPredictionName, uploadContestantPhoto } from "./util";
 import { backendUrl } from "./apiBase";
 import type { Elimination, Ranking } from "./Constants";
 
@@ -93,5 +93,22 @@ describe("image uploads", () => {
   it("uses absolute image URLs as-is and prefixes backend paths", () => {
     expect(backendUrl("https://images.example.com/a.png")).toBe("https://images.example.com/a.png");
     expect(backendUrl("/uploads/a.png")).toBe("/uploads/a.png");
+  });
+});
+
+describe("contestant names", () => {
+  it("uses the first word, two with firstNameHasSpace, or the nickname over both", () => {
+    expect(getFirstName("Thien An Nguyen")).toBe("Thien");
+    expect(getFirstName("Thien An Nguyen", true)).toBe("Thien An");
+    expect(getFirstName("William Smith", false, "Bubba")).toBe("Bubba");
+    expect(getFirstName("William Smith", false, "  ")).toBe("William");
+    expect(getIconLabel("William Smith", false, "Bubba")).toBe("BUBBA");
+  });
+
+  it("shows the full name on the Predictions page only for displayFullName shows", () => {
+    const c = { name: "Moh Dafok", nickname: null };
+    expect(getPredictionName(c, { displayFullName: false })).toBe("Moh");
+    expect(getPredictionName(c, { displayFullName: true })).toBe("Moh Dafok");
+    expect(getPredictionName({ name: "William Smith", nickname: "Bubba" }, null)).toBe("Bubba");
   });
 });

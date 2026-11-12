@@ -109,11 +109,17 @@ export default function showsRouter(prisma: PrismaClient) {
     // Only updates the fields actually present in the body (logoUrl: null
     // clears the logo), so changing one setting never wipes another.
     router.post("/update", requireAdmin(prisma), async (req, res) => {
-        const { showId, rankingMode, logoUrl } = req.body;
+        const { showId, rankingMode, logoUrl, displayFullName } = req.body;
         if (!showId) {
             return res.status(400).json({ error: "showId is required" });
         }
-        const data: { rankingMode?: "EPISODE" | "DAILY"; logoUrl?: string | null } = {};
+        const data: { rankingMode?: "EPISODE" | "DAILY"; logoUrl?: string | null; displayFullName?: boolean } = {};
+        if (displayFullName !== undefined) {
+            if (typeof displayFullName !== "boolean") {
+                return res.status(400).json({ error: "displayFullName must be true or false" });
+            }
+            data.displayFullName = displayFullName;
+        }
         if (rankingMode !== undefined) {
             if (rankingMode !== "EPISODE" && rankingMode !== "DAILY") {
                 return res.status(400).json({ error: "rankingMode must be EPISODE or DAILY" });

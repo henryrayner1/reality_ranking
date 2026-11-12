@@ -45,6 +45,12 @@
   padding: 1rem 1.25rem;
 }
 
+/* The card is text-align: left, but ContestantIcon's name strip (history
+   and finale order) expects the centred text it gets everywhere else. */
+.prediction-card .contestant-icon {
+  text-align: center;
+}
+
 .prediction-card-header {
   display: flex;
   align-items: baseline;
@@ -90,15 +96,16 @@
   color: var(--rk-accent-text);
 }
 
-/* Contestant pick grid: rectangular cards, photo with the full name beside
-   it. The whole card is the click target (cursor included). */
+/* Contestant cards (ContestantChip): square photo with the first name
+   beside it. Used as buttons in the picker grid and as plain boxes in the
+   history. */
 .prediction-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
   gap: 0.6rem;
 }
 
-.prediction-option {
+.prediction-chip {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -107,6 +114,44 @@
   border-radius: 10px;
   background: var(--rk-card-raised);
   text-align: left;
+}
+
+/* Sized here rather than relying on .contestant-photo, whose styles live in
+   the lazily loaded Insights.css. */
+.prediction-chip-photo {
+  display: block;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.prediction-chip-photo.contestant-photo-placed {
+  box-shadow: 0 0 0 2px var(--placement-color);
+}
+
+.prediction-chip-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-chip-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--rk-subtle);
+  overflow-wrap: anywhere;
+}
+
+.prediction-chip-placement {
+  font-size: 0.7rem;
+  color: var(--rk-muted);
+}
+
+/* Picker: the whole card is the click target (cursor included). */
+.prediction-option {
   cursor: pointer;
   transition: border-color 120ms ease, background-color 120ms ease;
 }
@@ -130,27 +175,7 @@
   background: var(--rk-accent-tint);
 }
 
-/* Sized here rather than relying on .contestant-photo, whose styles live in
-   the lazily loaded Insights.css. */
-.prediction-option-photo {
-  display: block;
-  width: 2.5rem;
-  min-width: 2.5rem;
-  height: 2.5rem;
-  object-fit: cover;
-  border-radius: 6px;
-}
-
-.prediction-option-name {
-  min-width: 0;
-  font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.2;
-  color: var(--rk-subtle);
-  overflow-wrap: anywhere;
-}
-
-.prediction-option-selected .prediction-option-name {
+.prediction-option-selected .prediction-chip-name {
   color: var(--rk-accent-text);
 }
 
@@ -182,9 +207,74 @@
   cursor: default;
 }
 
-.prediction-saved {
-  font-size: 0.85rem;
-  color: var(--rk-muted);
+.prediction-cancel {
+  border: 1px solid var(--rk-card-border);
+  border-radius: 999px;
+  padding: 0.45rem 1.1rem;
+  font-weight: 600;
+  color: var(--rk-subtle);
+  background: var(--rk-card-raised);
+  cursor: pointer;
+}
+
+.prediction-cancel:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Saved-prediction summary (before "Update Prediction" reopens the picker) */
+.prediction-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  text-align: center;
+}
+
+.prediction-summary-photos {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* Sized here because .contestant-photo's styles live in Insights.css. */
+.prediction-summary-photo {
+  display: block;
+  width: 5rem;
+  height: 5rem;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.prediction-summary-photo.contestant-photo-placed {
+  box-shadow: 0 0 0 3px var(--placement-color);
+}
+
+.prediction-summary-text {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--rk-subtle);
+}
+
+.prediction-summary-text strong {
+  color: var(--rk-accent-text);
+}
+
+.finale-summary-order {
+  list-style: none;
+  margin: 0.5rem auto 0;
+  padding: 0;
+  max-width: 20rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: var(--rk-subtle);
+}
+
+.finale-summary-order li {
+  display: flex;
+  gap: 0.75rem;
 }
 
 .prediction-error {
@@ -224,13 +314,52 @@
   color: var(--rk-subtle);
 }
 
-/* History */
+/* History. The card is capped at the visible screen height (below the
+   sticky navbar and page header, above .predictions-main's 2rem bottom
+   padding, with 1rem to spare) so that scrolled to the bottom of the page its
+   top is still in view; the episode list scrolls inside it instead. */
+.prediction-history-card {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100dvh - var(--navbar-height, 59px) - var(--page-header-height, 24px) - 3rem);
+  min-height: 16rem;
+}
+
 .prediction-history {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 0 0.5rem 0 0;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Always-visible scrollbar: a styled ::-webkit-scrollbar opts out of macOS's
+   auto-hiding overlay scrollbars in Chrome/Safari/Edge. Firefox gets the
+   standard properties instead (setting them in Chrome would switch it back
+   to the overlay style). */
+.prediction-history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.prediction-history::-webkit-scrollbar-track {
+  background: var(--rk-hairline);
+  border-radius: 999px;
+}
+
+.prediction-history::-webkit-scrollbar-thumb {
+  background: var(--rk-accent);
+  border-radius: 999px;
+}
+
+@supports not selector(::-webkit-scrollbar) {
+  .prediction-history {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rk-accent) var(--rk-hairline);
+  }
 }
 
 .history-row {
@@ -287,13 +416,13 @@
 
 .history-person {
   position: relative;
-  width: 40px;
+  width: 8.5rem;
 }
 
 .history-mark {
   position: absolute;
-  top: -6px;
-  right: -8px;
+  top: -7px;
+  right: -7px;
   width: 1.1rem;
   height: 1.1rem;
   border-radius: 50%;

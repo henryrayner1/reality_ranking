@@ -1,6 +1,7 @@
-import ContestantIcon from "../../ContestantIcon/ContestantIcon";
+import ContestantChip from "../ContestantChip/ContestantChip";
 import type { Contestant, Episode, Prediction, Season, Show } from "../../../utils/Constants";
 import { getEpisodeEliminations } from "../../../utils/predictions";
+import { getPredictionName } from "../../../utils/util";
 
 interface PredictionHistoryProps {
   // Aired episodes, newest first.
@@ -18,8 +19,8 @@ const Person = ({ contestant, season, show, mark, placement }: {
   mark?: "correct" | "wrong";
   placement?: number | null;
 }) => (
-  <div className={`history-person${mark ? ` history-person-${mark}` : ""}`}>
-    <ContestantIcon id={contestant.id} name={contestant.name} photoUrl={contestant.photoUrl} season={season} show={show} placement={placement} />
+  <div className={`prediction-chip history-person${mark ? ` history-person-${mark}` : ""}`}>
+    <ContestantChip contestant={contestant} season={season} show={show} placement={placement} />
     {mark && <span className="history-mark" aria-label={mark === "correct" ? "Correct" : "Wrong"}>{mark === "correct" ? "✓" : "✗"}</span>}
   </div>
 );
@@ -80,7 +81,10 @@ const PredictionHistory = ({ episodes, predictionsByEpisode, season, show, logge
                   : <span className="history-empty">{noElimination ? "No elimination" : "Results pending"}</span>}
               </div>
               {ep.isFinale && resolved && placementOf.size > 0 && (
-                <span className="history-winner">Winner: {byId.get([...placementOf].find(([, p]) => p === 1)?.[0] ?? "")?.name ?? "—"}</span>
+                <span className="history-winner">Winner: {(() => {
+                  const w = byId.get([...placementOf].find(([, p]) => p === 1)?.[0] ?? "");
+                  return w ? getPredictionName(w, show) : "—";
+                })()}</span>
               )}
             </div>
           </li>

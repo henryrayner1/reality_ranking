@@ -2,6 +2,13 @@ import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import { requireAdmin } from "../utils/auth.js";
 
+// Trimmed nickname; "" or null clears it, undefined means "not sent".
+const parseNickname = (nickname: unknown): string | null | undefined => {
+    if (nickname === undefined) return undefined;
+    if (typeof nickname !== "string") return null;
+    return nickname.trim() || null;
+};
+
 export default function contestantsRouter(prisma: PrismaClient) {
     const router = Router();
 
@@ -43,7 +50,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
     });
 
     router.post("/add", requireAdmin(prisma), async (req, res) => {
-        const { name, seasonId, photoUrl, firstNameHasSpace } = req.body;
+        const { name, seasonId, photoUrl, firstNameHasSpace, nickname } = req.body;
         if (!name || !seasonId) {
             return res.status(400).json({ error: "name and seasonId are required" });
         }
@@ -52,7 +59,8 @@ export default function contestantsRouter(prisma: PrismaClient) {
                 name,
                 seasonId: seasonId,
                 photoUrl: photoUrl || ".src/assets/contestant_placeholder.png",
-                firstNameHasSpace: !!firstNameHasSpace
+                firstNameHasSpace: !!firstNameHasSpace,
+                nickname: parseNickname(nickname) ?? null
             }
         });
         res.json(newContestant);
@@ -61,6 +69,7 @@ export default function contestantsRouter(prisma: PrismaClient) {
     router.patch("/:contestantId", requireAdmin(prisma), async (req, res) => {
         const { contestantId } = req.params;
         const { name, photoUrl, firstNameHasSpace } = req.body;
+        const nickname = parseNickname(req.body.nickname);
         const updatedContestant = await prisma.contestant.update({
             where: {
                 id: contestantId
@@ -68,7 +77,8 @@ export default function contestantsRouter(prisma: PrismaClient) {
             data: {
                 ...(name !== undefined && { name }),
                 ...(photoUrl !== undefined && { photoUrl }),
-                ...(firstNameHasSpace !== undefined && { firstNameHasSpace: !!firstNameHasSpace })
+                ...(firstNameHasSpace !== undefined && { firstNameHasSpace: !!firstNameHasSpace }),
+                ...(nickname !== undefined && { nickname })
             }
         });
         res.json(updatedContestant);

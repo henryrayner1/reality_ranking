@@ -43,7 +43,7 @@ describe("PredictionHistory", () => {
     render(<PredictionHistory episodes={episodes} predictionsByEpisode={predictions} season={season} loggedIn />);
     const row = rowFor("Episode 4");
     expect(within(row).getAllByLabelText("Correct")).toHaveLength(2);
-    expect(within(row).getByText("Winner: Bob Jones")).toBeInTheDocument();
+    expect(within(row).getByText("Winner: Bob")).toBeInTheDocument();
   });
 
   it("hides the user's picks when logged out", () => {

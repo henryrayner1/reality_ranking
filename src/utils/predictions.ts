@@ -73,3 +73,7 @@ export const seedFinaleOrder = (contestants: { id: string }[], saved: string[]):
   const kept = saved.filter((id) => ids.includes(id));
   return [...kept, ...ids.filter((id) => !kept.includes(id))];
 };
+
+// "A", "A and B", "A, B and C".
+export const formatNameList = (names: string[]): string =>
+  names.length <= 1 ? (names[0] ?? "") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;

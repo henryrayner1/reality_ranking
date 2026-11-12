@@ -42,8 +42,8 @@ const ContestantIcon = (props:IconProps) => {
   // Every caller already passes the contestant's season (with its full
   // contestants[] roster), so the flag is looked up here by id rather than
   // threaded through each call site as another prop.
-  const firstNameHasSpace = props.season.contestants?.find((c) => c.id === props.id)?.firstNameHasSpace;
-  const uppercaseName = getIconLabel(props.name, firstNameHasSpace);
+  const rosterEntry = props.season.contestants?.find((c) => c.id === props.id);
+  const uppercaseName = getIconLabel(props.name, rosterEntry?.firstNameHasSpace, rosterEntry?.nickname);
 
   const dragProps = props.isActive ? { ...attributes, ...listeners } : {};
 
