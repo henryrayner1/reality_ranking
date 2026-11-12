@@ -7,6 +7,7 @@ import type { Show } from "../../../utils/Constants";
 
 vi.mock("../InsightsRankingTable/InsightsRankingTable", () => ({ default: () => <div>ranking-table</div> }));
 vi.mock("../ContestantDetailPanel/ContestantDetailPanel", () => ({ default: () => <div>contestant-panel</div> }));
+vi.mock("../PredictionInsights/PredictionInsights", () => ({ default: () => <div>prediction-insights</div> }));
 
 const show: Show = { id: "s1", name: "Survivor", currSeason: 1 };
 const showTree = {
@@ -23,6 +24,24 @@ describe("Insights", () => {
     vi.spyOn(queries, "useRankingsInsights").mockReturnValue(emptyQuery);
     vi.spyOn(queries, "useEliminationsBySeason").mockReturnValue(emptyQuery);
     vi.spyOn(queries, "useUserRankings").mockReturnValue(emptyQuery);
+    vi.spyOn(queries, "usePredictionInsights").mockReturnValue(emptyQuery);
+  });
+
+  it("switches to the Predictions page mode and hides the data-scope toggle there without removing it", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Insights />, {
+      route: "/insights/survivor",
+      routePath: "/insights/:showSlug",
+      preloadedState: { user: { value: { id: "u1", email: "a@b.com", accountType: "USER" } } },
+    });
+    expect(screen.getByText("My Submissions")).toBeVisible();
+    await user.click(screen.getByText("Predictions"));
+    expect(screen.getByText("prediction-insights")).toBeInTheDocument();
+    // Hidden but still in place, so the page doesn't shift between tabs.
+    expect(screen.getByText("My Submissions")).toBeInTheDocument();
+    expect(screen.getByText("My Submissions")).not.toBeVisible();
+    await user.click(screen.getByText("Rankings Table"));
+    expect(screen.getByText("My Submissions")).toBeVisible();
   });
 
   it("shows the placeholder when no show is selected", () => {

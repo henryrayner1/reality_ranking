@@ -7,6 +7,7 @@ import {
   getUserRankings,
   getRankingsInsights,
   getMyPredictions,
+  getPredictionInsights,
 } from "../utils/util";
 import type { RankType, Season, Show } from "../utils/Constants";
 
@@ -85,6 +86,17 @@ export const usePredictions = (seasonId: string | undefined, userId: string | un
     queryKey: predictionsQueryKey(seasonId, userId),
     queryFn: () => getMyPredictions(seasonId as string),
     enabled: !!seasonId && !!userId,
+  });
+
+// Anonymous per-episode prediction totals for a season (aired episodes only).
+export const predictionInsightsQueryKey = (seasonId: string | undefined) =>
+  ["predictionInsights", seasonId] as const;
+
+export const usePredictionInsights = (seasonId: string | undefined) =>
+  useQuery({
+    queryKey: predictionInsightsQueryKey(seasonId),
+    queryFn: () => getPredictionInsights(seasonId as string),
+    enabled: !!seasonId,
   });
 
 export interface ShowTree extends Show {

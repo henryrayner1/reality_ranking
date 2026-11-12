@@ -1,0 +1,49 @@
+/* ContestantChip card: square photo with the name beside it. Shared by the
+   Predictions page (picker, Past episodes) and Insights' Predictions view,
+   so it lives with the component rather than in a page stylesheet. Uses the
+   --rk-* palette from index.css. */
+
+.prediction-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem 0.4rem 0.4rem;
+  border: 2px solid transparent;
+  border-radius: 10px;
+  background: var(--rk-card-raised);
+  text-align: left;
+}
+
+/* Sized here rather than relying on .contestant-photo, whose styles live in
+   the lazily loaded Insights.css. */
+.prediction-chip-photo {
+  display: block;
+  width: 2.5rem;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.prediction-chip-photo.contestant-photo-placed {
+  box-shadow: 0 0 0 2px var(--placement-color);
+}
+
+.prediction-chip-text {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.prediction-chip-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--rk-subtle);
+  overflow-wrap: anywhere;
+}
+
+.prediction-chip-placement {
+  font-size: 0.7rem;
+  color: var(--rk-muted);
+}

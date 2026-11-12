@@ -95,8 +95,9 @@
    than the Favorite/Winner switch below it (lighter active pill), since
    this one swaps the whole page's content rather than one table's data. */
 .insights-mode-tabs {
-  /* Equal-width columns (each as wide as the longer label) so the sliding
-     highlight below is the same size on either tab. */
+  /* Three equal-width columns (each as wide as the longest label; the bar
+     itself shrink-wraps to them) so the sliding highlight below is the same
+     size on every tab. */
   display: grid;
   grid-auto-flow: column;
   grid-auto-columns: 1fr;
@@ -132,16 +133,17 @@
   color: #fff;
 }
 
-/* Sliding highlight: one pill behind both tabs that moves to whichever is
-   active, instead of the active tab filling itself in. Both tabs are the same
-   width, so it's half the track wide and slides by its own width plus the gap. */
+/* Sliding highlight: one pill behind the three tabs that moves to whichever
+   is active, instead of the active tab filling itself in. The tabs are equal
+   width, so it's a third of the track (minus padding and the two gaps) and
+   slides by whole multiples of its own width plus a gap. */
 .insights-mode-tabs::before {
   content: "";
   position: absolute;
   top: 0.25rem;
   bottom: 0.25rem;
   left: 0.25rem;
-  width: calc((100% - 2 * 0.25rem - 0.25rem) / 2);
+  width: calc((100% - 2 * 0.25rem - 2 * 0.25rem) / 3);
   border-radius: 999px;
   background-color: var(--rk-accent);
   box-shadow: 0 2px 8px rgba(127, 119, 221, 0.35);
@@ -150,6 +152,10 @@
 
 .insights-mode-tabs:has(> .insights-mode-tab-active:nth-child(2))::before {
   transform: translateX(calc(100% + 0.25rem));
+}
+
+.insights-mode-tabs:has(> .insights-mode-tab-active:nth-child(3))::before {
+  transform: translateX(calc(200% + 2 * 0.25rem));
 }
 
 .insights-mode-tabs > .insights-mode-tab {
@@ -595,6 +601,12 @@
 @media screen and (max-width: 800px) {
   .insights-page {
     padding-bottom: 5vh;
+  }
+
+  /* Three equal tabs have to fit a phone's width. */
+  .insights-mode-tab {
+    padding: 0.4rem 0.7rem;
+    font-size: 0.82rem;
   }
 
   .insights-content {

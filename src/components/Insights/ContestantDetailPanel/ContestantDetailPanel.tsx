@@ -1,5 +1,6 @@
 import { Dropdown } from "react-bootstrap";
-import { type EliminationEntry, type InsightsResponse, type Season, type Show } from "../../../utils/Constants";
+import { type EliminationEntry, type InsightsResponse, type PredictionInsightsEpisode, type Season, type Show } from "../../../utils/Constants";
+import { getPredictionRanksFor } from "../../../utils/predictions";
 import { formatPlacement } from "../../../utils/util";
 import ContestantPhoto from "../../ContestantPhoto/ContestantPhoto";
 import PageLoading from "../../PageLoading/PageLoading";
@@ -13,6 +14,9 @@ interface ContestantDetailPanelProps {
   eliminations: EliminationEntry[];
   selectedContestantId: string | null;
   setSelectedContestantId: (id: string) => void;
+  // Aggregate prediction totals for the chart's "predicted to go home" line;
+  // null hides the line (e.g. under My Submissions).
+  predictionInsights?: PredictionInsightsEpisode[] | null;
   loadingFlag: boolean;
 }
 
@@ -126,6 +130,8 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
               contestantCount={currSeason.contestants.length}
               eliminations={props.eliminations}
               eliminationInfo={selectedEliminationInfo}
+              predictionRanks={props.predictionInsights ? getPredictionRanksFor(selected.id, currSeason, props.predictionInsights) : undefined}
+              finaleEpisodeNumber={props.predictionInsights?.find((p) => p.isFinale)?.episodeNumber}
             />
           </>
         )}

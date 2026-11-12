@@ -21,6 +21,43 @@ export default function predictionsRouter(prisma: PrismaClient) {
     res.json(predictions);
   });
 
+  // Anonymous aggregate for Insights: vote counts per contestant for every
+  // episode of the season that has already aired. Episodes still open for
+  // predictions are never included, so the crowd's pick can't sway anyone.
+  // Ordinary episodes count every pick; the finale counts only each person's
+  // predicted winner (contestantIds[0]).
+  router.get("/insights/:seasonId", async (req, res) => {
+    const { seasonId } = req.params;
+    const predictions = await prisma.prediction.findMany({
+      where: { episode: { seasonId, isPreSeason: false, airDate: { lte: new Date() } } },
+      select: {
+        contestantIds: true,
+        episode: { select: { id: true, episodeNumber: true, isFinale: true } },
+      },
+    });
+
+    const byEpisode = new Map<string, {
+      episodeId: string;
+      episodeNumber: number;
+      isFinale: boolean;
+      predictorCount: number;
+      votes: Record<string, number>;
+    }>();
+    for (const p of predictions) {
+      const ep = p.episode;
+      let entry = byEpisode.get(ep.id);
+      if (!entry) {
+        entry = { episodeId: ep.id, episodeNumber: ep.episodeNumber, isFinale: ep.isFinale, predictorCount: 0, votes: {} };
+        byEpisode.set(ep.id, entry);
+      }
+      entry.predictorCount += 1;
+      const counted = ep.isFinale ? p.contestantIds.slice(0, 1) : p.contestantIds;
+      for (const id of counted) entry.votes[id] = (entry.votes[id] ?? 0) + 1;
+    }
+
+    res.json([...byEpisode.values()].sort((a, b) => a.episodeNumber - b.episodeNumber));
+  });
+
   // Create or replace the user's prediction for an upcoming episode.
   router.put("/", requireUser(), async (req, res) => {
     const { episodeId, contestantIds } = req.body ?? {};

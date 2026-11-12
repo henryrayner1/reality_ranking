@@ -1,0 +1,60 @@
+/* Insights' Predictions view. Row layout, chips and the capped scrolling
+   card come from PredictionHistory.css / ContestantChip.css; this adds the
+   card surface and the fourth ("Top predicted") column. */
+
+.insights-predictions-card {
+  width: 100%;
+  max-width: min(100%, 60rem);
+  margin-top: 1.5rem;
+  text-align: left;
+  background: var(--rk-card-bg);
+  border: 1px solid var(--rk-card-border);
+  border-radius: 14px;
+  box-shadow: var(--rk-card-shadow);
+  padding: 1rem 1.25rem;
+}
+
+.history-row.insights-prediction-row {
+  grid-template-columns: 6.5rem minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.1fr);
+}
+
+.insights-prediction-count {
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--rk-muted);
+}
+
+.insights-view-all {
+  align-self: flex-start;
+  margin-top: 0.4rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--rk-accent-text);
+  cursor: pointer;
+}
+
+.insights-view-all:hover {
+  text-decoration: underline;
+}
+
+.insights-view-all-body {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+  text-align: left;
+}
+
+@media (max-width: 800px) {
+  .history-row.insights-prediction-row {
+    grid-template-columns: 1fr;
+  }
+
+  .insights-prediction-row .history-heading {
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+}

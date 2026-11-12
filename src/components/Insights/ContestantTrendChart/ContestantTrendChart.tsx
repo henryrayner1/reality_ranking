@@ -7,6 +7,8 @@ interface ChartPoint {
   episodeNumber: number;
   favoriteAvg: number | null;
   winnerAvg: number | null;
+  // Prediction rank (1 = most predicted to go home; finale: to win).
+  predictionRank: number | null;
   fieldSize: number;
 }
 
@@ -17,6 +19,11 @@ interface ContestantTrendChartProps {
   contestantCount: number;
   eliminations: EliminationEntry[];
   eliminationInfo?: { episodeNumber: number; eliminationType: string; placement?: number | null } | null;
+  // episodeNumber -> prediction rank (see getPredictionStandings). Omitted or
+  // empty hides the predictions line.
+  predictionRanks?: Map<number, number>;
+  // The finale's point means "predicted to win", so its tooltip says so.
+  finaleEpisodeNumber?: number;
 }
 
 // Submitted rankings only contain still-active contestants, so the worst
@@ -51,6 +58,7 @@ export const getFieldSizeByEpisode = (
 };
 
 const FIELD_SIZE_SERIES_NAME = "Number of Contestants";
+const PREDICTION_SERIES_NAME = "Predicted to go home";
 
 // Recharts sorts tooltip and legend rows by name by default; keep that for
 // Favorite/Winner but always list the contestant count last.
@@ -61,11 +69,13 @@ const buildChartData = (
   favoriteInsights: InsightsResponse,
   winnerInsights: InsightsResponse,
   contestantCount: number,
-  eliminations: EliminationEntry[]
+  eliminations: EliminationEntry[],
+  predictionRanks: Map<number, number> = new Map()
 ): ChartPoint[] => {
   const episodeNumbers = [...new Set([
     ...favoriteInsights.episodes.map((w) => w.episodeNumber),
     ...winnerInsights.episodes.map((w) => w.episodeNumber),
+    ...predictionRanks.keys(),
   ])].sort((a, b) => a - b);
   const fieldSizeByEpisode = getFieldSizeByEpisode(contestantCount, eliminations, episodeNumbers);
 
@@ -78,6 +88,7 @@ const buildChartData = (
       episodeNumber,
       favoriteAvg: favEntry?.averagePosition ?? null,
       winnerAvg: winEntry?.averagePosition ?? null,
+      predictionRank: predictionRanks.get(episodeNumber) ?? null,
       fieldSize: fieldSizeByEpisode.get(episodeNumber) ?? contestantCount,
     };
   });
@@ -89,8 +100,10 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
     props.favoriteInsights,
     props.winnerInsights,
     props.contestantCount,
-    props.eliminations
+    props.eliminations,
+    props.predictionRanks
   );
+  const hasPredictions = !!props.predictionRanks && props.predictionRanks.size > 0;
 
   if (chartData.length === 0) {
     return <p className="insights-placeholder">No ranking submissions yet for this contestant.</p>;
@@ -106,11 +119,15 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
           reversed
           allowDecimals
           domain={[1, props.contestantCount]}
-          label={{ value: "Avg. Rank", angle: -90, position: "insideLeft" }}
+          label={{ value: hasPredictions ? "Rank" : "Avg. Rank", angle: -90, position: "insideLeft" }}
         />
         <Tooltip
-          formatter={(value: number, name: string) => {
+          formatter={(value: number, name: string, item: { payload?: ChartPoint }) => {
             if (name === FIELD_SIZE_SERIES_NAME) return [value, name];
+            if (name === PREDICTION_SERIES_NAME) {
+              const isFinale = item?.payload?.episodeNumber === props.finaleEpisodeNumber;
+              return [value != null ? `#${value}` : "—", isFinale ? "Predicted to win" : name];
+            }
             return [value != null ? value.toFixed(2) : "—", name];
           }}
           labelFormatter={(episode) => episode === PRE_SEASON_EPISODE_NUMBER ? "Pre-season" : `Episode ${episode}`}
@@ -140,8 +157,14 @@ const ContestantTrendChart = (props: ContestantTrendChartProps) => {
           dot={false}
           isAnimationActive={false}
         />
-        <Line type="monotone" dataKey="favoriteAvg" name="Favorite" stroke="#e0489f" connectNulls dot />
-        <Line type="monotone" dataKey="winnerAvg" name="Winner" stroke="#2b7fb8" connectNulls dot />
+        {/* Straight segments, like the contestant-count line and shaded area:
+            a curved (monotone) line overshoots between points, so a contestant
+            ranked last every episode appeared to dip past the field-size line. */}
+        <Line type="linear" dataKey="favoriteAvg" name="Favorite" stroke="#e0489f" connectNulls dot />
+        <Line type="linear" dataKey="winnerAvg" name="Winner" stroke="#2b7fb8" connectNulls dot />
+        {hasPredictions && (
+          <Line type="linear" dataKey="predictionRank" name={PREDICTION_SERIES_NAME} stroke="#e8833a" strokeWidth={2} connectNulls dot />
+        )}
         {props.eliminationInfo && (
           <ReferenceLine
             x={props.eliminationInfo.episodeNumber}

@@ -44,6 +44,21 @@ describe("ContestantTrendChart", () => {
     expect(screen.getByText("Favorite")).toBeInTheDocument();
     expect(screen.getByText("Winner")).toBeInTheDocument();
     expect(screen.getByText("Number of Contestants")).toBeInTheDocument();
+    expect(screen.queryByText("Predicted to go home")).not.toBeInTheDocument();
+  });
+
+  it("adds the prediction rank line when ranks are given, even with no ranking data", () => {
+    render(
+      <ContestantTrendChart
+        contestantId="c1"
+        favoriteInsights={emptyInsights}
+        winnerInsights={emptyInsights}
+        contestantCount={10}
+        eliminations={[]}
+        predictionRanks={new Map([[1, 3], [2, 1]])}
+      />
+    );
+    expect(screen.getByText("Predicted to go home")).toBeInTheDocument();
   });
 });
 
