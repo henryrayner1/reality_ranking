@@ -5,8 +5,8 @@ import fs from "fs";
 // Uploaded images go to Cloudflare R2 when it's configured (production), and
 // to the local uploads/ folder otherwise (local dev). Render's free-tier disk
 // is wiped on every redeploy, so anything written to uploads/ in production
-// would vanish; R2 keeps it. Files already committed under uploads/ are still
-// served by express.static either way.
+// would vanish; R2 keeps it. uploads/ is gitignored, created on demand, and
+// served by express.static at /uploads (local-dev uploads only).
 const accountId = process.env.R2_ACCOUNT_ID;
 const accessKeyId = process.env.R2_ACCESS_KEY_ID;
 const secretAccessKey = process.env.R2_SECRET_ACCESS_KEY;
