@@ -8,6 +8,10 @@ import { BrowserRouter } from 'react-router-dom'
 import ScrollToTop from './utils/ScrollToTop.ts'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { installStaleChunkReload } from './utils/reloadOnStaleChunk'
+
+// Reload once if a page's code file is gone after a deploy (see the file).
+installStaleChunkReload()
 
 // Mirrors how Redux used to hold this data: fetched once, never silently
 // refetched, and only ever updated by an explicit invalidateQueries call
