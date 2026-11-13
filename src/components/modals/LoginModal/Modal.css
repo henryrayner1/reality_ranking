@@ -23,6 +23,10 @@ label {
     justify-content: center;
     align-self: center;
     background-color: rgba(0, 0, 0, 0.5);
+    /* Keeps a gutter around the card on narrow screens, so its edges and
+       rounded corners stay visible instead of running off the sides. */
+    padding: 1rem;
+    box-sizing: border-box;
 }
 
 .modal-close {
@@ -41,4 +45,10 @@ label {
     padding: 3rem;
     border-radius: 0.5rem;
     box-shadow: 0px 4px 10px 0px rgb(77, 77, 77);
+}
+
+@media (max-width: 640px) {
+    .modal-card {
+        padding: 2rem 1.5rem;
+    }
 }

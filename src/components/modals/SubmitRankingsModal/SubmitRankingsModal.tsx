@@ -28,7 +28,7 @@ const SubmitRankingsModal = (props:SubmitProps) => {
         }
     }
 
-    const confirmSubmission = <div className="modal-card min-w-[30.25rem]">
+    const confirmSubmission = <div className="modal-card w-full max-w-[30.25rem]">
         <div className="w-full">
             <h2 className="text-2xl font-bold text-black mb-4">{submitCompletedFlag ? "Success!" : errorFlag ? "Submission Failed" : "Confirm Rankings Submission"}</h2>
             <div className="w-full flex flex-col justify-center py-2 min-h-[4rem]">
