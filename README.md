@@ -1,73 +1,43 @@
-# React + TypeScript + Vite
+# Realitier
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Realitier lets fans rank the contestants on their favourite reality TV shows as the season airs, predict who's going home, and see how everyone's opinions change over time.
 
-Currently, two official plugins are available:
+Live site: <https://henryrayner1.github.io/reality_ranking/>
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **My Rankings**: each episode, drag contestants into your Favorite and Winner orders. Daily-ranking shows such as Big Brother open a new ranking each day. Pre-season rankings and finale placements are supported too.
+- **Predictions**: pick who you think will go home in the next episode, or order the finalists for the finale. Picks can be changed until the episode airs. Past episodes show your picks next to who was really eliminated.
+- **Insights**: the season-wide average rankings table, a per-contestant trend chart, and aggregate prediction results with vote shares.
+- **Admin**: manage shows, seasons, contestants (photos, nicknames), episodes and eliminations.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Tech stack
 
-## Expanding the ESLint configuration
+- **Frontend** (repo root): React, TypeScript, Vite, React Query, Redux Toolkit, Bootstrap and Tailwind, dnd-kit, Recharts. Deployed to GitHub Pages by `.github/workflows/deploy-pages.yml` on every push to `main`.
+- **Backend** (`backend/`): Express, Prisma and PostgreSQL. Deployed on Render, with uploaded images stored in Cloudflare R2.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Development
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install            # frontend (also installs the pre-push hook)
+npm install --prefix backend
+npm start              # frontend on :5173 and backend on :4000 together
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Other commands:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| Command | What it does |
+|---|---|
+| `npm run dev` | Frontend only (proxies `/api` to `localhost:4000`) |
+| `npm run build` | Type-check and build the frontend into `dist/` |
+| `npm run test:run` | Run the Vitest suite once |
+| `npm run lint` | ESLint |
+| `npm run dev --prefix backend` | Backend only, with reload on change |
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+The backend reads `backend/.env` (`DATABASE_URL`, `AUTH_TOKEN_SECRET`, `ADMIN_API_SECRET`, and optional `R2_*` storage settings). **The database it points at is the live production data**, so local edits and migrations affect the real site. See `CLAUDE.md` for details.
+
+A pre-push hook runs the tests and the build before every `git push`.
+
+## Name
+
+The site was called "Reality Ranking" before it became Realitier. The repository and the GitHub Pages path are still named `reality_ranking`.

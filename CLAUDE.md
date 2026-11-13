@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+The app is **Realitier** (renamed from "Reality Ranking" on 2026-11-13): that name appears in `index.html` (title and iOS home-screen app name), the navbar brand and the homepage heading. The repo, the GitHub Pages path (`/reality_ranking/`, also Vite's production `base`) and code identifiers still say `reality_ranking` on purpose. Changing the path would break the live URL until a custom domain (e.g. `realitier.tv`) is set up, at which point `base` becomes `/`.
+
 ## Commands
 
 Frontend (repo root):
