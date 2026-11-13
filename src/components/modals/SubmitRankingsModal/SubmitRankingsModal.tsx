@@ -1,11 +1,13 @@
 import { useState } from "react";
 import type { ModalProps } from "../../../utils/Constants";
+import { useBodyScrollLock } from "../../../hooks/useBodyScrollLock";
 
 interface SubmitProps extends ModalProps {
     handleSubmit: () => Promise<void>;
 }
 
 const SubmitRankingsModal = (props:SubmitProps) => {
+    useBodyScrollLock();
     const [loadingFlag, setLoadingFlag] = useState(false);
     const [submitCompletedFlag, setSubmitCompletedFlag] = useState(false);
     const [errorFlag, setErrorFlag] = useState(false);

@@ -4,8 +4,10 @@ import { createUser, userLogin } from '../../../utils/util';
 import type { ModalProps } from '../../../utils/Constants';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../../../redux/slices/userSlice';
+import { useBodyScrollLock } from '../../../hooks/useBodyScrollLock';
 
 const LoginModal = (props: ModalProps) => {
+  useBodyScrollLock();
 
   const [isLogin, setIsLogin] = useState(props.initialIsLogin ?? true);
   const [email, setEmail] = useState('');
