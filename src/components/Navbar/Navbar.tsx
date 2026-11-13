@@ -33,6 +33,16 @@ const Navbar = (props) => {
         if (collapseEl) Collapse.getOrCreateInstance(collapseEl, { toggle: false }).hide();
     };
 
+    // Logging out happens through a confirm modal, not a nav link, so the
+    // mobile menu used to stay open over the homepage afterwards. Collapse it
+    // when the user goes from logged in to logged out (cancelling the modal
+    // changes nothing, so the menu stays as it was).
+    const wasLoggedIn = useRef(props.loggedIn);
+    useEffect(() => {
+        if (wasLoggedIn.current && !props.loggedIn) collapseMobileMenu();
+        wasLoggedIn.current = props.loggedIn;
+    }, [props.loggedIn]);
+
     // Exposed as a CSS var so other sticky elements (e.g. .page-header) can
     // sit flush beneath the navbar regardless of its actual rendered height,
     // which varies across breakpoints and when the mobile menu expands/collapses.

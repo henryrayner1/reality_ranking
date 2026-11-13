@@ -2,11 +2,23 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "../../test/renderWithProviders";
 import Navbar from "./Navbar";
 
+const { hideMenu } = vi.hoisted(() => ({ hideMenu: vi.fn() }));
 vi.mock("bootstrap/dist/js/bootstrap.bundle.min.js", () => ({
-  default: { Collapse: { getOrCreateInstance: vi.fn(() => ({ hide: vi.fn() })) } },
+  default: { Collapse: { getOrCreateInstance: vi.fn(() => ({ hide: hideMenu })) } },
 }));
 
 describe("Navbar", () => {
+  beforeEach(() => hideMenu.mockClear());
+
+  it("collapses the mobile menu once the user is logged out, but not before", () => {
+    const { rerender } = renderWithProviders(
+      <Navbar loggedIn isAdmin={false} onLoginClick={() => {}} onLogoutClick={() => {}} />
+    );
+    expect(hideMenu).not.toHaveBeenCalled();
+    rerender(<Navbar loggedIn={false} isAdmin={false} onLoginClick={() => {}} onLogoutClick={() => {}} />);
+    expect(hideMenu).toHaveBeenCalledTimes(1);
+  });
+
   it("shows Login (not My Rankings/Admin) when logged out", () => {
     renderWithProviders(
       <Navbar loggedIn={false} isAdmin={false} onLoginClick={() => {}} onLogoutClick={() => {}} />
