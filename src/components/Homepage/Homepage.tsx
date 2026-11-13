@@ -46,7 +46,7 @@ const Homepage = (props: { openAuthModal: (isLogin?: boolean) => void }) => {
     <div className="homepage">
       <section className="homepage-hero">
         <TvStaticBackground />
-        <h1 className="homepage-hero-title">Reality Ranking</h1>
+        <h1 className="homepage-hero-title">Realitier</h1>
         <p className="homepage-hero-subtitle">
           Inspired by <a href="https://jokersupdates.com" target="_blank" rel="noopener noreferrer">Joker's Updates</a>' online Big Brother user survey rankings, this application allows you to rank contestants on your favorite reality shows as they air.
         </p>

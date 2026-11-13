@@ -67,7 +67,7 @@ const Navbar = (props) => {
                     {/* Same image as the iOS home-screen icon (public/apple-touch-icon.png).
                         BASE_URL so it also resolves under the GitHub Pages base path. */}
                     <img className="app-navbar-logo" src={`${import.meta.env.BASE_URL}apple-touch-icon.png`} alt="" aria-hidden="true" />
-                    Reality Ranking
+                    Realitier
                 </Link>
                 <button
                     className="navbar-toggler"
