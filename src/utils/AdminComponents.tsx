@@ -1,4 +1,5 @@
 import { backendUrl } from "./apiBase";
+import { useBodyScrollLock } from "../hooks/useBodyScrollLock";
 
 export const PageHeader = ({ title, subtitle }: { title: string; subtitle: string }) => {
     return (
@@ -91,6 +92,7 @@ export const ItemInfo = ({ name, meta }: { name: string; meta: string }) =>{
 // z-[1050] (Bootstrap's modal layer) so the backdrop covers the navbar and
 // the sticky .page-header, which both sit at z-index 1000.
 export const Modal = ({ title, onClose, children, size = "sm" }: { title: string; onClose: () => void; children: React.ReactNode; size?: "sm" | "lg" }) => {
+    useBodyScrollLock();
     return (
         <div className="fixed inset-0 z-[1050] flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
             <div className={`w-full ${size === "lg" ? "max-w-lg" : "max-w-sm"} rounded-xl bg-white p-5`} onClick={(e) => e.stopPropagation()}>

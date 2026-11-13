@@ -1,10 +1,12 @@
 import type { ModalProps } from "../../../utils/Constants";
+import { useBodyScrollLock } from "../../../hooks/useBodyScrollLock";
 
 interface LogoutConfirmModalProps extends ModalProps {
   onConfirm: () => void;
 }
 
 const LogoutConfirmModal = (props: LogoutConfirmModalProps) => {
+  useBodyScrollLock();
   return (
     <div className="modal">
       <div className="relative bg-white p-6 rounded shadow-lg w-96">
