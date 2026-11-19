@@ -216,20 +216,55 @@
   color: var(--rk-accent-text);
 }
 
+/* Saved finale prediction: the winner is the big photo above; everyone
+   else is a ContestantChip. Six-column grid so 2nd and 3rd share a row
+   (span 3 each) and the rest sit three to a row (span 2), smaller. */
 .finale-summary-order {
   list-style: none;
-  margin: 0.5rem auto 0;
+  margin: 0.75rem auto 0;
   padding: 0;
-  max-width: 20rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  color: var(--rk-subtle);
+  max-width: 30rem;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.6rem;
 }
 
-.finale-summary-order li {
-  display: flex;
-  gap: 0.75rem;
+.finale-summary-chip {
+  grid-column: span 2;
+}
+
+.finale-summary-podium {
+  grid-column: span 3;
+}
+
+/* Only two finalists: centre the lone runner-up. */
+.finale-summary-podium:first-child:last-child {
+  grid-column: 2 / span 4;
+}
+
+.finale-summary-podium.placement-silver { border-color: var(--placement-silver); }
+.finale-summary-podium.placement-bronze { border-color: var(--placement-bronze); }
+
+/* 4th and below: a step down in size so the podium reads first. */
+.finale-summary-chip:not(.finale-summary-podium) {
+  gap: 0.45rem;
+  padding: 0.3rem 0.45rem 0.3rem 0.3rem;
+}
+
+.finale-summary-chip:not(.finale-summary-podium) .prediction-chip-photo {
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+}
+
+.finale-summary-chip:not(.finale-summary-podium) .prediction-chip-name {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+  .finale-summary-chip:not(.finale-summary-podium) {
+    grid-column: span 3;
+  }
 }
 
 .prediction-error {
@@ -293,11 +328,6 @@
   justify-content: flex-end;
   font-weight: 700;
   color: var(--rk-accent-text);
-}
-
-.finale-summary-order .finale-order-place {
-  width: 3.5rem;
-  justify-content: flex-start;
 }
 
 .finale-order-chip {
