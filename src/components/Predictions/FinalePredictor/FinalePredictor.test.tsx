@@ -47,6 +47,11 @@ describe("FinalePredictor", () => {
       <FinalePredictor contestants={contestants} initialOrder={["c", "a", "b"]} season={season} hasSaved isSaving={false} onSubmit={vi.fn()} />
     );
     expect(screen.getByText(/You have predicted/)).toHaveTextContent("You have predicted Cara will win the season.");
+    // Everyone after the winner as chips, captioned with their placement.
+    const rest = within(screen.getByRole("list", { name: /Rest of your predicted placements/ })).getAllByRole("listitem");
+    expect(rest.map((li) => li.textContent)).toEqual(["Alice2nd", "Bob3rd"]);
+    expect(rest[0]).toHaveClass("finale-summary-podium", "placement-silver");
+    expect(rest[0].querySelector("img.prediction-chip-photo")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Update Prediction" }));
     expect(screen.getByText(/It's the finale!/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Save Prediction" })).toBeDisabled();

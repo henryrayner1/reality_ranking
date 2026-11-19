@@ -83,14 +83,26 @@ const FinalePredictor = ({ contestants, initialOrder, season, show, hasSaved, is
             You have predicted <strong>{winner && displayName(winner.id)}</strong> will win the season.
           </p>
         </div>
-        <ol className="finale-summary-order">
-          {saved.map((id, index) => (
-            <li key={id}>
-              <span className="finale-order-place">{formatPlacement(index + 1)}</span>
-              <span>{displayName(id)}</span>
-            </li>
-          ))}
-        </ol>
+        {saved.length > 1 && (
+          // Everyone after the winner as photo + name chips: 2nd and 3rd in
+          // a wider medal-outlined podium row, the rest smaller below.
+          <ol className="finale-summary-order" start={2} aria-label="Rest of your predicted placements">
+            {saved.slice(1).map((id, i) => {
+              const c = byId.get(id);
+              if (!c) return null;
+              const place = i + 2;
+              const podium = place <= 3;
+              return (
+                <li
+                  key={id}
+                  className={`prediction-chip finale-summary-chip${podium ? ` finale-summary-podium placement-${placementTier(place)}` : ""}`}
+                >
+                  <ContestantChip contestant={c} season={season} show={show} note={formatPlacement(place)} />
+                </li>
+              );
+            })}
+          </ol>
+        )}
         <div className="prediction-actions">
           <button type="button" className="prediction-submit" onClick={() => setEditing(true)}>Update Prediction</button>
         </div>
