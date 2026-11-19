@@ -283,6 +283,11 @@ body {
      the episode columns scrolling underneath it. */
   --rk-card-bg: rgb(201, 213, 231);
   --rk-card-raised: rgb(225, 232, 244);
+  /* Finale medal colours (1st-3rd), used by the placement rules below and
+     the Predictions finale editor's medal slots. */
+  --placement-gold: #D4A72C;
+  --placement-silver: #848D9C;
+  --placement-bronze: #B8733A;
   --rk-card-border: rgba(60, 90, 150, 0.16);
   --rk-card-shadow: 0 1px 2px rgba(20, 16, 60, 0.05), 0 4px 14px rgba(20, 16, 60, 0.06);
   --rk-header-bg: rgb(189, 203, 226);
@@ -294,16 +299,17 @@ body {
 /* Finale placements (ContestantIcon's `placement` prop), used by both the
    Ranking and Insights grids, so kept here rather than in either page's
    lazily-loaded CSS. Gold/silver/bronze for 1st-3rd, the purple accent for
-   every lower placement. The border is an ::after overlay so it draws on top
+   every lower placement (colours from the --placement-* variables in
+   :root). The border is an ::after overlay so it draws on top
    of the photo instead of shrinking it. */
 .contestant-icon-placed,
 .contestant-photo-placed {
   --placement-color: var(--rk-accent);
   --placement-text: #ffffff;
 }
-.contestant-icon-placed.placement-gold, .contestant-photo-placed.placement-gold { --placement-color: #D4A72C; --placement-text: #2b2105; }
-.contestant-icon-placed.placement-silver, .contestant-photo-placed.placement-silver { --placement-color: #848D9C; --placement-text: #ffffff; }
-.contestant-icon-placed.placement-bronze, .contestant-photo-placed.placement-bronze { --placement-color: #B8733A; --placement-text: #ffffff; }
+.contestant-icon-placed.placement-gold, .contestant-photo-placed.placement-gold { --placement-color: var(--placement-gold); --placement-text: #2b2105; }
+.contestant-icon-placed.placement-silver, .contestant-photo-placed.placement-silver { --placement-color: var(--placement-silver); --placement-text: #ffffff; }
+.contestant-icon-placed.placement-bronze, .contestant-photo-placed.placement-bronze { --placement-color: var(--placement-bronze); --placement-text: #ffffff; }
 .contestant-icon-placed::after {
   content: "";
   position: absolute;

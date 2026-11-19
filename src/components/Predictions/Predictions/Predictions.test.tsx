@@ -66,6 +66,20 @@ describe("Predictions", () => {
     expect(screen.getByText("Episode 1")).toBeInTheDocument();
   });
 
+  it("lists the contestants alphabetically by displayed name", async () => {
+    const shows = makeShows();
+    shows[0].seasons[0].contestants = [
+      { id: "z", name: "zoe Park", seasonId: "se1" },
+      { id: "b", name: "Bob Jones", seasonId: "se1" },
+      { id: "a", name: "Zed Smith", nickname: "Al", seasonId: "se1" } as any,
+    ];
+    vi.spyOn(util, "getShows").mockResolvedValue(shows as any);
+    renderPage();
+    await screen.findByRole("button", { name: "Bob Jones" });
+    const names = screen.getAllByRole("button", { pressed: false }).map((b) => b.getAttribute("aria-label"));
+    expect(names).toEqual(["Zed Smith", "Bob Jones", "zoe Park"]);
+  });
+
   it("shows a saved prediction as a summary instead of the picker", async () => {
     vi.spyOn(util, "getMyPredictions").mockResolvedValue([{ id: "p", episodeId: "e2", contestantIds: ["b"], updatedAt: "x" }]);
     renderPage();
