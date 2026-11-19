@@ -240,31 +240,93 @@
 }
 
 /* Finale order */
+/* Finale order editor: a fixed column of placement labels beside the list
+   of draggable ContestantChip cards. Both lists (plus the medal slots behind the chips) are subgrids
+   of one grid (row span set inline) so each label and slot lines up with its
+   row; only the chips move when dragging. */
 .finale-order {
+  display: grid;
+  grid-template-columns: auto minmax(0, 18rem);
+  column-gap: 0.75rem;
+  row-gap: 0.4rem;
+  justify-content: center;
+}
+
+.finale-order-places,
+.finale-order-chips {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-rows: subgrid;
 }
 
-.finale-order-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.35rem 0.6rem;
-  background: var(--rk-card-raised);
+.finale-order-places {
+  grid-column: 1;
+}
+
+.finale-order-slots,
+.finale-order-chips {
+  grid-column: 2;
+}
+
+.finale-order-slots {
+  display: grid;
+  grid-template-rows: subgrid;
+}
+
+/* Static medal outline per spot (colours from the --placement-* variables
+   in index.css's :root). A ring outside the slot's box, so the chip sitting
+   on top (same size, opaque) covers the slot but never the ring. Below 3rd:
+   no ring. */
+.finale-order-slot {
   border-radius: 10px;
 }
 
+.finale-order-slot.placement-gold { box-shadow: 0 0 0 2px var(--placement-gold); }
+.finale-order-slot.placement-silver { box-shadow: 0 0 0 2px var(--placement-silver); }
+.finale-order-slot.placement-bronze { box-shadow: 0 0 0 2px var(--placement-bronze); }
+
 .finale-order-place {
-  width: 3.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   font-weight: 700;
   color: var(--rk-accent-text);
 }
 
-.finale-order-name {
-  font-weight: 600;
-  color: var(--rk-subtle);
+.finale-summary-order .finale-order-place {
+  width: 3.5rem;
+  justify-content: flex-start;
+}
+
+.finale-order-chip {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.finale-order-chip:hover {
+  border-color: var(--rk-hairline);
+}
+
+.finale-order-chip:focus-visible {
+  outline: 2px solid var(--rk-accent);
+  outline-offset: 2px;
+}
+
+.finale-order-chip-dragging {
+  position: relative;
+  z-index: 1;
+  cursor: grabbing;
+  border-color: var(--rk-accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.finale-order-handle {
+  margin-left: auto;
+  padding-left: 0.5rem;
+  color: var(--rk-muted);
+  font-size: 1.1rem;
+  line-height: 1;
 }

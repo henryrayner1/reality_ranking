@@ -28,10 +28,15 @@ describe("FinalePredictor", () => {
     render(
       <FinalePredictor contestants={contestants} initialOrder={["b", "a", "c"]} season={season} hasSaved={false} isSaving={false} onSubmit={onSubmit} />
     );
-    const rows = screen.getAllByRole("listitem");
-    expect(within(rows[0]).getByText("Bob")).toBeInTheDocument();
-    expect(rows[0].querySelector(".finale-order-place")).toHaveTextContent("Winner");
-    expect(rows[1].querySelector(".finale-order-place")).toHaveTextContent("2nd");
+    // Draggable photo + name chips, in a list separate from the fixed
+    // placement labels.
+    const chips = within(screen.getByRole("list", { name: /Predicted placements/ })).getAllByRole("button");
+    expect(chips.map((c) => c.getAttribute("aria-label"))).toEqual(["Bob Jones", "Alice Smith", "Cara Lee"]);
+    expect(within(chips[0]).getByText("Bob")).toBeInTheDocument();
+    expect(chips[0].querySelector("img.prediction-chip-photo")).toBeInTheDocument();
+    expect(chips[0]).not.toHaveTextContent("Winner");
+    const places = Array.from(document.querySelectorAll(".finale-order-places .finale-order-place")).map((p) => p.textContent);
+    expect(places).toEqual(["Winner", "2nd", "3rd"]);
     await user.click(screen.getByRole("button", { name: "Submit Prediction" }));
     expect(onSubmit).toHaveBeenCalledWith(["b", "a", "c"]);
   });

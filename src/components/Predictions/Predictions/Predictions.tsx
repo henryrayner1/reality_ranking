@@ -8,7 +8,7 @@ import FinalePredictor from "../FinalePredictor/FinalePredictor";
 import PredictionHistory from "../PredictionHistory/PredictionHistory";
 import { predictionsQueryKey, usePredictions, useShows, useShowTree } from "../../../hooks/queries";
 import { slugifyShowName } from "../../../utils/slug";
-import { savePrediction } from "../../../utils/util";
+import { getPredictionName, savePrediction } from "../../../utils/util";
 import { formatDuration, isSeasonEnded } from "../../../utils/episodeRankability";
 import {
   getAiredEpisodes,
@@ -72,8 +72,13 @@ const Predictions = () => {
         nextEpisode.episodeNumber
       )
     );
-    return currSeason.contestants.filter((c) => ids.has(c.id));
-  }, [currSeason, nextEpisode]);
+    // Alphabetical by the name the page shows (first name / nickname, or
+    // full name on displayFullName shows): the picker grid's order and the
+    // finale editor's starting order before anything is saved.
+    return currSeason.contestants
+      .filter((c) => ids.has(c.id))
+      .sort((a, b) => getPredictionName(a, currShow).localeCompare(getPredictionName(b, currShow), undefined, { sensitivity: "base" }));
+  }, [currSeason, currShow, nextEpisode]);
   const saved = nextEpisode ? predictionsByEpisode.get(nextEpisode.id) : undefined;
 
   const topBar = (
