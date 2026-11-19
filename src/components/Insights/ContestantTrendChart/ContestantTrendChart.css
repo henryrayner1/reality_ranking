@@ -1,0 +1,112 @@
+/* Clickable legend under ContestantTrendChart: one toggle per line, all on
+   by default. Each toggle has a checkbox in its line's colour (--series-color,
+   set inline), which is also the legend key, so it reads as something to
+   switch. Uses the --rk-* palette
+   from index.css. Kept compact: chart + this row share 300px. */
+.trend-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+}
+
+.trend-chart-legend-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--rk-muted);
+  margin-right: 0.15rem;
+}
+
+.trend-chart-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.6rem 0.2rem 0.35rem;
+  border: 1px solid var(--rk-card-border);
+  border-radius: 999px;
+  background: var(--rk-card-raised);
+  color: var(--rk-subtle);
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(20, 16, 60, 0.08);
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, box-shadow 120ms ease;
+}
+
+.trend-chart-toggle:hover {
+  border-color: var(--rk-accent);
+  box-shadow: 0 1px 4px rgba(20, 16, 60, 0.14);
+}
+
+.trend-chart-toggle:active {
+  transform: translateY(1px);
+}
+
+.trend-chart-toggle:focus-visible {
+  outline: 2px solid var(--rk-accent);
+  outline-offset: 2px;
+}
+
+.trend-chart-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.95rem;
+  height: 0.95rem;
+  flex: none;
+  border: 1.5px solid var(--series-color);
+  border-radius: 4px;
+  background: var(--series-color);
+  color: #fff;
+}
+
+.trend-chart-check svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Hidden line: empty checkbox, dashed outline, muted text. */
+.trend-chart-toggle-off {
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+  color: var(--rk-muted);
+}
+
+.trend-chart-toggle-off .trend-chart-check {
+  background: transparent;
+  color: transparent;
+}
+
+/* Phones: small enough that the label and four toggles fit in two rows. */
+@media (max-width: 480px) {
+  .trend-chart-legend {
+    gap: 0.3rem;
+  }
+
+  .trend-chart-toggle {
+    gap: 0.3rem;
+    padding: 0.15rem 0.45rem 0.15rem 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .trend-chart-check {
+    width: 0.85rem;
+    height: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trend-chart-toggle {
+    transition: none;
+  }
+
+  .trend-chart-toggle:active {
+    transform: none;
+  }
+}

@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import ContestantTrendChart, { getFieldSizeByEpisode } from "./ContestantTrendChart";
 import type { EliminationEntry, InsightsResponse } from "../../../utils/Constants";
 
@@ -59,6 +60,35 @@ describe("ContestantTrendChart", () => {
       />
     );
     expect(screen.getByText("Predicted to go home")).toBeInTheDocument();
+  });
+
+  it("toggles each line from its legend button, all on by default", async () => {
+    const user = userEvent.setup();
+    const favoriteInsights = insightsWithData([{ episodeNumber: 1, averagePosition: 2 }, { episodeNumber: 2, averagePosition: 3 }]);
+    const { container } = render(
+      <ContestantTrendChart
+        contestantId="c1"
+        favoriteInsights={favoriteInsights}
+        winnerInsights={emptyInsights}
+        contestantCount={10}
+        eliminations={[]}
+        predictionRanks={new Map([[1, 3]])}
+      />
+    );
+    const buttons = screen.getAllByRole("button");
+    expect(buttons.map((b) => b.textContent)).toEqual(["Favorite", "Winner", "Predicted to go home", "Number of Contestants"]);
+    buttons.forEach((b) => expect(b).toHaveAttribute("aria-pressed", "true"));
+    const lineCount = () => container.querySelectorAll(".recharts-line").length;
+    const before = lineCount();
+
+    const favorite = screen.getByRole("button", { name: "Favorite" });
+    await user.click(favorite);
+    expect(favorite).toHaveAttribute("aria-pressed", "false");
+    expect(lineCount()).toBe(before - 1);
+
+    await user.click(favorite);
+    expect(favorite).toHaveAttribute("aria-pressed", "true");
+    expect(lineCount()).toBe(before);
   });
 });
 
