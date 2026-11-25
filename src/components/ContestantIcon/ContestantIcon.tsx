@@ -85,6 +85,7 @@ const ContestantIcon = (props:IconProps) => {
       <img
         src={getContestantPhotoUrl(props.name, props.photoUrl, props.season, props.show)}
         alt={props.name}
+        draggable={false}
         className='mt-[-5px] mb-[5px]'
         style={{
           ...(props.isActive ? { touchAction: 'none' } : {}),
