@@ -49,6 +49,18 @@ describe("Predictions", () => {
 
   afterEach(() => vi.restoreAllMocks());
 
+  it("shows the loading circle, not an empty show dropdown, while the show list loads", () => {
+    // Never resolves, like a backend still cold-starting.
+    vi.spyOn(util, "getShows").mockReturnValue(new Promise(() => {}));
+    for (const route of ["/predictions", "/predictions/survivor"]) {
+      const { container, unmount } = renderPage(route);
+      expect(container.querySelector(".loading-circle")).toBeInTheDocument();
+      expect(screen.queryByText("Show:")).not.toBeInTheDocument();
+      expect(screen.queryByText("Please select a show.")).not.toBeInTheDocument();
+      unmount();
+    }
+  });
+
   it("asks for a show when none is selected", async () => {
     renderPage("/predictions");
     expect(await screen.findByText("Please select a show.")).toBeInTheDocument();

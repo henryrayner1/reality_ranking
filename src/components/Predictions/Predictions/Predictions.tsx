@@ -3,6 +3,7 @@ import { useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import ShowSelect from "../../ShowSelect/ShowSelect";
+import PageLoading from "../../PageLoading/PageLoading";
 import EliminationPicker from "../EliminationPicker/EliminationPicker";
 import FinalePredictor from "../FinalePredictor/FinalePredictor";
 import PredictionHistory from "../PredictionHistory/PredictionHistory";
@@ -138,6 +139,18 @@ const Predictions = () => {
       </>
     );
   };
+
+  // Until the show list arrives (a cold-starting backend can take a while),
+  // show the same full-page loading circle as Ranking and Insights instead
+  // of an empty show dropdown. Every hook is above this return.
+  if (showTree.isLoading) {
+    return (
+      <div>
+        <h1 className="font-bold text-gray-800 page-header">Predictions</h1>
+        <PageLoading />
+      </div>
+    );
+  }
 
   let body;
   if (!showSlug || (!showId && shows.length > 0)) {
