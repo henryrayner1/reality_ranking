@@ -1,4 +1,4 @@
-import { buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminations, getFirstName, getIconLabel, getPredictionName, uploadContestantPhoto } from "./util";
+import { buildOwnInsights, buildPastRankingColumn, checkUserLoggedIn, createUser, formatPlacement, getEliminatedInEpisode, getEliminations, getFirstName, getIconLabel, getPredictionName, getRankedPositions, normalizeRankedIds, uploadContestantPhoto } from "./util";
 import { backendUrl } from "./apiBase";
 import type { Elimination, Ranking } from "./Constants";
 
@@ -56,12 +56,23 @@ describe("finale placements", () => {
   const ranking: Ranking = { id: "r", userId: "u", episodeId: "ep2", type: "FAVORITE", contestantIds: ["a", "b", "c", "d", "e"] };
 
   it("puts placed finalists at the top of the finale column, in placement order, and not eliminated", () => {
-    const column = buildPastRankingColumn(ranking, 2, eliminations, ids, ids, getName);
+    const column = buildPastRankingColumn({ ...ranking, type: "WINNER" }, 2, eliminations, ids, ids, getName);
     expect(column.map((entry) => [entry.contestantId, entry.eliminated, entry.placement])).toEqual([
       ["c", false, 1],
       ["a", false, 2],
       ["b", false, 3],
       ["d", true, undefined],
+      ["e", true, undefined],
+    ]);
+  });
+
+  it("keeps an unplaced finalist ranked (not greyed) in the finale's Favorite column", () => {
+    const column = buildPastRankingColumn(ranking, 2, eliminations, ids, ids, getName);
+    expect(column.map((entry) => [entry.contestantId, entry.eliminated, entry.placement])).toEqual([
+      ["c", false, 1],
+      ["a", false, 2],
+      ["b", false, 3],
+      ["d", false, undefined],
       ["e", true, undefined],
     ]);
   });
@@ -110,5 +121,79 @@ describe("contestant names", () => {
     expect(getPredictionName(c, { displayFullName: false })).toBe("Moh");
     expect(getPredictionName(c, { displayFullName: true })).toBe("Moh Dafok");
     expect(getPredictionName({ name: "William Smith", nickname: "Bubba" }, null)).toBe("Bubba");
+  });
+});
+
+describe("eliminations in the episode they happen", () => {
+  const names: Record<string, string> = { a: "Ava", b: "Ben", c: "Cal", d: "Dee" };
+  const getName = (id: string) => names[id] ?? "";
+  const ids = Object.keys(names);
+  // Episode 2 is a double elimination (Dee and Ben), episode 1 has none.
+  const eliminations: Elimination[] = [
+    { episodeId: "ep2", episodeNumber: 2, seasonId: "s", eliminationType: "", contestantIds: ["d", "b"] },
+  ];
+  const column = (ranking: Ranking, episodeNumber: number) =>
+    buildPastRankingColumn(ranking, episodeNumber, eliminations, ids, ids, getName).map((e) => [e.contestantId, e.eliminated]);
+
+  it("lists who went home in an episode A-Z", () => {
+    expect(getEliminatedInEpisode(eliminations, 2, getName)).toEqual(["b", "d"]);
+    expect(getEliminatedInEpisode(eliminations, 1, getName)).toEqual([]);
+  });
+
+  it("FAVORITE ranks anyone leaving who's missing last, and keeps a submitted position", () => {
+    expect(normalizeRankedIds(["c", "a"], "FAVORITE", ["b", "d"])).toEqual(["c", "a", "b", "d"]);
+    expect(normalizeRankedIds(["d", "c", "a", "b"], "FAVORITE", ["b", "d"])).toEqual(["d", "c", "a", "b"]);
+  });
+
+  it("WINNER always ranks anyone leaving last", () => {
+    expect(normalizeRankedIds(["d", "c", "a", "b"], "WINNER", ["b", "d"])).toEqual(["c", "a", "b", "d"]);
+    expect(normalizeRankedIds(["c", "a"], "WINNER", [])).toEqual(["c", "a"]);
+  });
+
+  it("keeps a Favorite ranking's leaving contestants in colour that episode, greyed the next", () => {
+    // An old ranking without them: they're ranked last, in colour.
+    const old: Ranking = { id: "r", userId: "u", episodeId: "ep2", type: "FAVORITE", contestantIds: ["c", "a"] };
+    expect(column(old, 2)).toEqual([["c", false], ["a", false], ["b", false], ["d", false]]);
+    // A new ranking that placed Dee first keeps her there.
+    const withDee: Ranking = { ...old, contestantIds: ["d", "c", "a", "b"] };
+    expect(column(withDee, 2)).toEqual([["d", false], ["c", false], ["a", false], ["b", false]]);
+    expect(column({ ...old, episodeId: "ep3" }, 3)).toEqual([["c", false], ["a", false], ["b", true], ["d", true]]);
+  });
+
+  it("greys a Winner ranking's leaving contestants the same episode", () => {
+    const ranking: Ranking = { id: "r", userId: "u", episodeId: "ep2", type: "WINNER", contestantIds: ["d", "c", "a"] };
+    expect(column(ranking, 2)).toEqual([["c", false], ["a", false], ["b", true], ["d", true]]);
+  });
+
+  it("applies the rule to a user's own insights", () => {
+    const own = buildOwnInsights(
+      [{ id: "r", userId: "u", episodeId: "ep2", type: "WINNER", contestantIds: ["d", "c", "a"], episode: { id: "ep2", episodeNumber: 2, seasonId: "s" } as Ranking["episode"] }],
+      "WINNER",
+      "s",
+      (n) => (n === 2 ? ["b", "d"] : [])
+    );
+    expect(own.episodes[0].contestantAverages).toEqual([
+      { contestantId: "c", averagePosition: 1 },
+      { contestantId: "a", averagePosition: 2 },
+      { contestantId: "b", averagePosition: 4 },
+      { contestantId: "d", averagePosition: 4 },
+    ]);
+  });
+
+  it("ties everyone the rule puts last at last place, but keeps a Favorite leaver's real position", () => {
+    expect(getRankedPositions(["c", "a", "b", "d"], "WINNER", ["b", "d"])).toEqual([
+      { contestantId: "c", position: 1 },
+      { contestantId: "a", position: 2 },
+      { contestantId: "b", position: 4 },
+      { contestantId: "d", position: 4 },
+    ]);
+    // Dee was ranked first by the user; Ben was left out, so he's tied last.
+    expect(getRankedPositions(["d", "c", "a"], "FAVORITE", ["b", "d"])).toEqual([
+      { contestantId: "d", position: 1 },
+      { contestantId: "c", position: 2 },
+      { contestantId: "a", position: 3 },
+      { contestantId: "b", position: 4 },
+    ]);
+    expect(getRankedPositions(["c", "a"], "FAVORITE", ["b", "d"]).map((p) => p.position)).toEqual([1, 2, 4, 4]);
   });
 });

@@ -19,6 +19,9 @@ vi.mock("../Episode/Episode", () => ({
       <span data-testid={`order-${props.currEpisode.episodeNumber}`}>
         {props.activeContestants.join(",")}
       </span>
+      <span data-testid={`eliminated-${props.currEpisode.episodeNumber}`}>
+        {props.eliminatedContestants.join(",")}
+      </span>
       <button onClick={props.onActivate}>activate-{props.currEpisode.episodeNumber}</button>
       <button onClick={() => props.onReorder([...props.activeContestants].reverse())}>
         reorder-{props.currEpisode.episodeNumber}
@@ -103,6 +106,24 @@ describe("RankingComponent2", () => {
     expect(screen.getByText(/X Episode 1/)).toBeInTheDocument();
   });
 
+  it("keeps a contestant rankable in Favorite the episode they go home, but locks them in Winner", async () => {
+    // Bob went home in episode 1.
+    vi.spyOn(queries, "useEliminations").mockReturnValue({
+      data: [{ episodeId: "e1", episodeNumber: 1, seasonId: "se1", eliminationType: "", contestantIds: ["c2"] }],
+      isLoading: false,
+    } as any);
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByText("activate-1"));
+    expect(screen.getByTestId("order-1")).toHaveTextContent("c1,c2");
+    expect(screen.getByTestId("eliminated-1")).toHaveTextContent("");
+
+    await user.click(screen.getByText("Winner"));
+    await user.click(screen.getByText("activate-1"));
+    expect(screen.getByTestId("order-1")).toHaveTextContent(/^c1$/);
+    expect(screen.getByTestId("eliminated-1")).toHaveTextContent("c2");
+  });
+
   it("reordering updates the order the mocked EpisodeComponent receives", async () => {
     const user = userEvent.setup();
     renderPage();
@@ -179,6 +200,57 @@ describe("RankingComponent2", () => {
     expect(screen.queryByTestId("episode-1")).not.toBeInTheDocument();
     expect(screen.getByText("BOB")).toBeInTheDocument();
     expect(screen.getByText("ALICE")).toBeInTheDocument();
+  });
+
+  describe("admin editing a past ranking", () => {
+    const pastRanking: Ranking = { id: "r1", userId: "u1", episodeId: "e1", type: "FAVORITE", contestantIds: ["c2", "c1"], episode: { ...episode1 } };
+    const admin = { user: { value: { ...loggedInUser, accountType: "ADMIN" } } };
+    beforeEach(() => {
+      vi.spyOn(queries, "useUserRankings").mockReturnValue({ data: [pastRanking], isLoading: false } as any);
+    });
+
+    it("isn't offered to non-admins", () => {
+      renderPage();
+      expect(screen.queryByRole("button", { name: /Edit Favorite ranking/ })).not.toBeInTheDocument();
+    });
+
+    it("re-orders the column and saves the new order", async () => {
+      const update = vi.spyOn(util, "updateRanking").mockResolvedValue({} as any);
+      const user = userEvent.setup();
+      renderPage(admin);
+      await user.click(screen.getByRole("button", { name: "Edit Favorite ranking for episode 1" }));
+      expect(screen.getByText("Editing your Favorite ranking for Episode 1")).toBeInTheDocument();
+      // The column is now the (mocked) draggable EpisodeComponent, seeded with the saved order.
+      expect(screen.getByTestId("order-1")).toHaveTextContent("c2,c1");
+      await user.click(screen.getByText("reorder-1"));
+      await user.click(screen.getByRole("button", { name: "Save" }));
+      expect(update).toHaveBeenCalledWith({ id: "r1", contestantIds: ["c1", "c2"] }, expect.anything());
+      expect(await screen.findByText("BOB")).toBeInTheDocument();
+      expect(screen.queryByText(/Editing your/)).not.toBeInTheDocument();
+    });
+
+    it("seeds a Favorite edit with the contestant who went home that episode", async () => {
+      // Bob went home in episode 1; this old ranking left him out.
+      vi.spyOn(queries, "useUserRankings").mockReturnValue({ data: [{ ...pastRanking, contestantIds: ["c1"] }], isLoading: false } as any);
+      vi.spyOn(queries, "useEliminations").mockReturnValue({
+        data: [{ episodeId: "e1", episodeNumber: 1, seasonId: "se1", eliminationType: "", contestantIds: ["c2"] }],
+        isLoading: false,
+      } as any);
+      const user = userEvent.setup();
+      renderPage(admin);
+      await user.click(screen.getByRole("button", { name: "Edit Favorite ranking for episode 1" }));
+      expect(screen.getByTestId("order-1")).toHaveTextContent("c1,c2");
+    });
+
+    it("cancels without saving", async () => {
+      const update = vi.spyOn(util, "updateRanking").mockResolvedValue({} as any);
+      const user = userEvent.setup();
+      renderPage(admin);
+      await user.click(screen.getByRole("button", { name: "Edit Favorite ranking for episode 1" }));
+      await user.click(screen.getByRole("button", { name: "Cancel" }));
+      expect(update).not.toHaveBeenCalled();
+      expect(screen.queryByTestId("episode-1")).not.toBeInTheDocument();
+    });
   });
 
   it("locks unranked episodes, disables Submit and shows the ended message once the season's endDate has passed", () => {

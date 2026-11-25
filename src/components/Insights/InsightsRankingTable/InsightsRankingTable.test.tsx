@@ -108,6 +108,41 @@ describe("InsightsRankingTable", () => {
     expect(names).toEqual(["BOB", "ALICE", "CAROL"]);
   });
 
+  it("keeps a contestant in colour in Favorite the episode they go home, but greys them in Winner", () => {
+    // Carol went home in episode 1 and was ranked last there (the insights
+    // endpoint ranks anyone leaving last if a ranking leaves them out).
+    const insightsFor = (type: "FAVORITE" | "WINNER"): InsightsResponse => ({
+      seasonId: "se1",
+      type,
+      episodes: [{
+        episodeId: "e1",
+        episodeNumber: 1,
+        contestantAverages: [
+          { contestantId: "c2", averagePosition: 1 },
+          { contestantId: "c1", averagePosition: 2 },
+          { contestantId: "c3", averagePosition: 3 },
+        ],
+      }],
+      overall: [],
+    });
+    const eliminations: EliminationEntry[] = [
+      { id: "el1", episodeId: "e1", contestantId: "c3", eliminationType: "ELIMINATED", episode: { episodeNumber: 1 } },
+    ];
+    const carolInEpisode1 = (container: HTMLElement) =>
+      (Array.from(container.querySelectorAll(".insights-cell")).slice(0, 3)[2].querySelector("img") as HTMLElement);
+
+    const favorite = render(
+      <InsightsRankingTable {...baseProps} currSeason={season} eliminations={eliminations} favoriteInsights={insightsFor("FAVORITE")} winnerInsights={insightsFor("WINNER")} />
+    );
+    expect(carolInEpisode1(favorite.container).style.filter).toBe("");
+    favorite.unmount();
+
+    const winner = render(
+      <InsightsRankingTable {...baseProps} rankingType="WINNER" currSeason={season} eliminations={eliminations} favoriteInsights={insightsFor("FAVORITE")} winnerInsights={insightsFor("WINNER")} />
+    );
+    expect(carolInEpisode1(winner.container).style.filter).toBe("grayscale(100%)");
+  });
+
   it("adds an unranked finale column with placed finalists on top, in colour", () => {
     // Episode 1 was ranked; nobody could rank the episode 2 finale, where Bob
     // won, Alice came 2nd and Carol was eliminated without a placement.

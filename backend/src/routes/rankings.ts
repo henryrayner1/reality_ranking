@@ -3,6 +3,30 @@ import { Router } from "express";
 import { requireAdmin, requireUser } from "../utils/auth.js";
 import { isPreSeasonOpen, isRankableNow, isSeasonEnded } from "../utils/episodeRankability.js";
 
+// A stored ranking's order with its episode's eliminations applied, so old and
+// new submissions average the same way. FAVORITE: anyone who went home that
+// episode but isn't in the ranking is ranked last. WINNER: anyone who went
+// home that episode is always ranked last. leavingIds is A-Z. Stored rows are
+// never rewritten. Duplicated by hand from normalizeRankedIds in
+// src/utils/util.ts; keep the two in sync.
+const normalizeRankedIds = (contestantIds: string[], type: RankType, leavingIds: string[]) => {
+  if (leavingIds.length === 0) return contestantIds;
+  if (type === "FAVORITE") return [...contestantIds, ...leavingIds.filter((id) => !contestantIds.includes(id))];
+  return [...contestantIds.filter((id) => !leavingIds.includes(id)), ...leavingIds];
+};
+
+// 1-based positions after normalizeRankedIds: anyone the rule put last ties
+// at last place (so a double elimination's leavers don't rank one above the
+// other). Duplicated by hand from getRankedPositions in src/utils/util.ts.
+const getRankedPositions = (contestantIds: string[], type: RankType, leavingIds: string[]) => {
+  const ranked = normalizeRankedIds(contestantIds, type, leavingIds);
+  const forcedLast = new Set(type === "FAVORITE" ? leavingIds.filter((id) => !contestantIds.includes(id)) : leavingIds);
+  return ranked.map((contestantId, index) => ({
+    contestantId,
+    position: forcedLast.has(contestantId) ? ranked.length : index + 1,
+  }));
+};
+
 export default function rankingsRouter(prisma: PrismaClient) {
   const router = Router();
 
@@ -62,6 +86,26 @@ export default function rankingsRouter(prisma: PrismaClient) {
       select: { id: true },
     });
 
+    // episodeNumber -> contestants who went home in it, A-Z. Deduped to each
+    // contestant's earliest elimination, like the frontend's getEliminationOrder.
+    const eliminationRows = await prisma.elimination.findMany({
+      where: { episode: { seasonId } },
+      select: { contestantId: true, contestant: { select: { name: true } }, episode: { select: { episodeNumber: true } } },
+    });
+    const earliest = new Map<string, { name: string; episodeNumber: number }>();
+    for (const e of eliminationRows) {
+      const prev = earliest.get(e.contestantId);
+      if (!prev || e.episode.episodeNumber < prev.episodeNumber) {
+        earliest.set(e.contestantId, { name: e.contestant?.name ?? "", episodeNumber: e.episode.episodeNumber });
+      }
+    }
+    const leavingByEpisode = new Map<number, string[]>();
+    [...earliest.entries()]
+      .sort(([, a], [, b]) => a.name.localeCompare(b.name))
+      .forEach(([contestantId, { episodeNumber }]) => {
+        leavingByEpisode.set(episodeNumber, [...(leavingByEpisode.get(episodeNumber) ?? []), contestantId]);
+      });
+
     const episodeBuckets = new Map<
       string,
       { episodeNumber: number; sums: Map<string, number>; counts: Map<string, number> }
@@ -74,8 +118,7 @@ export default function rankingsRouter(prisma: PrismaClient) {
         episodeBuckets.set(episodeId, { episodeNumber, sums: new Map(), counts: new Map() });
       }
       const bucket = episodeBuckets.get(episodeId)!;
-      r.contestantIds.forEach((contestantId, index) => {
-        const position = index + 1;
+      getRankedPositions(r.contestantIds, type as RankType, leavingByEpisode.get(episodeNumber) ?? []).forEach(({ contestantId, position }) => {
         bucket.sums.set(contestantId, (bucket.sums.get(contestantId) ?? 0) + position);
         bucket.counts.set(contestantId, (bucket.counts.get(contestantId) ?? 0) + 1);
       });
@@ -305,6 +348,37 @@ export default function rankingsRouter(prisma: PrismaClient) {
       return res.status(404).json({ error: "Ranking not found" });
     }
     res.json(ranking);
+  });
+
+  // Admin-only: replace a submitted ranking's order (the Ranking page's
+  // "edit" on a past column). Bypasses every ranking-window/lock check on
+  // purpose; it's for fixing up existing rankings, e.g. adding the contestant
+  // who went home that episode to an old Favorite ranking. Every id must be on
+  // that season's roster, with no repeats.
+  router.patch("/:id", requireAdmin(prisma), async (req, res) => {
+    const { id } = req.params;
+    const { contestantIds } = req.body ?? {};
+    if (
+      !Array.isArray(contestantIds) ||
+      contestantIds.length === 0 ||
+      !contestantIds.every((c) => typeof c === "string")
+    ) {
+      return res.status(400).json({ error: "contestantIds must be a non-empty array of ids" });
+    }
+    if (new Set(contestantIds).size !== contestantIds.length) {
+      return res.status(400).json({ error: "contestantIds must not repeat a contestant" });
+    }
+    const ranking = await prisma.ranking.findUnique({
+      where: { id },
+      select: { episode: { select: { season: { select: { contestants: { select: { id: true } } } } } } },
+    });
+    if (!ranking) return res.status(404).json({ error: "Ranking not found" });
+    const roster = new Set(ranking.episode.season.contestants.map((c) => c.id));
+    if (!contestantIds.every((c: string) => roster.has(c))) {
+      return res.status(400).json({ error: "Every contestant must be on this season's roster" });
+    }
+    const updated = await prisma.ranking.update({ where: { id }, data: { contestantIds } });
+    res.json(updated);
   });
 
   router.delete("/delete/:id", requireAdmin(prisma), async (req, res) => {

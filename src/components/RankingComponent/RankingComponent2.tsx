@@ -1,7 +1,8 @@
-import { type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
+import { AccountTypes, type Contestant, type Episode, type Ranking, type RankType } from "../../utils/Constants";
 import { useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
-import { buildPastRankingColumn, getEliminationOrder, submitRankings } from "../../utils/util";
+import { buildPastRankingColumn, getEliminatedThrough, getEliminationOrder, submitRankings, updateRanking } from "../../utils/util";
+import * as AdminUI from "../../utils/AdminComponents";
 import EpisodeComponent from "../Episode/Episode";
 import ContestantIcon from "../ContestantIcon/ContestantIcon";
 import ContestantSelect from "../ContestantSelect/ContestantSelect";
@@ -44,6 +45,9 @@ const RankingComponent2 = () => {
   // rankings) column by dimming everyone else's; null = no highlight ("All
   // Contestants").
   const [selectedContestantId, setSelectedContestantId] = useState<string | null>(null);
+  // Admin-only: the submitted ranking currently being re-ordered in place
+  // (its column renders as a draggable EpisodeComponent), with its draft order.
+  const [editingRanking, setEditingRanking] = useState<{ id: string; episodeNumber: number; order: string[] } | null>(null);
 
   // Scrolled to the far right on load/whenever the episode columns change,
   // so an overflowing grid (see .ranking-grid's overflow-x:auto, RankingComponent.css)
@@ -55,6 +59,7 @@ const RankingComponent2 = () => {
   const queryClient = useQueryClient();
 
   const user = useSelector((state: any) => state.user.value);
+  const isAdmin = user?.accountType === AccountTypes.ADMIN;
 
   const { data: shows = [] } = useShows();
   const showId = shows.find(s => slugifyShowName(s.name) === showSlug)?.id;
@@ -110,6 +115,19 @@ const RankingComponent2 = () => {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: userRankingsQueryKey(user?.id) }),
   });
 
+  // Saves an admin's edit to a past ranking. Insights' averages are refetched
+  // too, since they're built from these rankings.
+  const updateRankingMutation = useMutation({
+    mutationFn: updateRanking,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: userRankingsQueryKey(user?.id) }),
+        queryClient.invalidateQueries({ queryKey: ["rankingsInsights"] }),
+      ]);
+      setEditingRanking(null);
+    },
+  });
+
   useEffect(() => {
     if (!allUserRankings || !currSeason?.id) { setPastRankings([]); return; }
     setPastRankings(allUserRankings.filter((r: Ranking) => r.episode?.seasonId === currSeason.id));
@@ -117,6 +135,7 @@ const RankingComponent2 = () => {
 
   useEffect(() => {
     setPastRankingForType(rankingType === "FAVORITE" ? favoriteRankings : winnerRankings);
+    setEditingRanking(null);
   }, [rankingType]);
 
   // activeEpisodesByType/activeOrdersByType hold episode ids (and their
@@ -130,6 +149,7 @@ const RankingComponent2 = () => {
   useEffect(() => {
     setActiveEpisodesByType(emptyActiveEpisodesByType());
     setActiveOrdersByType(emptyActiveOrdersByType());
+    setEditingRanking(null);
   }, [currShow?.id]);
 
   useEffect(() => {
@@ -241,11 +261,12 @@ const RankingComponent2 = () => {
   const getContestantPhotoUrl = (contestantId: string) =>
     currSeason?.contestants?.find((c) => c.id === contestantId)?.photoUrl;
 
-  // Contestants eliminated as of this episode, most-recently-eliminated
-  // first — locked at the bottom of an active episode's column, same
-  // threshold Episode.tsx used to compute internally.
+  // Contestants eliminated as of this episode for the tab in view,
+  // most-recently-eliminated first — locked at the bottom of an active
+  // episode's column. Favorite still ranks whoever goes home this episode
+  // (getEliminatedThrough); Winner locks them at the bottom straight away.
   const getEpisodeEliminatedIds = (episode: Episode) =>
-    getEliminationOrder(currentSeasonEliminations, episode.episodeNumber, getContestantName).reverse();
+    getEliminationOrder(currentSeasonEliminations, getEliminatedThrough(rankingType, episode.episodeNumber), getContestantName).reverse();
 
   const activateEpisode = (episode: Episode) => {
     setActiveEpisodesByType((prev) => {
@@ -296,13 +317,59 @@ const RankingComponent2 = () => {
       .map((contestant) => contestant.id);
     const columnEntries = buildPastRankingColumn(ranking, episodeNumber, currentSeasonEliminations, seasonContestantIds, eligibleContestantIds, getContestantName);
     const heading = formatEpisodeHeading(episodeNumber);
+
+    // Admin edit: the column becomes draggable, starting from what it shows
+    // (so a Favorite column already includes whoever went home that episode).
+    // Greyed-out contestants stay locked at the bottom, and blank padding
+    // cells keep the column the same height as the others.
+    const rankedIds = columnEntries
+      .filter((entry) => entry.contestantId && !entry.eliminated && entry.placement == null)
+      .map((entry) => entry.contestantId as string);
+    const lockedIds = columnEntries
+      .filter((entry) => entry.contestantId && entry.eliminated)
+      .map((entry) => entry.contestantId as string);
+    if (editingRanking?.id === ranking.id) {
+      return [
+        <EpisodeComponent
+          key={`${ranking.id}-editing`}
+          currEpisode={episode}
+          isActive
+          activeContestants={editingRanking.order}
+          eliminatedContestants={lockedIds}
+          onReorder={(order) => setEditingRanking({ ...editingRanking, order })}
+          onActivate={() => {}}
+          contestants={currSeason?.contestants ?? []}
+          season={currSeason}
+          show={currShow}
+        />,
+        ...Array.from({ length: Math.max(0, columnEntries.length - editingRanking.order.length - lockedIds.length) }, (_, index) => (
+          <div key={`${ranking.id}-editing-blank-${index}`} className="cell" />
+        )),
+      ];
+    }
+    // A finale column holds placements, not a ranking, so it isn't editable.
+    const canEdit = isAdmin && !editingRanking && !columnEntries.some((entry) => entry.placement != null);
     // Raw grid items, not wrapped in a single spanning container — matching
     // InsightsRankingTable's proven pattern. buildPastRankingColumn now pads
     // every column to exactly the season's contestant count, so each column
     // always contributes the same number of grid cells and there's nothing
     // for grid-auto-flow: column to drift on.
     return [
-      <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>,
+      canEdit ? (
+        <button
+          type="button"
+          className="episode-heading episode-heading-edit"
+          key={`${ranking.id}-heading`}
+          title={`Edit this ${rankingType === "FAVORITE" ? "Favorite" : "Winner"} ranking`}
+          aria-label={`Edit ${rankingType === "FAVORITE" ? "Favorite" : "Winner"} ranking for ${currShow?.rankingMode === "DAILY" ? "day" : "episode"} ${heading}`}
+          onClick={() => {
+            updateRankingMutation.reset();
+            setEditingRanking({ id: ranking.id, episodeNumber, order: rankedIds });
+          }}
+        >{heading}</button>
+      ) : (
+        <div className="episode-heading" key={`${ranking.id}-heading`}>{heading}</div>
+      ),
       ...columnEntries.map((entry, index) => (
         <div key={`${ranking.id}-${entry.contestantId ?? `blank-${index}`}`} className={`cell${entry.eliminated ? ' eliminated-episode' : ''}`}>
           {entry.contestantId && (
@@ -455,6 +522,25 @@ const RankingComponent2 = () => {
   const rankingContainer = <div className="ranking-container">
       <div className="ranking-panel">
         {rankTypeTabs}
+        {editingRanking && (
+          <div className="ranking-edit-bar" role="status">
+            <span>
+              Editing your {rankingType === "FAVORITE" ? "Favorite" : "Winner"} ranking for{" "}
+              {formatEpisodeHeading(editingRanking.episodeNumber) === "Pre"
+                ? "pre-season"
+                : `${currShow?.rankingMode === "DAILY" ? "Day" : "Episode"} ${editingRanking.episodeNumber}`}
+            </span>
+            {updateRankingMutation.isError && <span className="ranking-edit-error">Couldn't save. Try again.</span>}
+            <div className="ranking-edit-actions">
+              <AdminUI.SecondaryButton onClick={() => setEditingRanking(null)} disabled={updateRankingMutation.isPending}>Cancel</AdminUI.SecondaryButton>
+              <AdminUI.PrimaryButton
+                size="sm"
+                disabled={updateRankingMutation.isPending}
+                onClick={() => updateRankingMutation.mutate({ id: editingRanking.id, contestantIds: editingRanking.order })}
+              >{updateRankingMutation.isPending ? "Saving..." : "Save"}</AdminUI.PrimaryButton>
+            </div>
+          </div>
+        )}
         {rowCount === 0
           ? <p className="ranking-placeholder">No contestants have been added to this season yet.</p>
           : episodeCount === 0

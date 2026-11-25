@@ -59,8 +59,14 @@ const Insights = () => {
   const ownRankings: Ranking[] = (userRankingsQuery.data ?? []).filter(
     (r: Ranking) => r.episode?.seasonId === currSeason?.id
   );
-  const ownFavoriteInsights = buildOwnInsights(ownRankings.filter((r) => r.type === "FAVORITE"), "FAVORITE", currSeason?.id ?? "");
-  const ownWinnerInsights = buildOwnInsights(ownRankings.filter((r) => r.type === "WINNER"), "WINNER", currSeason?.id ?? "");
+  // Who went home in each episode, A-Z, so the user's own rankings are read
+  // with the same rule as the insights endpoint (normalizeRankedIds).
+  const contestantName = (id: string) => currSeason?.contestants.find((c) => c.id === id)?.name ?? "";
+  const getLeavingIds = (episodeNumber: number) =>
+    [...new Set<string>(eliminations.filter((e) => e.episode?.episodeNumber === episodeNumber).map((e) => e.contestantId))]
+      .sort((a, b) => contestantName(a).localeCompare(contestantName(b)));
+  const ownFavoriteInsights = buildOwnInsights(ownRankings.filter((r) => r.type === "FAVORITE"), "FAVORITE", currSeason?.id ?? "", getLeavingIds);
+  const ownWinnerInsights = buildOwnInsights(ownRankings.filter((r) => r.type === "WINNER"), "WINNER", currSeason?.id ?? "", getLeavingIds);
 
   const favoriteInsights = dataScope === "own" ? ownFavoriteInsights : (favoriteInsightsQuery.data ?? null);
   const winnerInsights = dataScope === "own" ? ownWinnerInsights : (winnerInsightsQuery.data ?? null);
