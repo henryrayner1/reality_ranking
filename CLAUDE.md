@@ -12,7 +12,8 @@ Frontend (repo root):
 - `npm run lint` — ESLint
 
 Backend (`backend/`):
-- `npm run dev` — `tsx watch src/server.ts`; port comes from `.env` (`PORT`, defaults to 4000)
+- `npm run dev` — `node --watch --import tsx src/server.ts`; port comes from `.env` (`PORT`, defaults to 4000). It used to be `tsx watch`, which printed "Previous process hasn't exited yet. Force killing..." on every Ctrl-C: the terminal and npm (and `npm-run-all`) each forward the SIGINT, and tsx treats a second signal during shutdown as a hang. The server itself always exited immediately. Node's own watch mode ignores the repeat and still restarts on any imported file change.
+- `DATABASE_URL`/`DIRECT_DATABASE_URL` use `sslmode=verify-full`. `pg` 8 treats `require` as `verify-full` anyway but prints a SECURITY WARNING on every start, so `verify-full` keeps the same behaviour without the warning. Render's env vars need the same change.
 - `npm run build` / `npm start` — compile then run compiled JS
 - `npm run prisma:generate` / `npm run prisma:migrate` — regenerate client / apply schema changes
 - `npm run seed` — `tsx prisma/seed.ts`
