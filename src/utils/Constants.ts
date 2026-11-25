@@ -205,6 +205,9 @@ export interface PredictionInsightsEpisode {
   isFinale: boolean;
   predictorCount: number;
   votes: Record<string, number>;
+  // Finale only: contestantId -> how many predictions put them at each
+  // placement (index 0 = winner, 1 = 2nd, ...).
+  placementVotes?: Record<string, number[]>;
 }
 
 export interface InsightsResponse {

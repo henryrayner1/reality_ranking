@@ -24,7 +24,7 @@ const show: Show = { id: "s1", name: "Survivor", currSeason: 1 };
 
 const insights: PredictionInsightsEpisode[] = [
   { episodeId: "e1", episodeNumber: 1, isFinale: false, predictorCount: 4, votes: { a: 2, b: 2 } },
-  { episodeId: "e3", episodeNumber: 3, isFinale: true, predictorCount: 2, votes: { c: 2 } },
+  { episodeId: "e3", episodeNumber: 3, isFinale: true, predictorCount: 2, votes: { c: 2 }, placementVotes: { c: [2], b: [0, 1, 1], d: [0, 1, 0, 1], e: [0, 0, 1, 1] } },
 ];
 
 const rowFor = (heading: string) => screen.getByText(heading).closest("li") as HTMLElement;
@@ -60,6 +60,23 @@ describe("PredictionInsights", () => {
     expect(within(row).getByText("Most predicted to win")).toBeInTheDocument();
     expect(within(row).getByText("Final results")).toBeInTheDocument();
     expect(within(row).getByText("2 predictions")).toBeInTheDocument();
+  });
+
+  it("shows the finale's consensus predicted order, with everyone in View all", async () => {
+    const user = userEvent.setup();
+    renderView();
+    const row = rowFor("Episode 3");
+    const order = within(row).getByText("Predicted final order").parentElement as HTMLElement;
+    // c avg 1, b avg 2.5, d avg 3, e avg 3.5 (only top three shown).
+    expect(within(order).getByText("1. Cal")).toBeInTheDocument();
+    expect(within(order).getByText("2. Bea")).toBeInTheDocument();
+    expect(within(order).getByText("avg 2.5")).toBeInTheDocument();
+    expect(within(order).getByText("3. Dee")).toBeInTheDocument();
+    expect(within(order).queryByText("4. Eve")).not.toBeInTheDocument();
+    await user.click(within(row).getByRole("button", { name: "View all" }));
+    expect(screen.getByText("Episode 3: predicted final order")).toBeInTheDocument();
+    const modalBody = document.querySelector(".insights-view-all-body") as HTMLElement;
+    expect(within(modalBody).getByText("4. Eve")).toBeInTheDocument();
   });
 
   it("marks aired episodes nobody predicted, and no-elimination episodes", () => {

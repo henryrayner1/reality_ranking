@@ -42,15 +42,27 @@ export default function predictionsRouter(prisma: PrismaClient) {
       isFinale: boolean;
       predictorCount: number;
       votes: Record<string, number>;
+      // Finale only: contestantId -> how many predictions put them at each
+      // placement (index 0 = winner, 1 = 2nd, ...).
+      placementVotes?: Record<string, number[]>;
     }>();
     for (const p of predictions) {
       const ep = p.episode;
       let entry = byEpisode.get(ep.id);
       if (!entry) {
         entry = { episodeId: ep.id, episodeNumber: ep.episodeNumber, isFinale: ep.isFinale, predictorCount: 0, votes: {} };
+        if (ep.isFinale) entry.placementVotes = {};
         byEpisode.set(ep.id, entry);
       }
       entry.predictorCount += 1;
+      if (entry.placementVotes) {
+        const placementVotes = entry.placementVotes;
+        p.contestantIds.forEach((id, index) => {
+          const counts = (placementVotes[id] ??= []);
+          while (counts.length <= index) counts.push(0);
+          counts[index] += 1;
+        });
+      }
       const counted = ep.isFinale ? p.contestantIds.slice(0, 1) : p.contestantIds;
       for (const id of counted) entry.votes[id] = (entry.votes[id] ?? 0) + 1;
     }

@@ -1,6 +1,7 @@
 import {
   formatNameList,
   getPredictionRanksFor,
+  getFinaleStandings,
   getPredictionStandings,
   getAiredEpisodes,
   getNextPredictableEpisode,
@@ -114,6 +115,35 @@ describe("getPredictionStandings", () => {
   it("treats an all-way tie as tied for first, not last", () => {
     const s = getPredictionStandings({ predictorCount: 3, votes: { a: 1, b: 1, c: 1 } }, roster.slice(0, 3));
     expect(s.map((x) => x.rank)).toEqual([1, 1, 1]);
+  });
+});
+
+describe("getFinaleStandings", () => {
+  const roster = [{ id: "a", name: "Ann" }, { id: "b", name: "Bea" }, { id: "c", name: "Cal" }, { id: "d", name: "Dee" }];
+
+  it("orders by average predicted placement with per-placement shares", () => {
+    // 4 predictions: a a b b winners; d placed 4th by everyone.
+    const s = getFinaleStandings(
+      { predictorCount: 4, votes: { a: 2, b: 2 }, placementVotes: { a: [2, 1, 1], b: [2, 2], c: [0, 1, 3], d: [0, 0, 0, 4] } },
+      roster
+    );
+    expect(s.map((x) => x.contestantId)).toEqual(["b", "a", "c", "d"]);
+    expect(s[0].averagePlacement).toBe(1.5);
+    expect(s[1].averagePlacement).toBe(1.75);
+    expect(s[1].shares).toEqual([0.5, 0.25, 0.25, 0]);
+    expect(s[3].shares).toEqual([0, 0, 0, 1]);
+  });
+
+  it("breaks average ties by winner picks, then name, and puts unplaced contestants last", () => {
+    const s = getFinaleStandings({ predictorCount: 2, votes: { b: 1 }, placementVotes: { b: [1, 0, 1], c: [0, 2] } }, roster);
+    expect(s.map((x) => x.contestantId)).toEqual(["b", "c", "a", "d"]);
+    expect(s[2].averagePlacement).toBeNull();
+  });
+
+  it("falls back to winner picks when placementVotes is missing", () => {
+    const s = getFinaleStandings({ predictorCount: 3, votes: { c: 2, a: 1 } }, roster);
+    expect(s.map((x) => x.contestantId)).toEqual(["c", "a", "b", "d"]);
+    expect(s[0].shares).toEqual([2 / 3, 0, 0, 0]);
   });
 });
 
