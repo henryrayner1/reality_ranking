@@ -40,4 +40,4 @@ A pre-push hook runs the tests and the build before every `git push`.
 
 ## Name
 
-The site was called "Reality Ranking" before it became Realitier. The repository and the GitHub Pages path are still named `reality_ranking`.
+The site was called "Reality Ranking" before it became RealiTier. The repository and the GitHub Pages path are still named `reality_ranking`.

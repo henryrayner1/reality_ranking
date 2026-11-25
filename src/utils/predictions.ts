@@ -167,7 +167,9 @@ export const getRemainingContestants = (season: Season, episodeNumber: number): 
   return season.contestants.filter((c) => ids.has(c.id));
 };
 
-// episodeNumber -> a contestant's prediction rank, for the trend chart.
+// episodeNumber -> a contestant's "predicted to go home" rank, for the trend
+// chart's line. The finale is left out: its rank means "predicted to win",
+// the opposite way round, so it's plotted as getPredictedPlacementFor instead.
 export const getPredictionRanksFor = (
   contestantId: string,
   season: Season,
@@ -175,7 +177,7 @@ export const getPredictionRanksFor = (
 ): Map<number, number> => {
   const ranks = new Map<number, number>();
   for (const agg of insights) {
-    if (agg.predictorCount === 0) continue;
+    if (agg.predictorCount === 0 || agg.isFinale) continue;
     const standing = getPredictionStandings(agg, getRemainingContestants(season, agg.episodeNumber))
       .find((s) => s.contestantId === contestantId);
     if (standing) ranks.set(agg.episodeNumber, standing.rank);
@@ -185,3 +187,27 @@ export const getPredictionRanksFor = (
 
 // 0.625 -> "63%"
 export const formatPercent = (percent: number) => `${Math.round(percent * 100)}%`;
+
+export interface PredictedPlacement {
+  episodeNumber: number;
+  // Mean predicted placement across finale predictions (1 = winner).
+  averagePlacement: number;
+  // Their spot in the consensus order (getFinaleStandings), 1-based.
+  position: number;
+}
+
+// A finalist's predicted placement, for the trend chart's finale marker.
+// Null when nobody predicted the finale or nobody placed them.
+export const getPredictedPlacementFor = (
+  contestantId: string,
+  season: Season,
+  insights: PredictionInsightsEpisode[]
+): PredictedPlacement | null => {
+  const agg = insights.find((a) => a.isFinale && a.predictorCount > 0);
+  if (!agg) return null;
+  const standings = getFinaleStandings(agg, getRemainingContestants(season, agg.episodeNumber));
+  const index = standings.findIndex((s) => s.contestantId === contestantId);
+  const averagePlacement = standings[index]?.averagePlacement;
+  if (averagePlacement == null) return null;
+  return { episodeNumber: agg.episodeNumber, averagePlacement, position: index + 1 };
+};

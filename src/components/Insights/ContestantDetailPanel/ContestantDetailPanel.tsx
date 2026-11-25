@@ -1,6 +1,6 @@
 import { Dropdown } from "react-bootstrap";
 import { type EliminationEntry, type InsightsResponse, type PredictionInsightsEpisode, type Season, type Show } from "../../../utils/Constants";
-import { getPredictionRanksFor } from "../../../utils/predictions";
+import { getPredictedPlacementFor, getPredictionRanksFor } from "../../../utils/predictions";
 import { formatPlacement } from "../../../utils/util";
 import ContestantPhoto from "../../ContestantPhoto/ContestantPhoto";
 import PageLoading from "../../PageLoading/PageLoading";
@@ -131,7 +131,8 @@ const ContestantDetailPanel = (props: ContestantDetailPanelProps) => {
               eliminations={props.eliminations}
               eliminationInfo={selectedEliminationInfo}
               predictionRanks={props.predictionInsights ? getPredictionRanksFor(selected.id, currSeason, props.predictionInsights) : undefined}
-              finaleEpisodeNumber={props.predictionInsights?.find((p) => p.isFinale)?.episodeNumber}
+              predictedPlacement={props.predictionInsights ? getPredictedPlacementFor(selected.id, currSeason, props.predictionInsights) : undefined}
+              finaleEpisodeNumber={props.predictionInsights?.find((p) => p.isFinale && p.predictorCount > 0)?.episodeNumber}
             />
           </>
         )}

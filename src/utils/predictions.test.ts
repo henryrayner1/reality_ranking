@@ -1,5 +1,6 @@
 import {
   formatNameList,
+  getPredictedPlacementFor,
   getPredictionRanksFor,
   getFinaleStandings,
   getPredictionStandings,
@@ -167,5 +168,46 @@ describe("getPredictionRanksFor", () => {
     ]);
     // Episode 1: three still in, c tied for last with b -> 3. Episode 2: a gone, c most predicted -> 1.
     expect([...ranks]).toEqual([[1, 3], [2, 1]]);
+  });
+  it("leaves out the finale, whose rank means predicted to win", () => {
+    const season = {
+      id: "se1", showId: "s1", isCurrent: true, seasonNumber: 1,
+      contestants: [{ id: "a", name: "Ann", seasonId: "se1" }, { id: "b", name: "Bea", seasonId: "se1" }],
+      episodes: [{ id: "e1", episodeNumber: 1, seasonId: "se1", eliminations: [] }],
+    } as unknown as Season;
+    const ranks = getPredictionRanksFor("a", season, [
+      { episodeId: "e1", episodeNumber: 1, isFinale: true, predictorCount: 2, votes: { a: 2 } },
+    ]);
+    expect(ranks.size).toBe(0);
+  });
+});
+
+describe("getPredictedPlacementFor", () => {
+  const season = {
+    id: "se1", showId: "s1", isCurrent: true, seasonNumber: 1,
+    contestants: [
+      { id: "a", name: "Ann", seasonId: "se1" },
+      { id: "b", name: "Bea", seasonId: "se1" },
+      { id: "c", name: "Cal", seasonId: "se1" },
+    ],
+    episodes: [
+      { id: "e1", episodeNumber: 1, seasonId: "se1", eliminations: [{ contestantId: "c" }] },
+      { id: "e2", episodeNumber: 2, seasonId: "se1", isFinale: true, eliminations: [] },
+    ],
+  } as unknown as Season;
+  const insights = [
+    { episodeId: "e1", episodeNumber: 1, isFinale: false, predictorCount: 2, votes: { c: 2 } },
+    // Two finale predictions: a, b and b, a; then a third a, b.
+    { episodeId: "e2", episodeNumber: 2, isFinale: true, predictorCount: 3, votes: { a: 2, b: 1 }, placementVotes: { a: [2, 1], b: [1, 2] } },
+  ];
+
+  it("gives a finalist's average predicted placement and consensus spot", () => {
+    expect(getPredictedPlacementFor("a", season, insights)).toEqual({ episodeNumber: 2, averagePlacement: 4 / 3, position: 1 });
+    expect(getPredictedPlacementFor("b", season, insights)).toEqual({ episodeNumber: 2, averagePlacement: 5 / 3, position: 2 });
+  });
+
+  it("is null for someone not in the finale, or with no finale predictions", () => {
+    expect(getPredictedPlacementFor("c", season, insights)).toBeNull();
+    expect(getPredictedPlacementFor("a", season, insights.slice(0, 1))).toBeNull();
   });
 });
