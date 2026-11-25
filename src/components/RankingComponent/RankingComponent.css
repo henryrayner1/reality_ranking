@@ -469,3 +469,46 @@
     margin-left: 0;
   }
 }
+
+/* Admin-only: a submitted column's episode number is a button that opens it
+   for editing. Same footprint as a plain .episode-heading. */
+.episode-heading-edit {
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.episode-heading-edit:hover,
+.episode-heading-edit:focus-visible {
+  background-color: var(--rk-accent-tint);
+  color: var(--rk-accent-text);
+}
+
+/* Shown above the grid while an admin edits a past ranking. */
+.ranking-edit-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  background-color: var(--rk-accent-tint);
+  color: var(--rk-accent-text);
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.ranking-edit-error {
+  color: #A32D2D;
+}
+
+.ranking-edit-actions {
+  display: flex;
+  gap: 0.4rem;
+  margin-left: auto;
+}

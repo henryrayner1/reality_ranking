@@ -4,7 +4,7 @@ import "react-tooltip/dist/react-tooltip.css";
 import { type Contestant, type EliminationEntry, type InsightsResponse, type RankType, type Season, type Show } from "../../../utils/Constants";
 import ContestantIcon from "../../ContestantIcon/ContestantIcon";
 import { formatEpisodeHeading } from "../../../utils/episodeRankability";
-import { placeFinalistsFirst } from "../../../utils/util";
+import { getEliminatedThrough, placeFinalistsFirst } from "../../../utils/util";
 import PageLoading from "../../PageLoading/PageLoading";
 
 interface InsightsRankingTableProps {
@@ -107,9 +107,12 @@ const InsightsRankingTable = (props: InsightsRankingTableProps) => {
   };
   const getContestantName = (id: string) => contestantsById[id]?.name ?? "";
 
+  // Greyed from the episode after they went home in Favorite (they're still
+  // ranked in that episode), from that same episode in Winner — the same
+  // getEliminatedThrough rule as the Ranking page.
   const isEliminatedByEpisode = (contestantId: string, episodeNumber: number) => {
     const elim = eliminationByContestant.get(contestantId);
-    return !!elim && episodeNumber > elim.episodeNumber;
+    return !!elim && elim.episodeNumber <= getEliminatedThrough(rankingType, episodeNumber);
   };
 
   const rankTypeTabs = (

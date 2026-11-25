@@ -28,11 +28,12 @@ interface ContestantTrendChartProps {
   finaleEpisodeNumber?: number;
 }
 
-// Submitted rankings only contain still-active contestants, so the worst
-// possible rank shrinks with every elimination — a contestant ranked last every
-// episode would otherwise look like they're climbing. Field size at episode N
-// excludes anyone eliminated in episode N itself, matching getEliminationOrder's
-// "out of the ranked list starting the same episode" rule.
+// Rankings only contain contestants still in, so the worst possible rank
+// shrinks with every elimination — a contestant ranked last every episode
+// would otherwise look like they're climbing. Field size at episode N is
+// everyone still in going into it, including whoever goes home in it: they're
+// still ranked in that episode's Favorite ranking, ranked last in Winner
+// (normalizeRankedIds), and in the field the predictions were made against.
 export const getFieldSizeByEpisode = (
   rosterSize: number,
   eliminations: EliminationEntry[],
@@ -54,7 +55,7 @@ export const getFieldSizeByEpisode = (
   return new Map(
     episodeNumbers.map((episodeNumber) => [
       episodeNumber,
-      rosterSize - eliminationEpisodes.filter((n) => n <= episodeNumber).length,
+      rosterSize - eliminationEpisodes.filter((n) => n < episodeNumber).length,
     ])
   );
 };

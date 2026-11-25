@@ -105,15 +105,15 @@ describe("getFieldSizeByEpisode", () => {
     expect([...getFieldSizeByEpisode(10, [], [1, 2, 3]).values()]).toEqual([10, 10, 10]);
   });
 
-  it("shrinks starting the same episode a contestant is eliminated", () => {
-    expect([...getFieldSizeByEpisode(10, [elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 9, 9]);
+  it("still counts a contestant in the episode they go home, and shrinks from the next one", () => {
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 10, 9]);
   });
 
   it("counts a duplicate elimination entry for one contestant only once", () => {
-    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 9, 9]);
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("a", 2)], [1, 2, 3]).values()]).toEqual([10, 10, 9]);
   });
 
   it("drops by two for a double elimination", () => {
-    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("b", 2), elim("c", 3)], [1, 2, 3]).values()]).toEqual([10, 8, 7]);
+    expect([...getFieldSizeByEpisode(10, [elim("a", 2), elim("b", 2), elim("c", 3)], [1, 2, 3, 4]).values()]).toEqual([10, 10, 8, 7]);
   });
 });

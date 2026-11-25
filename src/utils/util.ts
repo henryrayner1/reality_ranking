@@ -213,6 +213,20 @@ export const submitRankings = async (rankingsList: { userId: string; episodeId: 
   return submitData;
 };
 
+// Admin-only: replace a submitted ranking's order.
+export const updateRanking = async ({ id, contestantIds }: { id: string; contestantIds: string[] }) => {
+  const response = await apiFetch(`/api/rankings/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ contestantIds }),
+  });
+  if (!response.ok) {
+    const msg = await response.text().catch(() => '');
+    throw new Error(msg || `Failed to update ranking: ${response.status}`);
+  }
+  return response.json();
+};
+
 export const getRanking = async (rankingId: string) => {
   const rankingRes = await apiFetch('/api/rankings/fetchRanking', {
     method: 'POST',
@@ -343,6 +357,58 @@ export const getEliminationOrder = (
   return eliminatedContestants;
 }
 
+// The last episode whose eliminations count as "eliminated" in an episode's
+// ranking column. Favorite keeps a contestant in the ranked list through the
+// episode they go home in (they're greyed out from the next one), so their
+// final Favorite rank is real and the column matches the field the
+// predictions were made against. Winner greys them out that same episode.
+// Anything without a type (old callers, fixtures) gets the Winner rule.
+// Duplicated by hand in backend/src/routes/rankings.ts (normalizeRankedIds).
+export const getEliminatedThrough = (type: RankType | string | undefined, episodeNumber: number) =>
+  type === "FAVORITE" ? episodeNumber - 1 : episodeNumber;
+
+// Contestants who went home in exactly this episode, A-Z.
+export const getEliminatedInEpisode = (
+  eliminations: Elimination[],
+  episodeNumber: number,
+  getContestantName: (contestantId: string) => string = () => ""
+) => {
+  const before = new Set(getEliminationOrder(eliminations, episodeNumber - 1));
+  return getEliminationOrder(eliminations, episodeNumber)
+    .filter((id) => !before.has(id))
+    .sort((a, b) => getContestantName(a).localeCompare(getContestantName(b)));
+};
+
+// A submitted ranking's order with this episode's eliminations applied the
+// same way everywhere (ranking page, Insights, the insights endpoint):
+// - FAVORITE: anyone who went home this episode but isn't in the ranking
+//   (every ranking submitted before this rule existed, and any submitted
+//   after the elimination was logged by an old client) is ranked last.
+// - WINNER: anyone who went home this episode is always ranked last, so
+//   their Winner line ends at the bottom of the field.
+// leavingIds should be A-Z (getEliminatedInEpisode); several leaving at once
+// are appended in that order. Stored rankings are never rewritten.
+export const normalizeRankedIds = (contestantIds: string[], type: RankType | string | undefined, leavingIds: string[]) => {
+  if (leavingIds.length === 0) return contestantIds;
+  if (type === "FAVORITE") return [...contestantIds, ...leavingIds.filter((id) => !contestantIds.includes(id))];
+  return [...contestantIds.filter((id) => !leavingIds.includes(id)), ...leavingIds];
+};
+
+// 1-based positions for averaging a ranking, after normalizeRankedIds. Anyone
+// the rule put last (every Winner leaver, and Favorite leavers the ranking
+// left out) shares last place, so a double elimination's leavers tie at the
+// bottom instead of one ranking a place above the other. Favorite leavers the
+// user actually ranked keep their real position.
+// Duplicated by hand in backend/src/routes/rankings.ts.
+export const getRankedPositions = (contestantIds: string[], type: RankType | string | undefined, leavingIds: string[]) => {
+  const ranked = normalizeRankedIds(contestantIds, type, leavingIds);
+  const forcedLast = new Set(type === "FAVORITE" ? leavingIds.filter((id) => !contestantIds.includes(id)) : leavingIds);
+  return ranked.map((contestantId, index) => ({
+    contestantId,
+    position: forcedLast.has(contestantId) ? ranked.length : index + 1,
+  }));
+};
+
 // Final placements (contestantId -> 1 for the winner, 2, 3, ...) decided at or
 // before the given episode, i.e. in the finale.
 export const getPlacements = (eliminations: Elimination[], episodeNumber: number) => {
@@ -403,12 +469,17 @@ export const buildPastRankingColumn = (
   eligibleContestantIds: string[] = seasonContestantIds,
   getContestantName: (contestantId: string) => string = () => ""
 ): RankingColumnEntry[] => {
-  // Eliminations are immutable at the bottom of the column starting the same
-  // episode/day a contestant is eliminated — matches Episode.tsx's
-  // EpisodeComponent, which uses the same single threshold.
-  const eliminatedIds = getEliminationOrder(eliminations, episodeNumber, getContestantName).reverse();
+  // Eliminated contestants are immutable at the bottom of the column: from
+  // the episode they go home in for Winner, from the next one for Favorite
+  // (getEliminatedThrough). Episode.tsx's live column uses the same threshold.
+  const eliminatedIds = getEliminationOrder(eliminations, getEliminatedThrough(ranking.type, episodeNumber), getContestantName).reverse();
+  const rankedIds = normalizeRankedIds(
+    ranking.contestantIds,
+    ranking.type,
+    getEliminatedInEpisode(eliminations, episodeNumber, getContestantName)
+  );
 
-  const active = ranking.contestantIds
+  const active = rankedIds
     .filter((contestantId) => !eliminatedIds.includes(contestantId))
     .map((contestantId) => ({ contestantId, eliminated: false }));
 
@@ -437,9 +508,11 @@ export const buildPastRankingColumn = (
     .map((id) => ({ contestantId: id, eliminated: false }));
 
   // Finalists placed in the finale aren't eliminations: they go above
-  // everyone else, ordered by placement, and render in colour.
+  // everyone else, ordered by placement, and render in colour. Taken from
+  // the placements themselves rather than eliminatedIds, which for Favorite
+  // doesn't include the finale's own results yet.
   const placements = getPlacements(eliminations, episodeNumber);
-  const placed = placeFinalistsFirst(eliminatedIds.filter((id) => placements.has(id)), placements, getContestantName)
+  const placed = placeFinalistsFirst([...placements.keys()], placements, getContestantName)
     .map((id) => ({ contestantId: id, eliminated: false, placement: placements.get(id) }));
   const unplaced = (entries: RankingColumnEntry[]) =>
     entries.filter((entry) => entry.contestantId === null || !placements.has(entry.contestantId));
@@ -466,16 +539,21 @@ export const buildPastRankingColumn = (
 // across every user in the season) so the shared ContestantTrendChart /
 // InsightsRankingTable components can be fed a "my submissions only" view
 // without needing to know the difference.
-export const buildOwnInsights = (rankings: Ranking[], type: RankType, seasonId: string): InsightsResponse => {
+export const buildOwnInsights = (
+  rankings: Ranking[],
+  type: RankType,
+  seasonId: string,
+  // Contestants who went home in a given episode, A-Z, so the user's own
+  // rankings get the same normalizeRankedIds treatment as the insights endpoint.
+  getLeavingIds: (episodeNumber: number) => string[] = () => []
+): InsightsResponse => {
   const episodes = rankings
     .filter((r) => r.episode?.episodeNumber != null)
     .map((r) => ({
       episodeId: r.episodeId,
       episodeNumber: r.episode!.episodeNumber,
-      contestantAverages: r.contestantIds.map((contestantId, index) => ({
-        contestantId,
-        averagePosition: index + 1,
-      })),
+      contestantAverages: getRankedPositions(r.contestantIds, type, getLeavingIds(r.episode!.episodeNumber))
+        .map(({ contestantId, position }) => ({ contestantId, averagePosition: position })),
     }))
     .sort((a, b) => a.episodeNumber - b.episodeNumber);
 
