@@ -26,6 +26,7 @@ const ContestantPhoto = (props: ContestantPhotoProps) => {
     <img
       src={getContestantPhotoUrl(props.name, props.photoUrl, props.season, props.show)}
       alt={props.name}
+      draggable={false}
       className={classes.join(' ')}
     />
   );
