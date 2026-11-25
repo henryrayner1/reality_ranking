@@ -111,6 +111,54 @@ export const getPredictionStandings = (
   }));
 };
 
+export interface FinaleStanding {
+  contestantId: string;
+  // Mean predicted placement (1 = winner) over the predictions that placed
+  // them; null when nobody did.
+  averagePlacement: number | null;
+  // Share of predictors (0-1) who put them 1st, 2nd, 3rd and 4th or lower.
+  // Sums to 1 unless some predictions left them out.
+  shares: [number, number, number, number];
+}
+
+// A finale's consensus order: everyone still in going into it, lowest average
+// predicted placement first (then more winner picks, then by name), with
+// nobody-placed contestants last.
+export const getFinaleStandings = (
+  agg: Pick<PredictionInsightsEpisode, "predictorCount" | "votes" | "placementVotes">,
+  remaining: Pick<Contestant, "id" | "name">[]
+): FinaleStanding[] => {
+  // A backend older than placementVotes only sent winner picks: treat them
+  // as 1st places so the column still shows something sensible.
+  const placementVotes = agg.placementVotes ??
+    Object.fromEntries(Object.entries(agg.votes).map(([id, n]) => [id, [n]]));
+  const share = (n: number) => (agg.predictorCount > 0 ? n / agg.predictorCount : 0);
+  return remaining
+    .map((c) => {
+      const counts = placementVotes[c.id] ?? [];
+      const total = counts.reduce((sum, n) => sum + n, 0);
+      const weighted = counts.reduce((sum, n, i) => sum + n * (i + 1), 0);
+      const rest = counts.slice(3).reduce((sum, n) => sum + n, 0);
+      return {
+        name: c.name,
+        standing: {
+          contestantId: c.id,
+          averagePlacement: total > 0 ? weighted / total : null,
+          shares: [share(counts[0] ?? 0), share(counts[1] ?? 0), share(counts[2] ?? 0), share(rest)],
+        } as FinaleStanding,
+      };
+    })
+    .sort((a, b) =>
+      (a.standing.averagePlacement ?? Infinity) - (b.standing.averagePlacement ?? Infinity) ||
+      b.standing.shares[0] - a.standing.shares[0] ||
+      a.name.localeCompare(b.name)
+    )
+    .map((r) => r.standing);
+};
+
+// 1.4 -> "1.4", 2 -> "2"
+export const formatAveragePlacement = (avg: number) => String(Math.round(avg * 10) / 10);
+
 // Contestants still in going into an episode, as roster entries.
 export const getRemainingContestants = (season: Season, episodeNumber: number): Contestant[] => {
   const ids = new Set(

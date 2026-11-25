@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ContestantChip from "../../Predictions/ContestantChip/ContestantChip";
 import PredictionVoteBars from "../PredictionVoteBars/PredictionVoteBars";
+import FinalePlacementBars from "../FinalePlacementBars/FinalePlacementBars";
 import PageLoading from "../../PageLoading/PageLoading";
 import * as AdminUI from "../../../utils/AdminComponents";
 import type { Contestant, Episode, PredictionInsightsEpisode, Season, Show } from "../../../utils/Constants";
@@ -8,8 +9,10 @@ import {
   formatPercent,
   getAiredEpisodes,
   getEpisodeEliminations,
+  getFinaleStandings,
   getPredictionStandings,
   getRemainingContestants,
+  type FinaleStanding,
   type PredictionStanding,
 } from "../../../utils/predictions";
 import { getPredictionName } from "../../../utils/util";
@@ -49,8 +52,28 @@ const PredictionInsights = ({ currSeason, currShow, insights, loadingFlag }: Pre
   const toBars = (standings: PredictionStanding[]) =>
     standings.map((s) => ({ id: s.contestantId, name: nameOf(s.contestantId), percent: s.percent }));
 
+  const toFinaleBars = (standings: FinaleStanding[]) =>
+    standings.map((s, i) => ({
+      id: s.contestantId,
+      name: nameOf(s.contestantId),
+      position: i + 1,
+      averagePlacement: s.averagePlacement,
+      shares: s.shares,
+    }));
+
   const standingsFor = (ep: Episode, agg: PredictionInsightsEpisode) =>
     getPredictionStandings(agg, getRemainingContestants(currSeason, ep.episodeNumber));
+  const finaleStandingsFor = (ep: Episode, agg: PredictionInsightsEpisode) =>
+    getFinaleStandings(agg, getRemainingContestants(currSeason, ep.episodeNumber));
+
+  // The finale's last column is the consensus predicted order (from every
+  // placement in each prediction), not just winner picks.
+  const renderBars = (ep: Episode, agg: PredictionInsightsEpisode, limit?: number) =>
+    ep.isFinale ? (
+      <FinalePlacementBars bars={toFinaleBars(finaleStandingsFor(ep, agg).slice(0, limit))} />
+    ) : (
+      <PredictionVoteBars bars={toBars(standingsFor(ep, agg).slice(0, limit))} />
+    );
 
   const viewAllEpisode = viewAllEpisodeId ? (currSeason.episodes ?? []).find((e) => e.id === viewAllEpisodeId) : null;
   const viewAllAgg = viewAllEpisode ? aggByEpisode.get(viewAllEpisode.id) : undefined;
@@ -105,10 +128,10 @@ const PredictionInsights = ({ currSeason, currShow, insights, loadingFlag }: Pre
                 </div>
               </div>
               <div className="history-section">
-                <span className="history-label">Top predicted</span>
+                <span className="history-label">{ep.isFinale ? "Predicted final order" : "Top predicted"}</span>
                 {agg ? (
                   <>
-                    <PredictionVoteBars bars={toBars(standings.slice(0, TOP_COUNT))} />
+                    {renderBars(ep, agg, TOP_COUNT)}
                     {standings.length > TOP_COUNT && (
                       <button type="button" className="insights-view-all" onClick={() => setViewAllEpisodeId(ep.id)}>
                         View all
@@ -125,12 +148,12 @@ const PredictionInsights = ({ currSeason, currShow, insights, loadingFlag }: Pre
       </ul>
       {viewAllEpisode && viewAllAgg && (
         <AdminUI.Modal
-          title={`Episode ${viewAllEpisode.episodeNumber}: predicted to ${viewAllEpisode.isFinale ? "win" : "go home"}`}
+          title={`Episode ${viewAllEpisode.episodeNumber}: ${viewAllEpisode.isFinale ? "predicted final order" : "predicted to go home"}`}
           onClose={() => setViewAllEpisodeId(null)}
           size="lg"
         >
           <div className="insights-view-all-body">
-            <PredictionVoteBars bars={toBars(standingsFor(viewAllEpisode, viewAllAgg))} />
+            {renderBars(viewAllEpisode, viewAllAgg)}
           </div>
         </AdminUI.Modal>
       )}

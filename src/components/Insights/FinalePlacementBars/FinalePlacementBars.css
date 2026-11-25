@@ -1,0 +1,74 @@
+.finale-bars-wrap {
+  width: 100%;
+}
+
+.finale-bars {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.finale-bar-label {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.2;
+  margin-bottom: 0.2rem;
+}
+
+.finale-bar-name {
+  font-weight: 600;
+  color: var(--rk-subtle);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.finale-bar-avg {
+  color: var(--rk-muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.finale-bar-track {
+  display: flex;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rk-hairline);
+  overflow: hidden;
+}
+
+.finale-bar-segment {
+  height: 100%;
+}
+
+.finale-bar-first { background: var(--placement-gold); }
+.finale-bar-second { background: var(--placement-silver); }
+.finale-bar-third { background: var(--placement-bronze); }
+.finale-bar-rest { background: var(--rk-accent); }
+
+.finale-bars-legend {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--rk-muted);
+}
+
+.finale-bars-legend li {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.finale-bars-swatch {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 2px;
+}
